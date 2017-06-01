@@ -4,6 +4,15 @@ from scipy.spatial import distance as dist
 from imutils import perspective
 from imutils import contours
 import os
+from matplotlib import pyplot as plt
+
+
+class Particle:
+    def __init__(self, type_phase, image_path, partial_image, contour):
+        self.type_phase = type_phase
+        self.image_path = image_path
+        self.partial_image = partial_image
+        self.contour = contour
 
 
 class MicroImg:
@@ -13,7 +22,7 @@ class MicroImg:
         self.folder = folder
         self.filename = filename
         self.image = cv2.imread(self.full_path())
-        self.contours = ""
+        self.particles = ()
 
     def full_path(self):
         return self.folder+'/'+self.filename
@@ -148,27 +157,53 @@ def get_box_metrics(contour, img, pixels_per_metric):
     return dimensions, img
 
 
+def process_folder(folder):
+    img_list = os.listdir(folder)
+    img_object = MicroImg('ice', folder, img_list[0])
 
+    this_image = img_object.image.copy()
 
-img_folder = 'img/ice/3103M1/'
-img_list = os.listdir(img_folder)
-img_object = MicroImg('ice', img_folder, img_list[0])
+    cnts = process_image(this_image, 'Canny')
 
-this_image = img_object.image.copy()
+    dims = []
 
-cnts = process_image(this_image, 'Canny')
+    for c in cnts:
+        this_dimensions, this_image = get_box_metrics(c, this_image, 3)
+        dims.append(this_dimensions)
+        # cv2.drawContours(this_image,c,
+
+    dims = list(filter(None,dims))
+    return dims, this_image
+
 
 cv2.namedWindow('Test', cv2.WINDOW_NORMAL)
 cv2.resizeWindow('Test', 768, 768)
 
-dims = []
+dims, this_image = process_folder('img/ice/3103M1')
+dims = np.asarray(dims)
 
-for c in cnts:
-    this_dimensions, this_image = get_box_metrics(c, this_image, 3)
-    dims = [dims,this_dimensions]
-    # cv2.drawContours(this_image,c,
+Ls = dims[:,0]
+Ws = dims[:,1]
+cnt_area = dims[:,2]
 
 cv2.imshow('Test', this_image)
 cv2.waitKey(0)
 
-dims = dims[1:]
+
+plt.subplot(2,3,1)
+plt.hist(cnt_area, histtype='bar', ec='black')
+plt.title('Contour Area')
+plt.subplot(2,3,2)
+plt.hist(Ls, histtype='bar', ec='black')
+plt.title('A')
+plt.subplot(2,3,3)
+plt.hist(Ws, histtype='bar', ec='black')
+plt.title('B')
+plt.subplot(2,3,4)
+plt.hist(Ls/Ws, histtype='bar', ec='black')
+plt.title('Aspect Ratio')
+plt.subplot(2,3,5)
+plt.hist(cnt_area/(Ls*Ws), ec='black')
+plt.title('Normalized Area')
+
+plt.show()
