@@ -4,25 +4,49 @@ import find_couples
 from matplotlib import pyplot as plt
 import cv2
 
-img_ice = MicroImg('Ice', 'img/ice/3103M1/', 'Ice-4.png', 'Otsu')
-img_drop = MicroImg('Drop', '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/3103/M1/',
-                        'Drops-4.png_withCircles.png', 'Canny')
+dim_list = list()
+mass_list = list()
 
-pairs_list, img_comp = find_couples.main(img_ice, img_drop)
+for i in np.arange(1, 2):
+    img_ice = MicroImg('Ice', 'img/ice/3103M1/', 'Ice-'+str(i)+'.png', 'Otsu')
+    img_drop = MicroImg('Drop', '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/3103/M1/',
+                            'Drops-'+str(i)+'.png_withCircles.png', 'Canny')
 
-list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
 
-plt.scatter(list_couples[0], list_couples[1])
-x = [1, 1000]
-y = x
-plt.plot(x, y)
-plt.xlim(0, 1000)
+    # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
+
+    dims_ice_list = [x['Center Points'] for x in img_ice.dimensions]
+    dims_drops_list = [x['Center Points'] for x in img_drop.dimensions]
+
+    pairs_list = list(zip(dims_ice_list, [find_couples.find_closest_drop(crystal, dims_drops_list, -200, 500) for crystal in dims_ice_list]))
+
+    ice_properties = list()
+
+    for (crystal, i) in zip(img_ice.dimensions, np.arange(0, len(dims_ice_list))):
+        for drop in img_drop.dimensions:
+            if drop['Center Points']==pairs_list[i][1]:
+                new_info = {'Drop Diameter': drop['Long Axis']}
+        crystal.update(new_info)
+        dim_list.append(crystal['Long Axis'])
+        mass_list.append(np.pi/6*crystal['Drop Diameter'])
+
+    cv2.namedWindow(('Comparison'+str(i)), cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(('Comparison'+str(i)), 768, 768)
+
+    img_comparison = img_ice.initial_image.copy()
+
+    for pair in pairs_list:
+        cv2.circle(img_comparison, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
+        cv2.circle(img_comparison, (int(pair[1][0]), int(pair[1][1])), 7, (255, 0, 0), -1)
+        cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]), int(pair[1][1])), (255, 255, 255))
+
+    cv2.imshow(('Comparison'+str(i)), img_comparison)
+    cv2.waitKey(0)
+
+plt.scatter([x for x in dim_list], [x for x in mass_list])
 plt.show()
 
-cv2.namedWindow('Comparison', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('Comparison', 768, 768)
-cv2.imshow('Comparison', img_comp)
-cv2.waitKey(0)
+
 
 
 

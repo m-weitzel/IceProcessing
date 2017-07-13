@@ -15,7 +15,6 @@ class MicroImg:
         self.pixels_per_metric = 3
         # self.initial_image = cv2.cvtColor(cv2.imread(self.full_path()), cv2.COLOR_BGR2GRAY)
         self.initial_image = cv2.imread(self.full_path())
-        self.particles = ()
         self.thresh_type = thresh_type
         self.bin_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
@@ -140,7 +139,7 @@ def draw_box_from_conts(contour, img, pixels_per_metric):
     # if dim_l > 100:
     #     return [], img
 
-    dimensions = (dim_l, dim_w, area, center_point[0], center_point[1])
+    dimensions = {'Long Axis': dim_l, 'Short Axis': dim_w, 'Area': area, 'Center Points': (center_point[0], center_point[1])}
 
     cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
                 (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,

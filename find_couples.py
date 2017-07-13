@@ -53,16 +53,14 @@ def find_closest_drop(crystal, drop_list, x_shift=-200, max_y_dist=200):
             return None
 
 
-def main(microimg_ice, microimg_drop, x_shift_guess=-200, maxdist=500):
-
-    img_comparison = microimg_ice.initial_image.copy()
+def main(ice_contours, drop_contours, x_shift_guess=-200, maxdist=500):
 
     ice_crystal_list = list()
     drop_list = list()
     x_shift_list = list()
     pairs_list = list()
 
-    for c in microimg_ice.contours:
+    for c in ice_contours:
         if cv2.contourArea(c) > 1000:
             m = cv2.moments(c)
             cx = int(m["m10"] / m["m00"])
@@ -79,7 +77,7 @@ def main(microimg_ice, microimg_drop, x_shift_guess=-200, maxdist=500):
             #            (int(cx), int(cy)), cv2.FONT_HERSHEY_SIMPLEX,
             #            0.65, (255, 255, 255), 2)
 
-    for c in microimg_drop.contours:
+    for c in drop_contours:
         if cv2.contourArea(c) > 1000:
             m = cv2.moments(c)
             cx = int(m["m10"] / m["m00"])
@@ -90,7 +88,7 @@ def main(microimg_ice, microimg_drop, x_shift_guess=-200, maxdist=500):
             drop_list.append(drop)
 
             # cv2.circle(img_comparison, drop, 7, (0, 255, 0), -1)
-            cv2.drawContours(img_comparison, [c], -1, (0, 0, 255), 2)
+            # cv2.drawContours(img_comparison, [c], -1, (0, 0, 255), 2)
 
     for crystal in ice_crystal_list:
         if len(x_shift_list) > 4:
@@ -102,12 +100,12 @@ def main(microimg_ice, microimg_drop, x_shift_guess=-200, maxdist=500):
             x_shift_list.append(crystal[0]-closest_drop[0])
             pairs_list.append(IceDropCouple(crystal, closest_drop))
 
-    for pair in pairs_list:
-        if pair.drop_center:
-            cv2.circle(img_comparison, pair.ice_center, 7, (0, 255, 0), -1)
-            cv2.circle(img_comparison, pair.drop_center, 7, (255, 0, 0), -1)
-            cv2.line(img_comparison, pair.drop_center, pair.ice_center, (255, 255, 255))
-    return pairs_list, img_comparison
+    # for pair in pairs_list:
+    #     if pair.drop_center:
+    #         cv2.circle(img_comparison, pair.ice_center, 7, (0, 255, 0), -1)
+    #         cv2.circle(img_comparison, pair.drop_center, 7, (255, 0, 0), -1)
+    #         cv2.line(img_comparison, pair.drop_center, pair.ice_center, (255, 255, 255))
+    return pairs_list
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
