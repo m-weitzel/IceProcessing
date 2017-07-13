@@ -90,14 +90,20 @@ def main(ice_contours, drop_contours, x_shift_guess=-200, maxdist=500):
             # cv2.circle(img_comparison, drop, 7, (0, 255, 0), -1)
             # cv2.drawContours(img_comparison, [c], -1, (0, 0, 255), 2)
 
+# First run for getting x shift
     for crystal in ice_crystal_list:
         if len(x_shift_list) > 4:
             closest_drop = find_closest_drop(crystal, drop_list, np.median(x_shift_list), maxdist)
         else:
             closest_drop = find_closest_drop(crystal, drop_list, x_shift_guess, maxdist)
-
         if closest_drop:
             x_shift_list.append(crystal[0]-closest_drop[0])
+
+# Second run for finding couples
+    for crystal in ice_crystal_list:
+        closest_drop = find_closest_drop(crystal, drop_list, np.median(x_shift_list), maxdist)
+
+        if closest_drop:
             pairs_list.append(IceDropCouple(crystal, closest_drop))
 
     # for pair in pairs_list:
