@@ -29,7 +29,16 @@ class MicroImg:
         # 'pixels per metric' calibration variable
         (cnts, _) = contours.sort_contours(cnts)
 
-        return cnts
+        filtered_contours = list()
+        for c in cnts:
+            if cv2.contourArea(c) > 750:
+                box = cv2.minAreaRect(c)
+                box = cv2.boxPoints(box)
+                box = np.array(box, dtype="int")
+
+                if ~((box > 2040).any() or (box < 8).any()):
+                    filtered_contours.append(c)
+        return filtered_contours
 
     def get_dims_and_process(self):
         dims = list()
@@ -87,15 +96,15 @@ def midpoint(pt_a, pt_b):
 
 def draw_box_from_conts(contour, img, pixels_per_metric):
     img_processed = img.copy()
-    if cv2.contourArea(contour) < 750:
-        return [], img
+    # if cv2.contourArea(contour) < 750:
+    #     return [], img
 
     box = cv2.minAreaRect(contour)
     box = cv2.boxPoints(box)
     box = np.array(box, dtype="int")
 
-    if (box > 2040).any() or (box < 8).any():
-        return [], img
+    # if (box > 2040).any() or (box < 8).any():
+    #     return [], img
 
     box = perspective.order_points(box)
 
