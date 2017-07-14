@@ -8,11 +8,12 @@ from matplotlib import pyplot as plt
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=None):
+    def __init__(self, type_phase, folder, filename, thresh_type=None, minsize = 750):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
         self.pixels_per_metric = 3
+        self.minsize = minsize
         # self.initial_image = cv2.cvtColor(cv2.imread(self.full_path()), cv2.COLOR_BGR2GRAY)
         self.initial_image = cv2.imread(self.full_path())
         self.thresh_type = thresh_type
@@ -31,7 +32,7 @@ class MicroImg:
 
         filtered_contours = list()
         for c in cnts:
-            if cv2.contourArea(c) > 750:
+            if cv2.contourArea(c) > self.minsize:
                 box = cv2.minAreaRect(c)
                 box = cv2.boxPoints(box)
                 box = np.array(box, dtype="int")
