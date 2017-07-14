@@ -67,7 +67,7 @@ for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, le
         y_shift = int(input('Y shift:'))
 
     for crystal in dims_ice_list:
-        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 200)
+        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 350)
         if nearest_drop:
             x_shift_list.append(crystal[0] - nearest_drop[0])
             pairs_list.append((crystal, nearest_drop))
@@ -110,10 +110,12 @@ for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, le
             cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
 
     cv2.imshow(('Comparison'+str(i)), img_comparison)
-    cv2.waitKey(0)
+    cv2.waitKey(3000)
     cv2.destroyWindow('Comparison'+str(i))
 
 plt.scatter([x for x in dim_list], [x for x in mass_list])
+plt.xlim((0, 1.1*np.max(dim_list)))
+plt.ylim((0, 1.1*np.max(mass_list)))
 plt.show()
 
 save_flag = input('Save data?')
