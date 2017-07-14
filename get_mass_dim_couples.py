@@ -3,15 +3,35 @@ from IceSizing import MicroImg
 import find_couples
 from matplotlib import pyplot as plt
 import cv2
-
+import pickle
+import os
+import tkinter
+from tkinter import messagebox
 
 dim_list = list()
 mass_list = list()
 
-for i in np.arange(1,16):
-    img_ice = MicroImg('Ice', '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1107/M1/', 'Ice-'+str(i)+'.png', 'Adaptive')
-    img_drop = MicroImg('Drop', '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1107/M1/',
-                        'Drops-'+str(i)+'.png_withCircles.png', 'Adaptive')
+folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1107/M1/'
+file_list = os.listdir(folder)
+
+ice_file_list = list()
+drop_file_list = list()
+
+for filename in file_list:
+    if 'Ice' in filename:
+        ice_file_list.append(filename)
+    elif 'withCircles' in filename:
+        drop_file_list.append(filename)
+
+ice_file_list.sort()
+drop_file_list.sort()
+
+ice_file_list = ('Ice-1.png', 'Ice-2.png')
+drop_file_list = ('Drops-1.png_withCircles.png', 'Drops-2.png_withCircles.png')
+
+for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, len(ice_file_list))):
+    img_ice = MicroImg('Ice', folder, ice_file, 'Adaptive')
+    img_drop = MicroImg('Drop', folder, drop_file, 'Adaptive')
 
     # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
 
@@ -51,7 +71,7 @@ for i in np.arange(1,16):
         if nearest_drop:
             x_shift_list.append(crystal[0] - nearest_drop[0])
             pairs_list.append((crystal, nearest_drop))
-            if len(x_shift_list)>4:
+            if len(x_shift_list) > 4:
                 x_shift = np.median(x_shift_list)
 
     # x_shift_list = list()
@@ -83,7 +103,6 @@ for i in np.arange(1,16):
         c[:, :, 1] += int(y_shift)
         cv2.drawContours(img_comparison, c, -1, (255, 0, 0), 2)
 
-
     for pair in pairs_list:
         if pair[1]:
             cv2.circle(img_comparison, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
@@ -94,14 +113,15 @@ for i in np.arange(1,16):
     cv2.waitKey(0)
     cv2.destroyWindow('Comparison'+str(i))
 
-
 plt.scatter([x for x in dim_list], [x for x in mass_list])
 plt.show()
 
+save_flag = input('Save data?')
+if save_flag == 'Yes' or save_flag == 'yes':
+    pickle.dump((x_shift, y_shift, dim_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
 
 
-
-# def process_folder(folder, filter_type):
+    # def process_folder(folder, filter_type):
 #     img_list = os.listdir(folder)
 #
 #     img_object_list = []
