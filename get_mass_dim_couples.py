@@ -3,49 +3,98 @@ from IceSizing import MicroImg
 import find_couples
 from matplotlib import pyplot as plt
 import cv2
+from tkinter import *
 
 dim_list = list()
 mass_list = list()
 
-for i in np.arange(1, 2):
-    img_ice = MicroImg('Ice', 'img/ice/3103M1/', 'Ice-'+str(i)+'.png', 'Otsu')
-    img_drop = MicroImg('Drop', '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/3103/M1/',
-                            'Drops-'+str(i)+'.png_withCircles.png', 'Canny')
-
+for i in np.arange(1,16):
+    img_ice = MicroImg('Ice', '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1107/M1/', 'Ice-'+str(i)+'.png', 'Adaptive')
+    img_drop = MicroImg('Drop', '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1107/M1/',
+                        'Drops-'+str(i)+'.png_withCircles.png', 'Adaptive')
 
     # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
 
     dims_ice_list = [x['Center Points'] for x in img_ice.dimensions]
     dims_drops_list = [x['Center Points'] for x in img_drop.dimensions]
 
-    pairs_list = list(zip(dims_ice_list, [find_couples.find_closest_drop(crystal, dims_drops_list, -200, 500) for crystal in dims_ice_list]))
-
-    ice_properties = list()
-
-    for (crystal, i) in zip(img_ice.dimensions, np.arange(0, len(dims_ice_list))):
-        for drop in img_drop.dimensions:
-            if drop['Center Points']==pairs_list[i][1]:
-                new_info = {'Drop Diameter': drop['Long Axis']}
-        crystal.update(new_info)
-        dim_list.append(crystal['Long Axis'])
-        mass_list.append(np.pi/6*crystal['Drop Diameter'])
+    x_shift_list = list()
+    x_shift = 0
 
     cv2.namedWindow(('Comparison'+str(i)), cv2.WINDOW_NORMAL)
     cv2.resizeWindow(('Comparison'+str(i)), 768, 768)
 
     img_comparison = img_ice.initial_image.copy()
 
+    for c in img_drop.contours:
+        cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
+
+    cv2.imshow(('Comparison' + str(i)), img_comparison)
+    cv2.waitKey(3000)
+
+    pairs_list = list()
+
+    try:
+        x_shift = img_ice.x_shift
+        this_input = input('Keep '+str(x_shift)+' as xshift? If no, enter new xshift (Drop to left: negative, Drops to right: positive).')
+        try:
+            x_shift = int(this_input)
+        except ValueError:
+            print('Invalid or empty input, keeping old xshift '+str(x_shift)+'.')
+
+    except AttributeError:
+        x_shift = int(input('X shift (Drop to left: negative, Drops to right: positive):'))
+
+
+    for crystal in dims_ice_list:
+        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, 500)
+        if nearest_drop:
+            x_shift_list.append(crystal[0] - nearest_drop[0])
+            pairs_list.append((crystal, nearest_drop))
+            if len(x_shift_list)>4:
+                x_shift = np.median(x_shift_list)
+
+    # x_shift_list = list()
+    # for crystal in dims_ice_list:
+    #     nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, 500)
+        # if nearest_drop:
+        #     x_shift_list.append(crystal[0] - nearest_drop[0])
+        #     x_shift = np.median(x_shift_list)
+
+    img_comparison = img_ice.initial_image.copy()
+
+    for crystal in img_ice.dimensions:
+        try:
+            k = [x[0] for x in pairs_list].index(crystal['Center Points'])
+            for drop in img_drop.dimensions:
+                if drop['Center Points'] == pairs_list[k][1]:
+                    new_info = {'Drop Diameter': drop['Long Axis']}
+            crystal.update(new_info)
+            dim_list.append(crystal['Long Axis'])
+            mass_list.append(np.pi/6*crystal['Drop Diameter'])
+        except ValueError:
+            print('No matching drop for crystal at '+str(crystal['Center Points'])+' not found.')
+
+    for c in img_ice.contours:
+        cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
+
+    for c in img_drop.contours:
+        c[:, :, 0] += int(x_shift)
+        cv2.drawContours(img_comparison, c, -1, (255, 0, 0), 2)
+
+
     for pair in pairs_list:
-        cv2.circle(img_comparison, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
-        cv2.circle(img_comparison, (int(pair[1][0]), int(pair[1][1])), 7, (255, 0, 0), -1)
-        cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]), int(pair[1][1])), (255, 255, 255))
+        if pair[1]:
+            cv2.circle(img_comparison, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
+            cv2.circle(img_comparison, (int(pair[1][0]+x_shift), int(pair[1][1])), 7, (255, 0, 0), -1)
+            cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1])), (255, 255, 255))
 
     cv2.imshow(('Comparison'+str(i)), img_comparison)
     cv2.waitKey(0)
+    cv2.destroyWindow('Comparison'+str(i))
 
 plt.scatter([x for x in dim_list], [x for x in mass_list])
 plt.show()
-
 
 
 

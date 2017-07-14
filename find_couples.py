@@ -25,8 +25,8 @@ class IceDropCouple:
         return x_dist, y_dist, ice_drop_dist
 
 
-def find_closest_drop(crystal, drop_list, x_shift=-200, max_y_dist=200):
-    if (crystal[0]-x_shift) > 2048:
+def find_closest_drop(crystal, drop_list, x_shift_dist=0, max_y_dist=200):
+    if ((crystal[0]-x_shift_dist) > 2048) | ((crystal[0]-x_shift_dist) < 0):
         return None
     else:
 
@@ -40,7 +40,9 @@ def find_closest_drop(crystal, drop_list, x_shift=-200, max_y_dist=200):
             x_dist_list.append(current_x_shift)
             y_dist_list.append(current_y_dist)
 
-        list_pairs = list(zip([x + x_shift for x in x_dist_list], y_dist_list, drop_list))
+        x_shifted = [x + x_shift_dist for x in x_dist_list]
+
+        list_pairs = list(zip(x_shifted, y_dist_list, drop_list))
         list_pairs.sort(key=lambda x: x[1])
         # result = (list_pairs[0])
         list_shortened = list_pairs[:4]
@@ -53,7 +55,7 @@ def find_closest_drop(crystal, drop_list, x_shift=-200, max_y_dist=200):
             return None
 
 
-def main(ice_contours, drop_contours, x_shift_guess=-200, maxdist=500):
+def main(ice_contours, drop_contours, x_shift_guess=-200, maxdist=250):
 
     ice_crystal_list = list()
     drop_list = list()
