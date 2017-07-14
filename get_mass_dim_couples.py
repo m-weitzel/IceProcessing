@@ -3,7 +3,7 @@ from IceSizing import MicroImg
 import find_couples
 from matplotlib import pyplot as plt
 import cv2
-from tkinter import *
+
 
 dim_list = list()
 mass_list = list()
@@ -44,10 +44,10 @@ for i in np.arange(1,16):
 
     except AttributeError:
         x_shift = int(input('X shift (Drop to left: negative, Drops to right: positive):'))
-
+        y_shift = int(input('Y shift:'))
 
     for crystal in dims_ice_list:
-        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, 500)
+        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 200)
         if nearest_drop:
             x_shift_list.append(crystal[0] - nearest_drop[0])
             pairs_list.append((crystal, nearest_drop))
@@ -80,18 +80,20 @@ for i in np.arange(1,16):
 
     for c in img_drop.contours:
         c[:, :, 0] += int(x_shift)
+        c[:, :, 1] += int(y_shift)
         cv2.drawContours(img_comparison, c, -1, (255, 0, 0), 2)
 
 
     for pair in pairs_list:
         if pair[1]:
             cv2.circle(img_comparison, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
-            cv2.circle(img_comparison, (int(pair[1][0]+x_shift), int(pair[1][1])), 7, (255, 0, 0), -1)
-            cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1])), (255, 255, 255))
+            cv2.circle(img_comparison, (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), 7, (255, 0, 0), -1)
+            cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
 
     cv2.imshow(('Comparison'+str(i)), img_comparison)
     cv2.waitKey(0)
     cv2.destroyWindow('Comparison'+str(i))
+
 
 plt.scatter([x for x in dim_list], [x for x in mass_list])
 plt.show()

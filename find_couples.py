@@ -25,8 +25,10 @@ class IceDropCouple:
         return x_dist, y_dist, ice_drop_dist
 
 
-def find_closest_drop(crystal, drop_list, x_shift_dist=0, max_y_dist=200):
+def find_closest_drop(crystal, drop_list, x_shift_dist=0, y_shift_dist = 0, max_y_dist=200):
     if ((crystal[0]-x_shift_dist) > 2048) | ((crystal[0]-x_shift_dist) < 0):
+        return None
+    elif ((crystal[1] - y_shift_dist) > 2048) | ((crystal[1] - y_shift_dist) < 0):
         return None
     else:
 
@@ -35,15 +37,16 @@ def find_closest_drop(crystal, drop_list, x_shift_dist=0, max_y_dist=200):
 
         for inner_drop in drop_list:
             current_x_shift = inner_drop[0] - crystal[0]
-            current_y_dist = abs(inner_drop[1] - crystal[1])
+            current_y_dist = inner_drop[1] - crystal[1]
 
             x_dist_list.append(current_x_shift)
             y_dist_list.append(current_y_dist)
 
         x_shifted = [x + x_shift_dist for x in x_dist_list]
+        y_shifted = [y + y_shift_dist for y in y_dist_list]
 
-        list_pairs = list(zip(x_shifted, y_dist_list, drop_list))
-        list_pairs.sort(key=lambda x: x[1])
+        list_pairs = list(zip(x_shifted, y_shifted, drop_list))
+        list_pairs.sort(key=lambda x: abs(x[1]))
         # result = (list_pairs[0])
         list_shortened = list_pairs[:4]
         list_shortened.sort(key=lambda x: np.sqrt([x[0]**2+x[1]**2]))
