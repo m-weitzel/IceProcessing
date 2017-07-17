@@ -46,6 +46,11 @@ class MicroImg:
         img = self.initial_image.copy()
         for c in self.contours:
             this_dimensions, img = draw_box_from_conts(c, img, self.pixels_per_metric)
+            csp = this_dimensions['Area']*this_dimensions['Short Axis']*\
+                  (2*this_dimensions['Long Axis']+2*this_dimensions['Short Axis']) /\
+                  (cv2.arcLength(c, True)/self.pixels_per_metric)
+            new_info = {'CSP': csp}
+            this_dimensions.update(new_info)
             dims.append(this_dimensions)
 
         dims = list(filter(None, dims))

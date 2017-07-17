@@ -5,13 +5,16 @@ from matplotlib import pyplot as plt
 import cv2
 import pickle
 import os
-import tkinter
-from tkinter import messagebox
+# import tkinter
+# from tkinter import messagebox
 
 dim_list = list()
+csp_list = list()
 mass_list = list()
+x_shift_global_list = list()
+y_shift_global_list = list()
 
-folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1107/M1/'
+folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/3103/M1/mini'
 file_list = os.listdir(folder)
 
 ice_file_list = list()
@@ -26,12 +29,20 @@ for filename in file_list:
 ice_file_list.sort()
 drop_file_list.sort()
 
-ice_file_list = ('Ice-1.png', 'Ice-2.png')
-drop_file_list = ('Drops-1.png_withCircles.png', 'Drops-2.png_withCircles.png')
+try:
+    (x_shift_global_list, y_shift_global_list, _, _, _) = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
+except FileNotFoundError:
+    print('No old data file found, starting from scratch.')
+    x_shift_global_list = [0]*len(ice_file_list)
+    y_shift_global_list = [0]*len(ice_file_list)
 
-for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, len(ice_file_list))):
-    img_ice = MicroImg('Ice', folder, ice_file, 'Adaptive')
-    img_drop = MicroImg('Drop', folder, drop_file, 'Adaptive')
+# ice_file_list = ('Ice-1.png', 'Ice-2.png')
+# drop_file_list = ('Drops-1.png_withCircles.png', 'Drops-2.png_withCircles.png')
+
+for ice_file, drop_file, x_shift, y_shift, i in \
+        zip(ice_file_list, drop_file_list, x_shift_global_list, y_shift_global_list, np.arange(1, len(ice_file_list)+1)):
+    img_ice = MicroImg('Ice', folder, ice_file, 'Adaptive', 7500)
+    img_drop = MicroImg('Drop', folder, drop_file, 'Adaptive', 7500)
 
     # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
 
@@ -39,7 +50,6 @@ for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, le
     dims_drops_list = [x['Center Points'] for x in img_drop.dimensions]
 
     x_shift_list = list()
-    x_shift = 0
 
     cv2.namedWindow(('Comparison'+str(i)), cv2.WINDOW_NORMAL)
     cv2.resizeWindow(('Comparison'+str(i)), 768, 768)
@@ -54,20 +64,18 @@ for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, le
 
     pairs_list = list()
 
+    this_input = input('Keep '+str(x_shift)+', '+str(y_shift)+' as xshift, yshift? If no, enter new xshift (Drop to left: negative, Drops to right: positive).')
     try:
-        x_shift = img_ice.x_shift
-        this_input = input('Keep '+str(x_shift)+' as xshift? If no, enter new xshift (Drop to left: negative, Drops to right: positive).')
+        x_shift = int(this_input)
         try:
-            x_shift = int(this_input)
+            y_shift = int(input('yshift:'))
         except ValueError:
-            print('Invalid or empty input, keeping old xshift '+str(x_shift)+'.')
-
-    except AttributeError:
-        x_shift = int(input('X shift (Drop to left: negative, Drops to right: positive):'))
-        y_shift = int(input('Y shift:'))
+            print('Invalid or empty input, keeping old xshift ' + str(y_shift) + '.')
+    except ValueError:
+        print('Invalid or empty input, keeping old xshift '+str(x_shift)+', '+str(y_shift)+'.')
 
     for crystal in dims_ice_list:
-        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 350)
+        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 250)
         if nearest_drop:
             x_shift_list.append(crystal[0] - nearest_drop[0])
             pairs_list.append((crystal, nearest_drop))
@@ -81,6 +89,8 @@ for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, le
         #     x_shift_list.append(crystal[0] - nearest_drop[0])
         #     x_shift = np.median(x_shift_list)
 
+    x_shift_global_list[i-1]=x_shift
+    y_shift_global_list[i-1]=y_shift
     img_comparison = img_ice.initial_image.copy()
 
     for crystal in img_ice.dimensions:
@@ -88,12 +98,13 @@ for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, le
             k = [x[0] for x in pairs_list].index(crystal['Center Points'])
             for drop in img_drop.dimensions:
                 if drop['Center Points'] == pairs_list[k][1]:
-                    new_info = {'Drop Diameter': drop['Long Axis']}
+                    new_info = {'Drop Diameter': drop['Short Axis']}
             crystal.update(new_info)
             dim_list.append(crystal['Long Axis'])
+            csp_list.append(crystal['CSP'])
             mass_list.append(np.pi/6*crystal['Drop Diameter'])
         except ValueError:
-            print('No matching drop for crystal at '+str(crystal['Center Points'])+' not found.')
+            print('No matching drop for crystal at '+str(crystal['Center Points'])+' found.')
 
     for c in img_ice.contours:
         cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
@@ -113,14 +124,14 @@ for ice_file, drop_file, i in zip(ice_file_list, drop_file_list, np.arange(1, le
     cv2.waitKey(3000)
     cv2.destroyWindow('Comparison'+str(i))
 
-plt.scatter([x for x in dim_list], [x for x in mass_list])
-plt.xlim((0, 1.1*np.max(dim_list)))
+plt.scatter([x for x in csp_list], [x for x in mass_list])
+plt.xlim((0, 1.1*np.max(csp_list)))
 plt.ylim((0, 1.1*np.max(mass_list)))
 plt.show()
 
 save_flag = input('Save data?')
 if save_flag == 'Yes' or save_flag == 'yes':
-    pickle.dump((x_shift, y_shift, dim_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
+    pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
 
 
     # def process_folder(folder, filter_type):
