@@ -50,11 +50,14 @@ def find_closest_drop(crystal, drop_list, x_shift_dist=0, y_shift_dist = 0, max_
         # result = (list_pairs[0])
         list_shortened = list_pairs[:4]
         list_shortened.sort(key=lambda x: np.sqrt([x[0]**2+x[1]**2]))
-        result = list_shortened[0]
 
-        if abs(np.sqrt(result[0]**2+result[1]**2)) < max_dist:
-            return result[2]
-        else:
+        try:
+            result = list_shortened[0]
+            if abs(np.sqrt(result[0]**2+result[1]**2)) < max_dist:
+                return result[2]
+            else:
+                return None
+        except IndexError:
             return None
 
 
@@ -118,5 +121,5 @@ def main(ice_contours, drop_contours, x_shift_guess=-200, maxdist=250):
     #         cv2.line(img_comparison, pair.drop_center, pair.ice_center, (255, 255, 255))
     return pairs_list
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()

@@ -37,7 +37,7 @@ class MicroImg:
                 box = cv2.boxPoints(box)
                 box = np.array(box, dtype="int")
 
-                if ~((box > 2040).any() or (box < 8).any()):
+                if ~((box > 2045).any() or (box < 4).any()):
                     filtered_contours.append(c)
         return filtered_contours
 

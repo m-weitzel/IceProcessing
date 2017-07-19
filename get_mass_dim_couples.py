@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import cv2
 import pickle
 import os
+from copy import deepcopy
 # import tkinter
 # from tkinter import messagebox
 
@@ -14,7 +15,7 @@ mass_list = list()
 x_shift_global_list = list()
 y_shift_global_list = list()
 
-folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/3103/M1/mini'
+folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/2203/M2'
 file_list = os.listdir(folder)
 
 ice_file_list = list()
@@ -30,7 +31,7 @@ ice_file_list.sort()
 drop_file_list.sort()
 
 try:
-    (x_shift_global_list, y_shift_global_list, _, _, _) = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
+    (x_shift_global_list, y_shift_global_list, _, _, _) = pickle.load(open(folder+'/mass_dim_data.dat', 'rb'))
 except FileNotFoundError:
     print('No old data file found, starting from scratch.')
     x_shift_global_list = [0]*len(ice_file_list)
@@ -51,15 +52,18 @@ for ice_file, drop_file, x_shift, y_shift, i in \
 
     x_shift_list = list()
 
-    cv2.namedWindow(('Comparison'+str(i)), cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(('Comparison'+str(i)), 768, 768)
+    cv2.namedWindow(('Comparison'+str(abs(int(ice_file[-6:-4])))), cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(('Comparison'+str(abs(int(ice_file[-6:-4])))), 768, 768)
 
     img_comparison = img_ice.initial_image.copy()
+    preview_img_contours = deepcopy(img_drop.contours)
 
-    for c in img_drop.contours:
+    for c in preview_img_contours:
+        c[:, :, 0] += int(x_shift)
+        c[:, :, 1] += int(y_shift)
         cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
 
-    cv2.imshow(('Comparison' + str(i)), img_comparison)
+    cv2.imshow(('Comparison' + str(abs(int(ice_file[-6:-4])))), img_comparison)
     cv2.waitKey(3000)
 
     pairs_list = list()
@@ -75,7 +79,7 @@ for ice_file, drop_file, x_shift, y_shift, i in \
         print('Invalid or empty input, keeping old xshift '+str(x_shift)+', '+str(y_shift)+'.')
 
     for crystal in dims_ice_list:
-        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 250)
+        nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 150)
         if nearest_drop:
             x_shift_list.append(crystal[0] - nearest_drop[0])
             pairs_list.append((crystal, nearest_drop))
@@ -91,6 +95,7 @@ for ice_file, drop_file, x_shift, y_shift, i in \
 
     x_shift_global_list[i-1]=x_shift
     y_shift_global_list[i-1]=y_shift
+    print('Saving '+str(x_shift)+' as xshift, '+str(y_shift)+' as yshift.')
     img_comparison = img_ice.initial_image.copy()
 
     for crystal in img_ice.dimensions:
@@ -120,9 +125,10 @@ for ice_file, drop_file, x_shift, y_shift, i in \
             cv2.circle(img_comparison, (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), 7, (255, 0, 0), -1)
             cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
 
-    cv2.imshow(('Comparison'+str(i)), img_comparison)
+    cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_comparison)
+    cv2.imwrite((folder+'/IDCouple-'+str(abs(int(ice_file[-6:-4])))+'.png'), img_comparison)
     cv2.waitKey(3000)
-    cv2.destroyWindow('Comparison'+str(i))
+    cv2.destroyWindow('Comparison'+str(abs(int(ice_file[-6:-4]))))
 
 plt.scatter([x for x in csp_list], [x for x in mass_list])
 plt.xlim((0, 1.1*np.max(csp_list)))
@@ -131,7 +137,7 @@ plt.show()
 
 save_flag = input('Save data?')
 if save_flag == 'Yes' or save_flag == 'yes':
-    pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
+    pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + '/mass_dim_data.dat', 'wb'))
 
 
     # def process_folder(folder, filter_type):
