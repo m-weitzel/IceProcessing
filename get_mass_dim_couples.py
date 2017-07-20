@@ -27,6 +27,9 @@ for filename in file_list:
     elif 'withCircles' in filename:
         drop_file_list.append(filename)
 
+assert (len(ice_file_list)>0), 'No files found.'
+assert (len(drop_file_list)>0), 'No drop files found.'
+
 ice_file_list.sort()
 drop_file_list.sort()
 
@@ -64,7 +67,7 @@ for ice_file, drop_file, x_shift, y_shift, i in \
         cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
 
     cv2.imshow(('Comparison' + str(abs(int(ice_file[-6:-4])))), img_comparison)
-    cv2.waitKey(3000)
+    cv2.waitKey(1000)
 
     pairs_list = list()
 
@@ -127,17 +130,19 @@ for ice_file, drop_file, x_shift, y_shift, i in \
 
     cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_comparison)
     cv2.imwrite((folder+'/IDCouple-'+str(abs(int(ice_file[-6:-4])))+'.png'), img_comparison)
-    cv2.waitKey(3000)
+    cv2.waitKey(1000)
     cv2.destroyWindow('Comparison'+str(abs(int(ice_file[-6:-4]))))
+
+
+save_flag = input('Save data?')
+if save_flag == 'Yes' or save_flag == 'yes':
+    pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
 
 plt.scatter([x for x in csp_list], [x for x in mass_list])
 plt.xlim((0, 1.1*np.max(csp_list)))
 plt.ylim((0, 1.1*np.max(mass_list)))
 plt.show()
 
-save_flag = input('Save data?')
-if save_flag == 'Yes' or save_flag == 'yes':
-    pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + '/mass_dim_data.dat', 'wb'))
 
 
     # def process_folder(folder, filter_type):
