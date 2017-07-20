@@ -107,7 +107,7 @@ for ice_file, drop_file, x_shift, y_shift, i in \
             crystal.update(new_info)
             dim_list.append(crystal['Long Axis'])
             csp_list.append(crystal['CSP'])
-            mass_list.append(np.pi/6*crystal['Drop Diameter'])
+            mass_list.append(np.pi/6*crystal['Drop Diameter']**3)
         except ValueError:
             print('No matching drop for crystal at '+str(crystal['Center Points'])+' found.')
 
