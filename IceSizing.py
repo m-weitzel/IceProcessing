@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=None, minsize = 750):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize = 750):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
@@ -63,35 +63,48 @@ class MicroImg:
 
         img = self.initial_image
 
-        if len(img.shape) > 2:
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if (self.type_phase=='Drop')|(self.type_phase=='drop'):
+
+            blue = img[:, :, 2]
+            rt, thresh = cv2.threshold(blue, 200, 255, cv2.THRESH_BINARY)
         else:
-            gray = img
-        gray = cv2.GaussianBlur(gray, (7, 7), 0)
+            if len(img.shape) > 2:
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            else:
+                gray = img
+            gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
-        if self.thresh_type == "Canny":
-            canny_low = 6
-            thresh = cv2.Canny(gray, canny_low, canny_low*3)
-        elif self.thresh_type == "Bin":
-            threshold = gray.mean()-1.5*gray.std()
-            rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
-        elif self.thresh_type == "Otsu":
-            threshold = gray.mean()-1.5*gray.std()
-            rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        elif self.thresh_type == "Adaptive":
-            block_size = 767
-            # block_size = 751
-            adpt_constant = 7
-            thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, block_size, adpt_constant)
-        else:
-            raise NameError('Invalid Threshold Method')
+            if self.thresh_type[0] == "Canny":
+                canny_low = 6
+                thresh = cv2.Canny(gray, canny_low, canny_low*3)
+            elif self.thresh_type[0] == "Bin":
+                threshold = gray.mean()-1.5*gray.std()
+                rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
+            elif self.thresh_type[0] == "Otsu":
+                threshold = gray.mean()-1.5*gray.std()
+                rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            elif self.thresh_type[0] == "Adaptive":
+                block_size = self.thresh_type[1]
+                # block_size = 751
+                adpt_constant = 7
+                thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, block_size, adpt_constant)
+            elif self.thresh_type[0] == "Color":
+                lower_range = np.array([110, 50, 50])
+                upper_range = np.array([130, 255, 255])
 
-        # load the initial_image, convert it to grayscale, and blur it slightly
+                hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+                hsv = cv2.GaussianBlur(hsv, (7, 7), 0)
 
-        dilation = 20
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation, dilation))
-        thresh = cv2.dilate(thresh, kernel, iterations=1)
-        thresh = cv2.erode(thresh, kernel, iterations=1)
+                thresh = cv2.inRange(hsv, lower_range, upper_range)
+            else:
+                raise NameError('Invalid Threshold Method')
+
+            # load the initial_image, convert it to grayscale, and blur it slightly
+
+            dilation = 20
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation, dilation))
+            thresh = cv2.dilate(thresh, kernel, iterations=1)
+            thresh = cv2.erode(thresh, kernel, iterations=1)
 
         return thresh
 

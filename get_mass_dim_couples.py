@@ -15,7 +15,8 @@ mass_list = list()
 x_shift_global_list = list()
 y_shift_global_list = list()
 
-folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/2203/M2'
+folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1907/M3/'
+# folder = '/holo/mweitzel/Windkanal/Ice/1907/M3/'
 file_list = os.listdir(folder)
 
 ice_file_list = list()
@@ -34,7 +35,7 @@ ice_file_list.sort()
 drop_file_list.sort()
 
 try:
-    (x_shift_global_list, y_shift_global_list, _, _, _) = pickle.load(open(folder+'/mass_dim_data.dat', 'rb'))
+    (x_shift_global_list, y_shift_global_list, _, _, _) = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
 except FileNotFoundError:
     print('No old data file found, starting from scratch.')
     x_shift_global_list = [0]*len(ice_file_list)
@@ -45,8 +46,8 @@ except FileNotFoundError:
 
 for ice_file, drop_file, x_shift, y_shift, i in \
         zip(ice_file_list, drop_file_list, x_shift_global_list, y_shift_global_list, np.arange(1, len(ice_file_list)+1)):
-    img_ice = MicroImg('Ice', folder, ice_file, 'Adaptive', 7500)
-    img_drop = MicroImg('Drop', folder, drop_file, 'Adaptive', 7500)
+    img_ice = MicroImg('Ice', folder, ice_file, ('Canny', 0), 7500)
+    img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 7500)
 
     # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
 
