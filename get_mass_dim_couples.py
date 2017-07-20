@@ -123,15 +123,42 @@ for ice_file, drop_file, x_shift, y_shift, i in \
         c[:, :, 1] += int(y_shift)
         cv2.drawContours(img_comparison, c, -1, (255, 0, 0), 2)
 
-    for pair in pairs_list:
+    img_preview = img_comparison.copy()
+
+    for p, pair in enumerate(pairs_list):
+        if pair[1]:
+            cv2.circle(img_preview, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
+            cv2.circle(img_preview, (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), 7, (255, 0, 0), -1)
+            cv2.line(img_preview, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
+            cv2.putText(img_preview, str(p), (int(pair[0][0]), int(pair[0][1])), cv2.FONT_HERSHEY_SIMPLEX,
+                3, (255, 255, 255), 2)
+
+    cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_preview)
+    cv2.waitKey(1000)
+
+    input_remove = input('Enter objects to remove.')
+
+    if input_remove:
+        remove_list = list(map(int, input_remove.split(',')))
+
+        for removable in remove_list:
+            pairs_list.pop(removable)
+            dim_list.pop(removable)
+            csp_list.pop(removable)
+            mass_list.pop(removable)
+
+    for p, pair in enumerate(pairs_list):
         if pair[1]:
             cv2.circle(img_comparison, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
-            cv2.circle(img_comparison, (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), 7, (255, 0, 0), -1)
-            cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
+            cv2.circle(img_comparison, (int(pair[1][0] + x_shift), int(pair[1][1] + y_shift)), 7, (255, 0, 0), -1)
+            cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])),
+                     (int(pair[1][0] + x_shift), int(pair[1][1] + y_shift)), (255, 255, 255))
 
-    cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_comparison)
-    cv2.imwrite((folder+'/IDCouple-'+str(abs(int(ice_file[-6:-4])))+'.png'), img_comparison)
+    cv2.imshow(('Comparison' + str(abs(int(ice_file[-6:-4])))), img_comparison)
     cv2.waitKey(1000)
+
+    cv2.imwrite((folder+'/IDCouple-'+str(abs(int(ice_file[-6:-4])))+'.png'), img_comparison)
+
     cv2.destroyWindow('Comparison'+str(abs(int(ice_file[-6:-4]))))
 
 
