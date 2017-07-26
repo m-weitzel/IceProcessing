@@ -15,7 +15,7 @@ mass_list = list()
 x_shift_global_list = list()
 y_shift_global_list = list()
 
-folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1907/M3/'
+folder = '/uni-mainz.de/homes/maweitze/CCR/3103/M1/'
 # folder = '/holo/mweitzel/Windkanal/Ice/1907/M3/'
 file_list = os.listdir(folder)
 
@@ -46,8 +46,8 @@ except FileNotFoundError:
 
 for ice_file, drop_file, x_shift, y_shift, i in \
         zip(ice_file_list, drop_file_list, x_shift_global_list, y_shift_global_list, np.arange(1, len(ice_file_list)+1)):
-    img_ice = MicroImg('Ice', folder, ice_file, ('Canny', 0), 7500)
-    img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 7500)
+    img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 1001), 750, 100000)
+    img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 750, 100000)
 
     # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
 
@@ -71,6 +71,9 @@ for ice_file, drop_file, x_shift, y_shift, i in \
     cv2.waitKey(1000)
 
     pairs_list = list()
+    this_dim_list = list()
+    this_mass_list = list()
+    this_csp_list = list()
 
     this_input = input('Keep '+str(x_shift)+', '+str(y_shift)+' as xshift, yshift? If no, enter new xshift (Drop to left: negative, Drops to right: positive).')
     try:
@@ -109,9 +112,9 @@ for ice_file, drop_file, x_shift, y_shift, i in \
                 if drop['Center Points'] == pairs_list[k][1]:
                     new_info = {'Drop Diameter': drop['Short Axis']}
             crystal.update(new_info)
-            dim_list.append(crystal['Long Axis'])
-            csp_list.append(crystal['CSP'])
-            mass_list.append(np.pi/6*crystal['Drop Diameter']**3)
+            this_dim_list.append(crystal['Long Axis'])
+            this_csp_list.append(crystal['CSP'])
+            this_mass_list.append(np.pi/6*crystal['Drop Diameter']**3)
         except ValueError:
             print('No matching drop for crystal at '+str(crystal['Center Points'])+' found.')
 
@@ -123,27 +126,62 @@ for ice_file, drop_file, x_shift, y_shift, i in \
         c[:, :, 1] += int(y_shift)
         cv2.drawContours(img_comparison, c, -1, (255, 0, 0), 2)
 
-    for pair in pairs_list:
+    img_preview = img_comparison.copy()
+
+    for p, pair in enumerate(pairs_list):
+        if pair[1]:
+            cv2.circle(img_preview, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
+            cv2.circle(img_preview, (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), 7, (255, 0, 0), -1)
+            cv2.line(img_preview, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
+            cv2.putText(img_preview, str(p), (int(pair[0][0]), int(pair[0][1])), cv2.FONT_HERSHEY_SIMPLEX,
+                3, (255, 255, 255), 2)
+
+    cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_preview)
+    cv2.waitKey(1000)
+
+    input_remove = input('Enter objects to remove.')
+
+    if input_remove:
+        remove_list = list(map(int, input_remove.split(',')))
+        remove_list.sort(reverse=True)
+
+        for removable in remove_list:
+            pairs_list.pop(removable)
+            this_dim_list.pop(removable)
+            this_csp_list.pop(removable)
+            this_mass_list.pop(removable)
+
+    dim_list += this_dim_list
+    csp_list += this_csp_list
+    mass_list += this_mass_list
+
+    for p, pair in enumerate(pairs_list):
         if pair[1]:
             cv2.circle(img_comparison, (int(pair[0][0]), int(pair[0][1])), 7, (0, 255, 0), -1)
-            cv2.circle(img_comparison, (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), 7, (255, 0, 0), -1)
-            cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
+            cv2.circle(img_comparison, (int(pair[1][0] + x_shift), int(pair[1][1] + y_shift)), 7, (255, 0, 0), -1)
+            cv2.line(img_comparison, (int(pair[0][0]), int(pair[0][1])),
+                     (int(pair[1][0] + x_shift), int(pair[1][1] + y_shift)), (255, 255, 255))
 
-    cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_comparison)
-    cv2.imwrite((folder+'/IDCouple-'+str(abs(int(ice_file[-6:-4])))+'.png'), img_comparison)
+    cv2.imshow(('Comparison' + str(abs(int(ice_file[-6:-4])))), img_comparison)
     cv2.waitKey(1000)
+
+    cv2.imwrite((folder+'/IDCouple-'+str(abs(int(ice_file[-6:-4])))+'.png'), img_comparison)
+
     cv2.destroyWindow('Comparison'+str(abs(int(ice_file[-6:-4]))))
 
+plt.scatter([x for x in dim_list], [x for x in mass_list])
+plt.xlim((0, 1.1*np.max(dim_list)))
+plt.ylim((0, 1.1*np.max(mass_list)))
 
 save_flag = input('Save data?')
 if save_flag == 'Yes' or save_flag == 'yes':
     pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
+    print('Data saved in '+folder+'mass_dim_data.dat.')
 
-plt.scatter([x for x in csp_list], [x for x in mass_list])
-plt.xlim((0, 1.1*np.max(csp_list)))
-plt.ylim((0, 1.1*np.max(mass_list)))
+    plt.savefig(folder + 'graph.png')
+    print('Graph saved in ' + folder + 'graph.png.')
+
 plt.show()
-
 
 
     # def process_folder(folder, filter_type):
