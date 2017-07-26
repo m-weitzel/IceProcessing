@@ -15,7 +15,7 @@ mass_list = list()
 x_shift_global_list = list()
 y_shift_global_list = list()
 
-folder = '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1907/M3/'
+folder = '/uni-mainz.de/homes/maweitze/CCR/3103/M1/'
 # folder = '/holo/mweitzel/Windkanal/Ice/1907/M3/'
 file_list = os.listdir(folder)
 
@@ -46,8 +46,8 @@ except FileNotFoundError:
 
 for ice_file, drop_file, x_shift, y_shift, i in \
         zip(ice_file_list, drop_file_list, x_shift_global_list, y_shift_global_list, np.arange(1, len(ice_file_list)+1)):
-    img_ice = MicroImg('Ice', folder, ice_file, ('Canny', 0), 7500)
-    img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 7500)
+    img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 1001), 750, 100000)
+    img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 750, 100000)
 
     # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
 
@@ -176,12 +176,12 @@ plt.ylim((0, 1.1*np.max(mass_list)))
 save_flag = input('Save data?')
 if save_flag == 'Yes' or save_flag == 'yes':
     pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
+    print('Data saved in '+folder+'mass_dim_data.dat.')
 
-plt.scatter([x for x in csp_list], [x for x in mass_list])
-plt.xlim((0, 1.1*np.max(csp_list)))
-plt.ylim((0, 1.1*np.max(mass_list)))
+    plt.savefig(folder + 'graph.png')
+    print('Graph saved in ' + folder + 'graph.png.')
+
 plt.show()
-
 
 
     # def process_folder(folder, filter_type):

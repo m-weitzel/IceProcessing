@@ -8,18 +8,21 @@ from matplotlib import pyplot as plt
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize = 750):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=10000, dilation=30):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
         self.pixels_per_metric = 3
         self.minsize = minsize
+        self.maxsize = maxsize
+        self.dilation = dilation
         # self.initial_image = cv2.cvtColor(cv2.imread(self.full_path()), cv2.COLOR_BGR2GRAY)
         self.initial_image = cv2.imread(self.full_path())
         self.thresh_type = thresh_type
         self.bin_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
         self.dimensions, self.processed_image = self.get_dims_and_process()
+
 
     def get_contours_from_img(self):
 
@@ -32,7 +35,8 @@ class MicroImg:
 
         filtered_contours = list()
         for c in cnts:
-            if cv2.contourArea(c) > self.minsize:
+            c_area = cv2.contourArea(c)
+            if (c_area > self.minsize) & (c_area < self.maxsize):
                 box = cv2.minAreaRect(c)
                 box = cv2.boxPoints(box)
                 box = np.array(box, dtype="int")
@@ -66,7 +70,7 @@ class MicroImg:
         if (self.type_phase=='Drop')|(self.type_phase=='drop'):
 
             blue = img[:, :, 2]
-            rt, thresh = cv2.threshold(blue, 200, 255, cv2.THRESH_BINARY)
+            rt, thresh = cv2.threshold(blue, 250, 255, cv2.THRESH_BINARY)
         else:
             if len(img.shape) > 2:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -75,11 +79,17 @@ class MicroImg:
             gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
             if self.thresh_type[0] == "Canny":
-                canny_low = 6
+                canny_low = self.thresh_type[1]
                 thresh = cv2.Canny(gray, canny_low, canny_low*3)
             elif self.thresh_type[0] == "Bin":
-                threshold = gray.mean()-1.5*gray.std()
-                rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
+                if self.thresh_type[1] != 0:
+                    threshold = self.thresh_type[1]
+                else:
+                    threshold = gray.mean()-1.5*gray.std()
+                if np.sign(self.thresh_type[1]) == -1:
+                    rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY)
+                else:
+                    rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
             elif self.thresh_type[0] == "Otsu":
                 threshold = gray.mean()-1.5*gray.std()
                 rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -88,20 +98,20 @@ class MicroImg:
                 # block_size = 751
                 adpt_constant = 7
                 thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, block_size, adpt_constant)
-            elif self.thresh_type[0] == "Color":
-                lower_range = np.array([110, 50, 50])
-                upper_range = np.array([130, 255, 255])
-
-                hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-                hsv = cv2.GaussianBlur(hsv, (7, 7), 0)
-
-                thresh = cv2.inRange(hsv, lower_range, upper_range)
+            # elif self.thresh_type[0] == "Color":
+            #     lower_range = np.array([110, 50, 50])
+            #     upper_range = np.array([130, 255, 255])
+            #
+            #     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            #     hsv = cv2.GaussianBlur(hsv, (7, 7), 0)
+            #
+            #     thresh = cv2.inRange(hsv, lower_range, upper_range)
             else:
                 raise NameError('Invalid Threshold Method')
 
             # load the initial_image, convert it to grayscale, and blur it slightly
 
-            dilation = 20
+            dilation = self.dilation
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation, dilation))
             thresh = cv2.dilate(thresh, kernel, iterations=1)
             thresh = cv2.erode(thresh, kernel, iterations=1)
