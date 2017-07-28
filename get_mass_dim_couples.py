@@ -6,17 +6,8 @@ import cv2
 import pickle
 import os
 from copy import deepcopy
-# import tkinter
-# from tkinter import messagebox
-
-dim_list = list()
-csp_list = list()
-mass_list = list()
-x_shift_global_list = list()
-y_shift_global_list = list()
 
 folder = '/uni-mainz.de/homes/maweitze/CCR/3103/M1/'
-# folder = '/holo/mweitzel/Windkanal/Ice/1907/M3/'
 file_list = os.listdir(folder)
 
 ice_file_list = list()
@@ -28,11 +19,16 @@ for filename in file_list:
     elif 'withCircles' in filename:
         drop_file_list.append(filename)
 
-assert (len(ice_file_list)>0), 'No files found.'
-assert (len(drop_file_list)>0), 'No drop files found.'
+assert (len(ice_file_list) > 0), 'No files found.'
+assert (len(drop_file_list) > 0), 'No drop files found.'
 
 ice_file_list.sort()
 drop_file_list.sort()
+
+dim_list = list()
+csp_list = list()
+mass_list = list()
+crystal_list = list()
 
 try:
     (x_shift_global_list, y_shift_global_list, _, _, _) = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
@@ -41,23 +37,15 @@ except FileNotFoundError:
     x_shift_global_list = [0]*len(ice_file_list)
     y_shift_global_list = [0]*len(ice_file_list)
 
-# ice_file_list = ('Ice-1.png', 'Ice-2.png')
-# drop_file_list = ('Drops-1.png_withCircles.png', 'Drops-2.png_withCircles.png')
-
 for ice_file, drop_file, x_shift, y_shift, i in \
         zip(ice_file_list, drop_file_list, x_shift_global_list, y_shift_global_list, np.arange(1, len(ice_file_list)+1)):
     img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 1001), 750, 100000)
     img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 750, 100000)
 
-    # list_couples = list(map(lambda x: (x.ice_center, x.drop_center), pairs_list))
-
     dims_ice_list = [x['Center Points'] for x in img_ice.dimensions]
     dims_drops_list = [x['Center Points'] for x in img_drop.dimensions]
 
     x_shift_list = list()
-
-    cv2.namedWindow(('Comparison'+str(abs(int(ice_file[-6:-4])))), cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(('Comparison'+str(abs(int(ice_file[-6:-4])))), 768, 768)
 
     img_comparison = img_ice.initial_image.copy()
     preview_img_contours = deepcopy(img_drop.contours)
@@ -67,13 +55,12 @@ for ice_file, drop_file, x_shift, y_shift, i in \
         c[:, :, 1] += int(y_shift)
         cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
 
+    cv2.namedWindow(('Comparison'+str(abs(int(ice_file[-6:-4])))), cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(('Comparison'+str(abs(int(ice_file[-6:-4])))), 768, 768)
     cv2.imshow(('Comparison' + str(abs(int(ice_file[-6:-4])))), img_comparison)
     cv2.waitKey(1000)
 
     pairs_list = list()
-    this_dim_list = list()
-    this_mass_list = list()
-    this_csp_list = list()
 
     this_input = input('Keep '+str(x_shift)+', '+str(y_shift)+' as xshift, yshift? If no, enter new xshift (Drop to left: negative, Drops to right: positive).')
     try:
@@ -81,10 +68,11 @@ for ice_file, drop_file, x_shift, y_shift, i in \
         try:
             y_shift = int(input('yshift:'))
         except ValueError:
-            print('Invalid or empty input, keeping old xshift ' + str(y_shift) + '.')
+            print('Invalid or empty input, keeping old yshift ' + str(y_shift) + '.')
     except ValueError:
         print('Invalid or empty input, keeping old xshift '+str(x_shift)+', '+str(y_shift)+'.')
 
+    # Actual call to finding matching drop for all crystals in current image
     for crystal in dims_ice_list:
         nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, y_shift, 150)
         if nearest_drop:
@@ -93,17 +81,16 @@ for ice_file, drop_file, x_shift, y_shift, i in \
             if len(x_shift_list) > 4:
                 x_shift = np.median(x_shift_list)
 
-    # x_shift_list = list()
-    # for crystal in dims_ice_list:
-    #     nearest_drop = find_couples.find_closest_drop(crystal, dims_drops_list, x_shift, 500)
-        # if nearest_drop:
-        #     x_shift_list.append(crystal[0] - nearest_drop[0])
-        #     x_shift = np.median(x_shift_list)
-
-    x_shift_global_list[i-1]=x_shift
-    y_shift_global_list[i-1]=y_shift
+    x_shift_global_list[i-1] = x_shift
+    y_shift_global_list[i-1] = y_shift
     print('Saving '+str(x_shift)+' as xshift, '+str(y_shift)+' as yshift.')
+
     img_comparison = img_ice.initial_image.copy()
+
+    this_dim_list = list()
+    this_mass_list = list()
+    this_csp_list = list()
+    this_crystal_list = list()
 
     for crystal in img_ice.dimensions:
         try:
@@ -134,7 +121,7 @@ for ice_file, drop_file, x_shift, y_shift, i in \
             cv2.circle(img_preview, (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), 7, (255, 0, 0), -1)
             cv2.line(img_preview, (int(pair[0][0]), int(pair[0][1])), (int(pair[1][0]+x_shift), int(pair[1][1]+y_shift)), (255, 255, 255))
             cv2.putText(img_preview, str(p), (int(pair[0][0]), int(pair[0][1])), cv2.FONT_HERSHEY_SIMPLEX,
-                3, (255, 255, 255), 2)
+                        3, (255, 255, 255), 2)
 
     cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_preview)
     cv2.waitKey(1000)
