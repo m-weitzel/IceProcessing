@@ -7,7 +7,7 @@ import pickle
 import os
 from copy import deepcopy
 
-folder = '/uni-mainz.de/homes/maweitze/CCR/3103/M1/'
+folder = '/uni-mainz.de/homes/maweitze/CCR/0604/M1/'
 file_list = os.listdir(folder)
 
 ice_file_list = list()
@@ -25,13 +25,18 @@ assert (len(drop_file_list) > 0), 'No drop files found.'
 ice_file_list.sort()
 drop_file_list.sort()
 
-dim_list = list()
-csp_list = list()
-mass_list = list()
 crystal_list = list()
 
 try:
-    (x_shift_global_list, y_shift_global_list, _, _, _) = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
+    tmp = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
+    if len(tmp) == 5:
+        (x_shift_global_list, y_shift_global_list, _, _, _) = tmp
+    elif len(tmp) == 3:
+        x_shift_global_list = tmp['x_shift']
+        y_shift_global_list = tmp['y_shift']
+    else:
+        print(len(tmp))
+
 except FileNotFoundError:
     print('No old data file found, starting from scratch.')
     x_shift_global_list = [0]*len(ice_file_list)
@@ -87,9 +92,6 @@ for ice_file, drop_file, x_shift, y_shift, i in \
 
     img_comparison = img_ice.initial_image.copy()
 
-    this_dim_list = list()
-    this_mass_list = list()
-    this_csp_list = list()
     this_crystal_list = list()
 
     for crystal in img_ice.dimensions:
@@ -99,9 +101,7 @@ for ice_file, drop_file, x_shift, y_shift, i in \
                 if drop['Center Points'] == pairs_list[k][1]:
                     new_info = {'Drop Diameter': drop['Short Axis']}
             crystal.update(new_info)
-            this_dim_list.append(crystal['Long Axis'])
-            this_csp_list.append(crystal['CSP'])
-            this_mass_list.append(np.pi/6*crystal['Drop Diameter']**3)
+            this_crystal_list.append(crystal)
         except ValueError:
             print('No matching drop for crystal at '+str(crystal['Center Points'])+' found.')
 
@@ -134,13 +134,9 @@ for ice_file, drop_file, x_shift, y_shift, i in \
 
         for removable in remove_list:
             pairs_list.pop(removable)
-            this_dim_list.pop(removable)
-            this_csp_list.pop(removable)
-            this_mass_list.pop(removable)
+            this_crystal_list.pop(removable)
 
-    dim_list += this_dim_list
-    csp_list += this_csp_list
-    mass_list += this_mass_list
+    crystal_list += this_crystal_list
 
     for p, pair in enumerate(pairs_list):
         if pair[1]:
@@ -156,13 +152,15 @@ for ice_file, drop_file, x_shift, y_shift, i in \
 
     cv2.destroyWindow('Comparison'+str(abs(int(ice_file[-6:-4]))))
 
-plt.scatter([x for x in dim_list], [x for x in mass_list])
-plt.xlim((0, 1.1*np.max(dim_list)))
-plt.ylim((0, 1.1*np.max(mass_list)))
+plt.scatter([x['Long Axis'] for x in crystal_list], [np.pi/6*x['Drop Diameter']**3 for x in crystal_list])
+# plt.xlim((0, 1.1*np.max(dim_list)))
+# plt.ylim((0, 1.1*np.max(mass_list)))
 
 save_flag = input('Save data?')
 if save_flag == 'Yes' or save_flag == 'yes':
-    pickle.dump((x_shift_global_list, y_shift_global_list, dim_list, csp_list, mass_list), open(folder + 'mass_dim_data.dat', 'wb'))
+
+    save_dict = {"x_shift": x_shift_global_list, "y_shift": y_shift_global_list, "crystal": crystal_list}
+    pickle.dump(save_dict, open(folder + 'mass_dim_data.dat', 'wb'))
     print('Data saved in '+folder+'mass_dim_data.dat.')
 
     plt.savefig(folder + 'graph.png')
