@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=10000, dilation=30):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
@@ -79,7 +79,10 @@ class MicroImg:
             gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
             if self.thresh_type[0] == "Canny":
-                canny_low = self.thresh_type[1]
+                if self.thresh_type[1] == 0:
+                    canny_low = 6
+                else:
+                    canny_low = self.thresh_type[1]
                 thresh = cv2.Canny(gray, canny_low, canny_low*3)
             elif self.thresh_type[0] == "Bin":
                 if self.thresh_type[1] != 0:
