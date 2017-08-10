@@ -13,33 +13,40 @@ fall_folder = folder+'Fall'
 folder_list = os.listdir(fall_folder)
 cont_real = list()
 fall_dist = list()
+orientation = list()
 
 try:
     tmp = pickle.load(open(folder+'fall_speed_data.dat', 'rb'))
     cont_real = tmp[0]
     fall_dist = tmp[1]
+    orientation = tmp[2]
 
-except FileNotFoundError:
+except (FileNotFoundError, IndexError):
     print('No old data file found, starting from scratch.')
+    try:
+        os.mkdir(fall_folder+'/processed')
+    except FileExistsError:
+        pass
     for filename in folder_list:
         if '_cropped' in filename:
             img = MicroImg('Streak', fall_folder, filename,
                            thresh_type=('Bin', -225), minsize=75, maxsize=1000, dilation=10)
 
-            dims = img.dimensions
+            dims = img.data
             conts = img.contours
 
             for dim, cont in zip(dims, conts):
                 if dim['Short Axis'] < 4:
                     cont_real.append(cont)
                     fall_dist.append(dim['Long Axis'])
+                    orientation.append(dim['Orientation'])
 
             img.contours = cont_real
             print('Processed '+filename)
-            plt.imshow(img.processed_image)
-            plt.savefig(fall_folder+'/'+filename+'_processed.png')
+            # plt.imshow(img.processed_image)
+            cv2.imwrite(fall_folder+'/processed/'+filename+'_processed.png', img.processed_image)
 
-    pickle.dump((cont_real, fall_dist), open(folder+'fall_speed_data.dat','wb'))
+    pickle.dump((cont_real, fall_dist, orientation), open(folder+'fall_speed_data.dat','wb'))
 
 tmp = pickle.load(open(folder+'mass_dim_data.dat','rb'))
 
@@ -71,8 +78,10 @@ dropdiam_max = 75
 def plot_param_hist(ax, list_of_vals, max_val, n_bins, unit):
     bins = max_val/n_bins*np.arange(n_bins)
     (mu, sigma) = norm.fit(list_of_vals)
-    n, bins, _ = ax.hist(list_of_vals, bins=bins, normed=1)
-    y = mlab.normpdf(bins, mu, sigma)
+    n, bins, _ = ax.hist(list_of_vals, bins=bins)
+    dx = bins[1] - bins[0]
+    scale = len(list_of_vals)*dx
+    y = mlab.normpdf(bins, mu, sigma) * scale
     ax.plot(bins, y, 'g--', linewidth=2)
     ax.axvline(x=mu, ymax=max(y)/ax.get_ylim()[1], color='r', linewidth=2)
     ax.axvline(x=mu-sigma, ymax=max(y)/ax.get_ylim()[1], color='r', linewidth=2)
@@ -110,6 +119,23 @@ ax.set_ylabel('Count')
 plt.suptitle('Histogram Overview for '+folder[-8:], fontsize=12)
 
 plt.savefig(folder + 'histogram.png')
+
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
+ax.set_theta_zero_location("S")
+N = 50
+width = (2*np.pi)/N
+theta = np.linspace(-np.pi+np.pi/N, np.pi+np.pi/N, N, endpoint=False)
+max_height = 8
+#ori = [np.deg2rad(a) for a in np.sort(orientation) if ~np.isnan(np.deg2rad(a))]
+ori = orientation
+radii = np.histogram(ori, theta)
+bars = ax.bar(radii[1][:-1], radii[0], width=width, bottom=20)
+
+for r, bar in zip(orientation, bars):
+    bar.set_facecolor( plt.cm.jet(r/10.))
+    bar.set_alpha(0.5)
+
 plt.show()
 
 def get_angles(img):

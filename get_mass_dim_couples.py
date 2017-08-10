@@ -37,7 +37,7 @@ try:
     else:
         print(len(tmp))
 
-except FileNotFoundError:
+except (FileNotFoundError, EOFError):
     print('No old data file found, starting from scratch.')
     x_shift_global_list = [0]*len(ice_file_list)
     y_shift_global_list = [0]*len(ice_file_list)
@@ -47,8 +47,8 @@ for ice_file, drop_file, x_shift, y_shift, i in \
     img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 1001), 750, 100000)
     img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 750, 100000)
 
-    dims_ice_list = [x['Center Points'] for x in img_ice.dimensions]
-    dims_drops_list = [x['Center Points'] for x in img_drop.dimensions]
+    dims_ice_list = [x['Center Points'] for x in img_ice.data]
+    dims_drops_list = [x['Center Points'] for x in img_drop.data]
 
     x_shift_list = list()
 
@@ -94,10 +94,10 @@ for ice_file, drop_file, x_shift, y_shift, i in \
 
     this_crystal_list = list()
 
-    for crystal in img_ice.dimensions:
+    for crystal in img_ice.data:
         try:
             k = [x[0] for x in pairs_list].index(crystal['Center Points'])
-            for drop in img_drop.dimensions:
+            for drop in img_drop.data:
                 if drop['Center Points'] == pairs_list[k][1]:
                     new_info = {'Drop Diameter': drop['Short Axis']}
             crystal.update(new_info)
