@@ -7,19 +7,21 @@ import pickle
 from scipy.stats import norm
 import cv2
 
-folder = '/uni-mainz.de/homes/maweitze/CCR/1107/M1/'
+folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
 
 fall_folder = folder+'Fall'
 folder_list = sorted(os.listdir(fall_folder))
 cont_real = list()
 fall_dist = list()
 orientation = list()
+time_list = list()
 
 try:
     tmp = pickle.load(open(folder+'fall_speed_data.dat', 'rb'))
     cont_real = tmp[0]
     fall_dist = tmp[1]
     orientation = tmp[2]
+    time_list = tmp[3]
 
 except (FileNotFoundError, IndexError):
     print('No old data file found, starting from scratch.')
@@ -27,7 +29,7 @@ except (FileNotFoundError, IndexError):
         os.mkdir(fall_folder+'/processed')
     except FileExistsError:
         pass
-    for filename in folder_list:
+    for i, filename in enumerate(folder_list):
         if '_cropped' in filename:
             img = MicroImg('Streak', fall_folder, filename,
                            thresh_type=('Bin', -130), minsize=75, maxsize=10000, dilation=10)
@@ -40,13 +42,14 @@ except (FileNotFoundError, IndexError):
                     cont_real.append(cont)
                     fall_dist.append(dim['Long Axis'])
                     orientation.append(dim['Orientation'])
+                    time_list.append([i])
 
             img.contours = cont_real
             print('Processed '+filename)
             # plt.imshow(img.processed_image)
             cv2.imwrite(fall_folder+'/processed/'+filename+'_processed.png', img.processed_image)
 
-    pickle.dump((cont_real, fall_dist, orientation), open(folder+'fall_speed_data.dat','wb'))
+    pickle.dump((cont_real, fall_dist, orientation, time_list), open(folder+'fall_speed_data.dat','wb'))
 
 tmp = pickle.load(open(folder+'mass_dim_data.dat','rb'))
 
@@ -140,6 +143,29 @@ for r, bar in zip(orientation, bars):
     bar.set_facecolor( plt.cm.jet(r/10.))
     bar.set_alpha(0.5)
 
+temp_vals = list()
+mean_vals = np.zeros(len(folder_list))
+curr_val = 0
+
+for time, v in zip(time_list, vs):
+    if time == [curr_val]:
+        temp_vals.append(v)
+    if time != [curr_val]:
+        if len(temp_vals)>0:
+            mean_vals[curr_val] = np.mean(temp_vals)
+        else:
+            mean_vals[curr_val] = 0
+        temp_vals = list()
+        while time != [curr_val]:
+            curr_val += 1
+        temp_vals.append(v)
+
+N=25
+sum_run = np.cumsum(np.insert(mean_vals, 0, 0))
+rm_vs = (sum_run[N:]-sum_run[:-N])/N
+
+plt.figure()
+plt.plot(np.arange(len(folder_list))[12:-12], rm_vs)
 plt.show()
 
 def get_angles(img):
