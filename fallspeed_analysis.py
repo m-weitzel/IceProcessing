@@ -10,7 +10,7 @@ import cv2
 folder = '/uni-mainz.de/homes/maweitze/CCR/1107/M1/'
 
 fall_folder = folder+'Fall'
-folder_list = os.listdir(fall_folder)
+folder_list = sorted(os.listdir(fall_folder))
 cont_real = list()
 fall_dist = list()
 orientation = list()
@@ -30,13 +30,13 @@ except (FileNotFoundError, IndexError):
     for filename in folder_list:
         if '_cropped' in filename:
             img = MicroImg('Streak', fall_folder, filename,
-                           thresh_type=('Bin', -225), minsize=75, maxsize=1000, dilation=10)
+                           thresh_type=('Bin', -130), minsize=75, maxsize=10000, dilation=10)
 
             dims = img.data
             conts = img.contours
 
             for dim, cont in zip(dims, conts):
-                if dim['Short Axis'] < 4:
+                if dim['Short Axis'] < 8:
                     cont_real.append(cont)
                     fall_dist.append(dim['Long Axis'])
                     orientation.append(dim['Orientation'])
@@ -57,6 +57,7 @@ dropdiam_list = list()
 
 for obj in tmp['crystal']:
     area_eq_diam_list.append(2*np.sqrt(obj['Area']/np.pi))
+    # area_eq_diam_list.append(0.58*obj['Short Axis']/2*(1+0.95*(obj['Long Axis']/obj['Short Axis'])**0.75))
     max_diam_list.append(obj['Long Axis'])
     mass_list.append(np.pi/6*obj['Drop Diameter']**3)
     dropdiam_list.append(obj['Drop Diameter'])
@@ -65,6 +66,9 @@ pixel_size    = 23.03 # in µm
 exposure_time = 85000 # in µs
 
 vs = np.asarray(fall_dist)*pixel_size/exposure_time*100 # in cm/s
+
+projected_vs = [v*np.cos(o) for (v,o) in zip(vs, orientation)]
+
 # plt.imshow(img.processed_image)
 
 n_bins = 25
@@ -91,9 +95,9 @@ def plot_param_hist(ax, list_of_vals, max_val, n_bins, unit):
     ax.text(0.95*float(ax.get_xlim()[1]), 0.95*float(ax.get_ylim()[1]), 'Mean:${0:.3f} \pm {1:.3f}$ {2:s}'.format(mu, sigma, unit),
              bbox=dict(facecolor='red', alpha=0.2), horizontalalignment='right', verticalalignment='top')
 
-fig, axs = plt.subplots(2, 2)
+fig, axs = plt.subplots(2, 2, figsize=(20, 12.5))
 ax = axs[0][0]
-plot_param_hist(ax, vs, v_max, n_bins, 'cm/s')
+plot_param_hist(ax, projected_vs, v_max, n_bins, 'cm/s')
 ax.set_title('Terminal Velocity in cm/s')
 ax.set_xlabel('Terminal Velocity in cm/s')
 ax.set_ylabel('Count')
@@ -123,7 +127,7 @@ plt.savefig(folder + 'histogram.png')
 fig = plt.figure(figsize=(8,8))
 ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
 ax.set_theta_zero_location("S")
-N = 50
+N = 100
 width = (2*np.pi)/N
 theta = np.linspace(-np.pi+np.pi/N, np.pi+np.pi/N, N, endpoint=False)
 max_height = 8
