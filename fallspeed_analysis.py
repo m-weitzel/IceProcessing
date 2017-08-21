@@ -7,10 +7,11 @@ import pickle
 from scipy.stats import norm
 import cv2
 
-folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
+folder = '/uni-mainz.de/homes/maweitze/CCR/0908/M1/'
 
 fall_folder = folder+'Fall'
 folder_list = sorted(os.listdir(fall_folder))
+folder_list = [f for f in folder_list if '.png' in f]
 cont_real = list()
 fall_dist = list()
 orientation = list()
@@ -145,6 +146,7 @@ for r, bar in zip(orientation, bars):
 
 temp_vals = list()
 mean_vals = np.zeros(len(folder_list))
+std_vals = np.zeros(len(folder_list))
 curr_val = 0
 
 for time, v in zip(time_list, vs):
@@ -153,19 +155,44 @@ for time, v in zip(time_list, vs):
     if time != [curr_val]:
         if len(temp_vals)>0:
             mean_vals[curr_val] = np.mean(temp_vals)
-        else:
-            mean_vals[curr_val] = 0
-        temp_vals = list()
-        while time != [curr_val]:
+            std_vals[curr_val] = np.std(temp_vals)
             curr_val += 1
+        else:
+            mean_vals[curr_val] = np.nan
+            std_vals[curr_val] = np.nan
+            curr_val += 1
+        while time != [curr_val]:
+            mean_vals[curr_val] = np.nan
+            std_vals[curr_val] = np.nan
+            curr_val += 1
+        temp_vals = list()
         temp_vals.append(v)
 
-N=25
-sum_run = np.cumsum(np.insert(mean_vals, 0, 0))
-rm_vs = (sum_run[N:]-sum_run[:-N])/N
+N=101
+
+sum_run = np.nancumsum(np.insert(mean_vals, 0, 0))
+sum_std = np.nancumsum(np.insert(std_vals, 0, 0))
+
+rm_vs = np.zeros(len(mean_vals))
+# rm_std = np.zeros(len(folder_list))
+
+for n in np.arange(N-1):
+    rm_vs[n] = np.nanmean(mean_vals[:n])
+    # rm_std[n] = np.nanstd(mean_vals[:n])
+rm_vs[N-1:] = (sum_run[N:]-sum_run[:-N])/N
+rm_std = (sum_std[N:]-sum_std[:-N])/N
+
+f_start = folder_list[0]
+start_time = np.float16(f_start[21:23])*60+np.float16(f_start[24:26])+np.float16(f_start[27:30])/1000
+time_fl = [np.float16(f[21:23])*60+np.float16(f[24:26])+np.float16(f[27:30])/1000-start_time for f in folder_list if '.png' in f]
 
 plt.figure()
-plt.plot(np.arange(len(folder_list))[12:-12], rm_vs)
+plt.plot(time_fl, rm_vs, color='b')
+plt.plot(time_fl[np.int((N-1)/2):np.int(-(N-1)/2)], rm_vs[np.int((N-1)/2):np.int(-(N-1)/2)]+rm_std, color='b', linestyle='--')
+plt.plot(time_fl[np.int((N-1)/2):np.int(-(N-1)/2)], rm_vs[np.int((N-1)/2):np.int(-(N-1)/2)]-rm_std, color='b', linestyle='--')
+plt.title('Running Mean of Fall Speed over Time')
+plt.xlabel('Time in seconds')
+plt.ylabel('Running mean of fall velocity in cm/s')
 plt.show()
 
 def get_angles(img):
