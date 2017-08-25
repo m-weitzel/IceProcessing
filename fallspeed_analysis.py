@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
+import matplotlib.ticker as tck
 from IceSizing import MicroImg
 import os
 import numpy as np
@@ -197,6 +198,62 @@ plt.plot(time_fl[np.int((N-1)/2):np.int(-(N-1)/2)], rm_vs[np.int((N-1)/2):np.int
 plt.title('Running Mean of Fall Speed over Time')
 plt.xlabel('Time in seconds')
 plt.ylabel('Running mean of fall velocity in cm/s')
+
+center_x = [c[0] for c in centerpt]
+
+f, ax = plt.subplots(1)
+ax.scatter(center_x, [o/np.pi for o in orientation])
+ax.yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+ax.yaxis.set_major_locator(tck.MultipleLocator(base=0.5))
+
+
+# plt.show()
+
+os = sorted(zip(orientation, centerpt), key=lambda tup: tup[1][0])
+orientation_s = [o[0] for o in os]
+centerpt_s = [o[1] for o in os]
+
+bins_orientation = list()
+
+bin_size = 40
+max_x_bin = np.ceil(830/bin_size)
+max_y_bin = np.ceil(2048/bin_size)
+x_range = np.arange(max_x_bin+1)[1:]
+y_range = np.arange(max_y_bin+1)[1:]
+xs = x_range*bin_size
+ys = y_range*bin_size
+
+for i in x_range-1:
+    bins_orientation.append(list())
+    for j in y_range-1:
+        bins_orientation[int(i)].append(list())
+
+for oc in zip(orientation_s, centerpt_s):
+    set_flag=0
+    for i, x in enumerate(xs):
+        for j, y in enumerate(ys):
+            if (oc[1][0] < x) & (oc[1][1] < y):
+                bins_orientation[i][j].append(oc[0])
+                set_flag = 1
+                break
+        if set_flag:
+            break
+
+binned_o = np.zeros([len(xs), len(ys)])
+binned_n = np.zeros([len(xs), len(ys)])
+
+for i in x_range-1:
+    for j in y_range-1:
+        binned_o[int(i)][int(j)] = np.mean(bins_orientation[int(i)][int(j)])
+        binned_n[int(i)][int(j)] = len(bins_orientation[int(i)][int(j)])
+
+plt.figure()
+plt.pcolormesh(xs*pixel_size, ys*pixel_size, np.flip(np.transpose(binned_n),0)/np.max(binned_n))
+plt.colorbar()
+plt.xlabel('x in $\mu m$')
+plt.ylabel('y in $\mu m$')
+plt.title('Relative occurence of fall streak center points')
+
 plt.show()
 
 
