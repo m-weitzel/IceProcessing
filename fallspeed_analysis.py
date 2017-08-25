@@ -9,12 +9,16 @@ import cv2
 
 folder = '/uni-mainz.de/homes/maweitze/CCR/0908/M1/'
 
+pixel_size = 23.03      # in µm
+exposure_time = 85000   # in µs
+
 fall_folder = folder+'Fall'
 folder_list = sorted(os.listdir(fall_folder))
 folder_list = [f for f in folder_list if '.png' in f]
 cont_real = list()
 fall_dist = list()
 orientation = list()
+centerpt = list()
 time_list = list()
 
 try:
@@ -22,7 +26,8 @@ try:
     cont_real = tmp[0]
     fall_dist = tmp[1]
     orientation = tmp[2]
-    time_list = tmp[3]
+    centerpt = tmp[3]
+    time_list = tmp[4]
 
 except (FileNotFoundError, IndexError):
     print('No old data file found, starting from scratch.')
@@ -33,7 +38,7 @@ except (FileNotFoundError, IndexError):
     for i, filename in enumerate(folder_list):
         if '_cropped' in filename:
             img = MicroImg('Streak', fall_folder, filename,
-                           thresh_type=('Bin', -130), minsize=75, maxsize=10000, dilation=10)
+                           thresh_type=('Bin', -180), minsize=75, maxsize=10000, dilation=10)
 
             dims = img.data
             conts = img.contours
@@ -43,6 +48,7 @@ except (FileNotFoundError, IndexError):
                     cont_real.append(cont)
                     fall_dist.append(dim['Long Axis'])
                     orientation.append(dim['Orientation'])
+                    centerpt.append(dim['Center Points'])
                     time_list.append([i])
 
             img.contours = cont_real
@@ -50,9 +56,9 @@ except (FileNotFoundError, IndexError):
             # plt.imshow(img.processed_image)
             cv2.imwrite(fall_folder+'/processed/'+filename+'_processed.png', img.processed_image)
 
-    pickle.dump((cont_real, fall_dist, orientation, time_list), open(folder+'fall_speed_data.dat','wb'))
+    pickle.dump((cont_real, fall_dist, orientation, centerpt, time_list), open(folder+'fall_speed_data.dat', 'wb'))
 
-tmp = pickle.load(open(folder+'mass_dim_data.dat','rb'))
+tmp = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
 
 area_eq_diam_list = list()
 max_diam_list = list()
@@ -66,12 +72,9 @@ for obj in tmp['crystal']:
     mass_list.append(np.pi/6*obj['Drop Diameter']**3)
     dropdiam_list.append(obj['Drop Diameter'])
 
-pixel_size    = 23.03 # in µm
-exposure_time = 85000 # in µs
+vs = np.asarray(fall_dist)*pixel_size/exposure_time*100  # in cm/s
 
-vs = np.asarray(fall_dist)*pixel_size/exposure_time*100 # in cm/s
-
-projected_vs = [v*np.cos(o) for (v,o) in zip(vs, orientation)]
+projected_vs = [v*np.cos(o) for (v, o) in zip(vs, orientation)]
 
 # plt.imshow(img.processed_image)
 
@@ -82,6 +85,7 @@ ae_max = 75
 mxdim_max = 105
 mass_max = 87500
 dropdiam_max = 75
+
 
 def plot_param_hist(ax, list_of_vals, max_val, n_bins, unit):
     bins = max_val/n_bins*np.arange(n_bins)
@@ -99,7 +103,7 @@ def plot_param_hist(ax, list_of_vals, max_val, n_bins, unit):
     ax.text(0.95*float(ax.get_xlim()[1]), 0.95*float(ax.get_ylim()[1]), 'Mean:${0:.3f} \pm {1:.3f}$ {2:s}'.format(mu, sigma, unit),
              bbox=dict(facecolor='red', alpha=0.2), horizontalalignment='right', verticalalignment='top')
 
-fig, axs = plt.subplots(2, 2, figsize=(20, 12.5))
+_, axs = plt.subplots(2, 2, figsize=(20, 12.5))
 ax = axs[0][0]
 plot_param_hist(ax, projected_vs, v_max, n_bins, 'cm/s')
 ax.set_title('Terminal Velocity in cm/s')
@@ -112,13 +116,13 @@ ax.set_title('Area equivalent diameter in um')
 ax.set_xlabel('Area equivalent diameter in um')
 ax.set_ylabel('Count')
 
-ax = axs[1][0]
+ax = axs[1][1]
 plot_param_hist(ax, max_diam_list, mxdim_max, n_bins, '$\mu m$')
 ax.set_title('Maximum diameter in um')
 ax.set_xlabel('Maximum diameter in um')
 ax.set_ylabel('Count')
 
-ax = axs[1][1]
+ax = axs[1][0]
 plot_param_hist(ax, dropdiam_list, dropdiam_max, n_bins, '$\mu m$')
 ax.set_title('Drop diameter in um')
 ax.set_xlabel('Drop diameter in um')
@@ -128,20 +132,20 @@ plt.suptitle('Histogram Overview for '+folder[-8:], fontsize=12)
 
 plt.savefig(folder + 'histogram.png')
 
-fig = plt.figure(figsize=(8,8))
+fig = plt.figure(figsize=(8, 8))
 ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
 ax.set_theta_zero_location("S")
 N = 100
 width = (2*np.pi)/N
 theta = np.linspace(-np.pi+np.pi/N, np.pi+np.pi/N, N, endpoint=False)
 max_height = 8
-#ori = [np.deg2rad(a) for a in np.sort(orientation) if ~np.isnan(np.deg2rad(a))]
-ori = orientation
-radii = np.histogram(ori, theta)
+# ori = [np.deg2rad(a) for a in np.sort(orientation) if ~np.isnan(np.deg2rad(a))]
+# ori = orientation
+radii = np.histogram(orientation, theta)
 bars = ax.bar(radii[1][:-1], radii[0], width=width, bottom=20)
 
 for r, bar in zip(orientation, bars):
-    bar.set_facecolor( plt.cm.jet(r/10.))
+    bar.set_facecolor(plt.cm.jet(r/10.))
     bar.set_alpha(0.5)
 
 temp_vals = list()
@@ -149,7 +153,7 @@ mean_vals = np.zeros(len(folder_list))
 std_vals = np.zeros(len(folder_list))
 curr_val = 0
 
-for time, v in zip(time_list, vs):
+for time, v in zip(time_list, projected_vs):
     if time == [curr_val]:
         temp_vals.append(v)
     if time != [curr_val]:
@@ -176,7 +180,7 @@ sum_std = np.nancumsum(np.insert(std_vals, 0, 0))
 rm_vs = np.zeros(len(mean_vals))
 # rm_std = np.zeros(len(folder_list))
 
-for n in np.arange(N-1):
+for n in np.arange(np.min([N-1, len(mean_vals)])):
     rm_vs[n] = np.nanmean(mean_vals[:n])
     # rm_std[n] = np.nanstd(mean_vals[:n])
 rm_vs[N-1:] = (sum_run[N:]-sum_run[:-N])/N
@@ -195,13 +199,14 @@ plt.xlabel('Time in seconds')
 plt.ylabel('Running mean of fall velocity in cm/s')
 plt.show()
 
+
 def get_angles(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurd = cv2.GaussianBlur(img, (15, 15), 0)
     grad = cv2.Laplacian(blurd, -1)
     # grad = cv2.Sobel(blurd, -1, 1, 0, ksize=15)
 
-    edges = cv2.Canny(grad, 3, 9, apertureSize=3)
+    # edges = cv2.Canny(grad, 3, 9, apertureSize=3)
     lines = cv2.HoughLines(grad, 1, np.pi / 180, 200)
 
     return lines[0][1]
