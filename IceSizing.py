@@ -16,13 +16,12 @@ class MicroImg:
         self.minsize = minsize
         self.maxsize = maxsize
         self.dilation = dilation
-        # self.initial_image = cv2.cvtColor(cv2.imread(self.full_path()), cv2.COLOR_BGR2GRAY)
         self.initial_image = cv2.imread(self.full_path())
+        # self.initial_image = cv2.Laplacian(cv2.imread(self.full_path()), cv2.CV_64F)
         self.thresh_type = thresh_type
         self.bin_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
         self.data, self.processed_image = self.get_data_and_process()
-
 
     def get_contours_from_img(self):
 
@@ -73,6 +72,7 @@ class MicroImg:
             rt, thresh = cv2.threshold(blue, 250, 255, cv2.THRESH_BINARY)
         else:
             if len(img.shape) > 2:
+                # img = cv2.convertScaleAbs(img)
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             else:
                 gray = img
@@ -94,8 +94,14 @@ class MicroImg:
                 else:
                     rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
             elif self.thresh_type[0] == "Otsu":
-                threshold = gray.mean()-1.5*gray.std()
-                rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                if self.thresh_type[1] != 0:
+                    threshold = self.thresh_type[1]
+                else:
+                    threshold = gray.mean()-1.5*gray.std()
+                if np.sign(self.thresh_type[1]) == -1:
+                    rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                else:
+                    rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             elif self.thresh_type[0] == "Adaptive":
                 block_size = self.thresh_type[1]
                 # block_size = 751
@@ -167,7 +173,7 @@ def draw_box_from_conts(contour, img, pixels_per_metric):
     d_b = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
     if d_a > d_b:
-        orientation = np.arctan((tltrX-blbrX)/(tltrY-blbrY))
+        orientation = np.arctan((blbrX-tltrX)/(blbrY-tltrY))
     else:
         orientation = np.arctan((tlblX-trbrX)/(tlblY-trbrY))
 
