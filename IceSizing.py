@@ -66,7 +66,7 @@ class MicroImg:
 
         img = self.initial_image
 
-        if (self.type_phase=='Drop')|(self.type_phase=='drop'):
+        if (self.type_phase == 'Drop') | (self.type_phase == 'drop'):
 
             blue = img[:, :, 2]
             rt, thresh = cv2.threshold(blue, 250, 255, cv2.THRESH_BINARY)
@@ -206,6 +206,7 @@ def draw_box_from_conts(contour, img, pixels_per_metric):
     # cv2.waitKey(0)
 
     return data, img_processed
+
 
 def main():
     None

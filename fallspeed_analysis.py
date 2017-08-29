@@ -46,6 +46,7 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
         centerpt_density(centerpt, orientation, pixel_size)
     plt.show()
 
+
 def load_v_data(fldr):
     list_of_lists = pickle.load(open(fldr+'fall_speed_data.dat', 'rb'))
     # cont_real = list_of_lists[0]
@@ -87,7 +88,7 @@ def initialize_data(fldr, fldr_list):
                     time_list.append([i])
 
             img.contours = cont_real
-            print('Processed '+filename)
+            print('Done processing ' + filename + ', ' + str(i+1) + ' of ' + str(len(fldr_list)) + '.')
             # plt.imshow(img.processed_image)
             cv2.imwrite(fldr+'Fall/processed/'+filename+'_processed.png', img.processed_image)
 
@@ -179,17 +180,17 @@ def orientation_polar_plot(orientation):
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
     ax.set_theta_zero_location("S")
-    N = 100
-    width = (2*np.pi)/N
-    theta = np.linspace(-np.pi+np.pi/N, np.pi+np.pi/N, N, endpoint=False)
-    max_height = 8
+    n_bins = 100
+    width = (2*np.pi)/n_bins
+    theta = np.linspace(-np.pi+np.pi/n_bins, np.pi+np.pi/n_bins, n_bins, endpoint=False)
+    # max_height = 8
     # ori = [np.deg2rad(a) for a in np.sort(orientation) if ~np.isnan(np.deg2rad(a))]
     # ori = orientation
     radii = np.histogram(orientation, theta)
     bars = ax.bar(radii[1][:-1], radii[0], width=width, bottom=20)
 
     for r, bar in zip(orientation, bars):
-        bar.set_facecolor(plt.cm.jet(r/10.))
+        # bar.set_facecolor(plt.cm.jet(r/10.))
         bar.set_alpha(0.5)
 
 
@@ -218,7 +219,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
             temp_vals = list()
             temp_vals.append(v)
 
-    N = 101
+    n_bins = 101
 
     sum_run = np.nancumsum(np.insert(mean_vals, 0, 0))
     sum_std = np.nancumsum(np.insert(std_vals, 0, 0))
@@ -226,11 +227,11 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     rm_vs = np.zeros(len(mean_vals))
     # rm_std = np.zeros(len(folder_list))
 
-    for n in np.arange(np.min([N-1, len(mean_vals)])):
+    for n in np.arange(np.min([n_bins-1, len(mean_vals)])):
         rm_vs[n] = np.nanmean(mean_vals[:n])
         # rm_std[n] = np.nanstd(mean_vals[:n])
-    rm_vs[N-1:] = (sum_run[N:]-sum_run[:-N])/N
-    rm_std = (sum_std[N:]-sum_std[:-N])/N
+    rm_vs[n_bins-1:] = (sum_run[n_bins:]-sum_run[:-n_bins])/n_bins
+    rm_std = (sum_std[n_bins:]-sum_std[:-n_bins])/n_bins
 
     f_start = folder_list[0]
     start_time = np.float16(f_start[21:23])*60+np.float16(f_start[24:26])+np.float16(f_start[27:30])/1000
@@ -238,8 +239,8 @@ def velocity_time_series(folder_list, time_list, projected_vs):
 
     plt.figure()
     plt.plot(time_fl, rm_vs, color='b')
-    plt.plot(time_fl[np.int((N-1)/2):np.int(-(N-1)/2)], rm_vs[np.int((N-1)/2):np.int(-(N-1)/2)]+rm_std, color='b', linestyle='--')
-    plt.plot(time_fl[np.int((N-1)/2):np.int(-(N-1)/2)], rm_vs[np.int((N-1)/2):np.int(-(N-1)/2)]-rm_std, color='b', linestyle='--')
+    plt.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std, color='b', linestyle='--')
+    plt.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]-rm_std, color='b', linestyle='--')
     plt.title('Running Mean of Fall Speed over Time')
     plt.xlabel('Time in seconds')
     plt.ylabel('Running mean of fall velocity in cm/s')
@@ -254,6 +255,7 @@ def orientation_scatter(centerpt, orientation):
 
     ax.set_xlabel('x location of center point')
     ax.set_ylabel('Angle of fall streak')
+
 
 def centerpt_density(centerpt, orientation, pxl_size):
 
@@ -271,13 +273,13 @@ def centerpt_density(centerpt, orientation, pxl_size):
     xs = x_range*bin_size
     ys = y_range*bin_size
 
-    for i in x_range-1:
+    for i in x_range - 1:
         bins_orientation.append(list())
-        for j in y_range-1:
+        for j in y_range - 1:
             bins_orientation[int(i)].append(list())
 
     for oc in zip(orientation_s, centerpt_s):
-        set_flag=0
+        set_flag = 0
         for i, x in enumerate(xs):
             for j, y in enumerate(ys):
                 if (oc[1][0] < x) & (oc[1][1] < y):

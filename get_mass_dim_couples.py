@@ -31,11 +31,12 @@ try:
     tmp = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
     if len(tmp) == 5:
         (x_shift_global_list, y_shift_global_list, _, _, _) = tmp
-    elif len(tmp) == 3:
+    # elif len(tmp) == 3:
+    else:
         x_shift_global_list = tmp['x_shift']
         y_shift_global_list = tmp['y_shift']
-    else:
-        print(len(tmp))
+    # else:
+    #     print(len(tmp))
 
 except (FileNotFoundError, EOFError):
     print('No old data file found, starting from scratch.')
@@ -97,6 +98,7 @@ for ice_file, drop_file, x_shift, y_shift, i in \
     for crystal in img_ice.data:
         try:
             k = [x[0] for x in pairs_list].index(crystal['Center Points'])
+            new_info = {}
             for drop in img_drop.data:
                 if drop['Center Points'] == pairs_list[k][1]:
                     new_info = {'Drop Diameter': drop['Short Axis']}
