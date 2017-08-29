@@ -8,74 +8,97 @@ import pickle
 from scipy.stats import norm
 import cv2
 
+folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
+pixel_size = 23.03  # in µm
+exposure_time = 85000  # in µs
 
-def main():
-    folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
-
-    pixel_size = 23.03      # in µm
-    exposure_time = 85000   # in µs
-
-    vs, orientation, centerpt, list_of_lists = initialize_data(folder, pixel_size, exposure_time)
-    folder_list = list_of_lists[-2]
-    projected_vs = [v * np.cos(o) for (v, o) in zip(vs, orientation)]
-    time_list = list_of_lists[5]
-    # mass_velocity_dim_histograms(projected_vs, list_of_lists, folder)
-    # orientation_polar_plot(orientation)
-
-    # velocity_time_series(folder_list, time_list, projected_vs)
-
-    orientation_scatter(centerpt, orientation, pixel_size)
+histogram_plt_flag = 0
+orientation_polar_flag = 0
+v_t_series_flag = 0
+ori_scatter_flag = 1
+centerpt_density_flag = 1
 
 
-def initialize_data(folder, pixel_size, exposure_time):
-    fall_folder = folder+'Fall'
+def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn_flag=1):
+
+    fall_folder = fldr+'Fall'
     folder_list = sorted(os.listdir(fall_folder))
     folder_list = [f for f in folder_list if '.png' in f]
+
+    try:
+        fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
+    except FileNotFoundError:
+        fall_dist, orientation, centerpt, time_list = initialize_data(fldr, folder_list)
+    vs = np.asarray(fall_dist) * pxl_size / exp_time * 100  # in cm/s
+    projected_vs = [v * np.cos(o) for (v, o) in zip(vs, orientation)]
+
+    mass_data = load_mass_data(folder)
+
+    if h_flag:
+        mass_velocity_dim_histograms(projected_vs, mass_data, folder)
+    if op_flag:
+        orientation_polar_plot(orientation)
+    if vt_flag:
+        velocity_time_series(folder_list, time_list, projected_vs)
+    if or_flag:
+        orientation_scatter(centerpt, orientation)
+    if dn_flag:
+        centerpt_density(centerpt, orientation, pixel_size)
+    plt.show()
+
+def load_v_data(fldr):
+    list_of_lists = pickle.load(open(fldr+'fall_speed_data.dat', 'rb'))
+    # cont_real = list_of_lists[0]
+    fall_dist = list_of_lists[1]
+    orientation = list_of_lists[2]
+    centerpt = list_of_lists[3]
+    time_list = list_of_lists[4]
+
+    return fall_dist, orientation, centerpt, time_list
+
+
+def initialize_data(fldr, fldr_list):
+
     cont_real = list()
     fall_dist = list()
     orientation = list()
     centerpt = list()
     time_list = list()
 
+    print('No old data file found, starting from scratch.')
     try:
-        list_of_lists = pickle.load(open(folder+'fall_speed_data.dat', 'rb'))
-        cont_real = list_of_lists[0]
-        fall_dist = list_of_lists[1]
-        orientation = list_of_lists[2]
-        centerpt = list_of_lists[3]
-        time_list = list_of_lists[4]
+        os.mkdir(fldr+'Fall/processed')
+    except FileExistsError:
+        pass
+    for i, filename in enumerate(fldr_list):
+        if '_cropped' in filename:
+            img = MicroImg('Streak', fldr+'Fall', filename,
+                           thresh_type=('Bin', -180), minsize=75, maxsize=10000, dilation=1)
 
-    except (FileNotFoundError, IndexError):
-        print('No old data file found, starting from scratch.')
-        try:
-            os.mkdir(fall_folder+'/processed')
-        except FileExistsError:
-            pass
-        for i, filename in enumerate(folder_list):
-            if '_cropped' in filename:
-                img = MicroImg('Streak', fall_folder, filename,
-                               thresh_type=('Bin', -180), minsize=75, maxsize=10000, dilation=10)
+            dims = img.data
+            conts = img.contours
 
-                dims = img.data
-                conts = img.contours
+            for dim, cont in zip(dims, conts):
+                if dim['Short Axis'] < 8:
+                    cont_real.append(cont)
+                    fall_dist.append(dim['Long Axis'])
+                    orientation.append(dim['Orientation'])
+                    centerpt.append(dim['Center Points'])
+                    time_list.append([i])
 
-                for dim, cont in zip(dims, conts):
-                    if dim['Short Axis'] < 8:
-                        cont_real.append(cont)
-                        fall_dist.append(dim['Long Axis'])
-                        orientation.append(dim['Orientation'])
-                        centerpt.append(dim['Center Points'])
-                        time_list.append([i])
+            img.contours = cont_real
+            print('Processed '+filename)
+            # plt.imshow(img.processed_image)
+            cv2.imwrite(fldr+'Fall/processed/'+filename+'_processed.png', img.processed_image)
 
-                img.contours = cont_real
-                print('Processed '+filename)
-                # plt.imshow(img.processed_image)
-                cv2.imwrite(fall_folder+'/processed/'+filename+'_processed.png', img.processed_image)
+    list_of_lists = (cont_real, fall_dist, orientation, centerpt, time_list)
+    pickle.dump(list_of_lists, open(fldr+'fall_speed_data.dat', 'wb'))
 
-        list_of_lists = (cont_real, fall_dist, orientation, centerpt, time_list)
-        pickle.dump(list_of_lists, open(folder+'fall_speed_data.dat', 'wb'))
+    return fall_dist, orientation, centerpt, time_list
 
-    tmp = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
+
+def load_mass_data(fldr):
+    tmp = pickle.load(open(fldr + 'mass_dim_data.dat', 'rb'))
 
     area_eq_diam_list = list()
     max_diam_list = list()
@@ -83,47 +106,43 @@ def initialize_data(folder, pixel_size, exposure_time):
     dropdiam_list = list()
 
     for obj in tmp['crystal']:
-        area_eq_diam_list.append(2*np.sqrt(obj['Area']/np.pi))
+        area_eq_diam_list.append(2 * np.sqrt(obj['Area'] / np.pi))
         # area_eq_diam_list.append(0.58*obj['Short Axis']/2*(1+0.95*(obj['Long Axis']/obj['Short Axis'])**0.75))
         max_diam_list.append(obj['Long Axis'])
-        mass_list.append(np.pi/6*obj['Drop Diameter']**3)
+        mass_list.append(np.pi / 6 * obj['Drop Diameter'] ** 3)
         dropdiam_list.append(obj['Drop Diameter'])
 
-    vs = np.asarray(fall_dist)*pixel_size/exposure_time*100  # in cm/s
-
-    return vs, orientation, centerpt, (area_eq_diam_list, max_diam_list, mass_list, dropdiam_list, folder_list, time_list)
-# plt.imshow(img.processed_image)
+    return area_eq_diam_list, max_diam_list, mass_list, dropdiam_list
 
 
-def mass_velocity_dim_histograms(vs, list_of_lists, folder):
+def mass_velocity_dim_histograms(vs, mass_data, fldr):
 
     n_bins = 25
-
     v_max = 3
     ae_max = 75
     mxdim_max = 105
-    mass_max = 87500
+    # mass_max = 87500
     dropdiam_max = 75
 
-    area_eq_diam_list = list_of_lists[0]
-    max_diam_list = list_of_lists[1]
-    dropdiam_list = list_of_lists[3]
+    area_eq_diam_list = mass_data[0]
+    max_diam_list = mass_data[1]
+    dropdiam_list = mass_data[3]
 
-    def plot_param_hist(ax, list_of_vals, max_val, n_bins, unit):
-        bins = max_val/n_bins*np.arange(n_bins)
+    def plot_param_hist(t_ax, list_of_vals, max_val, t_n_bins, unit):
+        bins = max_val/n_bins*np.arange(t_n_bins)
         (mu, sigma) = norm.fit(list_of_vals)
         n, bins, _ = ax.hist(list_of_vals, bins=bins)
         dx = bins[1] - bins[0]
         scale = len(list_of_vals)*dx
         y = mlab.normpdf(bins, mu, sigma) * scale
-        ax.plot(bins, y, 'g--', linewidth=2)
-        ax.axvline(x=mu, ymax=max(y)/ax.get_ylim()[1], color='r', linewidth=2)
-        ax.axvline(x=mu-sigma, ymax=max(y)/ax.get_ylim()[1], color='r', linewidth=2)
-        ax.axvline(x=mu+sigma, ymax=max(y)/ax.get_ylim()[1], color='r', linewidth=2)
-        ax.axhline(y=max(y), xmin=(mu-sigma)/ax.get_xlim()[1], xmax=(mu+sigma)/ax.get_xlim()[1], color='r', linewidth=2)
+        t_ax.plot(bins, y, 'g--', linewidth=2)
+        t_ax.axvline(x=mu, ymax=max(y)/t_ax.get_ylim()[1], color='r', linewidth=2)
+        t_ax.axvline(x=mu-sigma, ymax=max(y)/t_ax.get_ylim()[1], color='r', linewidth=2)
+        t_ax.axvline(x=mu+sigma, ymax=max(y)/t_ax.get_ylim()[1], color='r', linewidth=2)
+        t_ax.axhline(y=max(y), xmin=(mu-sigma)/t_ax.get_xlim()[1], xmax=(mu+sigma)/t_ax.get_xlim()[1], color='r', linewidth=2)
 
-        ax.text(0.95*float(ax.get_xlim()[1]), 0.95*float(ax.get_ylim()[1]), 'Mean:${0:.3f} \pm {1:.3f}$ {2:s}'.format(mu, sigma, unit),
-                 bbox=dict(facecolor='red', alpha=0.2), horizontalalignment='right', verticalalignment='top')
+        t_ax.text(0.95*float(t_ax.get_xlim()[1]), 0.95*float(t_ax.get_ylim()[1]), 'Mean:${0:.3f} \pm {1:.3f}$ {2:s}'.format(mu, sigma, unit),
+                  bbox=dict(facecolor='red', alpha=0.2), horizontalalignment='right', verticalalignment='top')
 
     _, axs = plt.subplots(2, 2, figsize=(20, 12.5))
     ax = axs[0][0]
@@ -150,9 +169,9 @@ def mass_velocity_dim_histograms(vs, list_of_lists, folder):
     ax.set_xlabel('Drop diameter in um')
     ax.set_ylabel('Count')
 
-    plt.suptitle('Histogram Overview for '+folder[-8:], fontsize=12)
+    plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=12)
 
-    plt.savefig(folder + 'histogram.png')
+    plt.savefig(fldr + 'histogram.png')
 
 
 def orientation_polar_plot(orientation):
@@ -226,19 +245,21 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     plt.ylabel('Running mean of fall velocity in cm/s')
 
 
-def orientation_scatter(centerpt, orientation, pixel_size):
+def orientation_scatter(centerpt, orientation):
     center_x = [c[0] for c in centerpt]
-
     f, ax = plt.subplots(1)
     ax.scatter(center_x, [o/np.pi for o in orientation])
     ax.yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
     ax.yaxis.set_major_locator(tck.MultipleLocator(base=0.5))
 
-    # plt.show()
+    ax.set_xlabel('x location of center point')
+    ax.set_ylabel('Angle of fall streak')
 
-    os = sorted(zip(orientation, centerpt), key=lambda tup: tup[1][0])
-    orientation_s = [o[0] for o in os]
-    centerpt_s = [o[1] for o in os]
+def centerpt_density(centerpt, orientation, pxl_size):
+
+    oris = sorted(zip(orientation, centerpt), key=lambda tup: tup[1][0])
+    orientation_s = [o[0] for o in oris]
+    centerpt_s = [o[1] for o in oris]
 
     bins_orientation = list()
 
@@ -275,13 +296,11 @@ def orientation_scatter(centerpt, orientation, pixel_size):
             binned_n[int(i)][int(j)] = len(bins_orientation[int(i)][int(j)])
 
     plt.figure()
-    plt.pcolor(xs * pixel_size, ys * pixel_size, np.flip(np.transpose(binned_n), 0) / np.max(binned_n))
+    plt.pcolor(xs * pxl_size, ys * pxl_size, np.flip(np.transpose(binned_n), 0) / np.max(binned_n))
     plt.colorbar()
     plt.xlabel('x in $\mu m$')
     plt.ylabel('y in $\mu m$')
     plt.title('Relative occurence of fall streak center points')
-
-    plt.show()
 
 
 def get_angles(img):
@@ -297,4 +316,4 @@ def get_angles(img):
 
 
 if __name__ == '__main__':
-    main()
+    main(folder, pixel_size, exposure_time, histogram_plt_flag, orientation_polar_flag, v_t_series_flag, ori_scatter_flag, centerpt_density_flag)
