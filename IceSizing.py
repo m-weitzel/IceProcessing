@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, optional_object_filter_condition='False'):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
@@ -21,7 +21,7 @@ class MicroImg:
         self.thresh_type = thresh_type
         self.bin_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
-        self.data, self.processed_image = self.get_data_and_process()
+        self.data, self.processed_image = self.get_data_and_process(optional_object_filter_condition)
 
     def get_contours_from_img(self):
 
@@ -44,17 +44,18 @@ class MicroImg:
                     filtered_contours.append(c)
         return filtered_contours
 
-    def get_data_and_process(self):
+    def get_data_and_process(self, optional_object_filter_condition):
         data = list()
         img = self.initial_image.copy()
         for c in self.contours:
-            this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric)
-            csp = this_data['Area']*this_data['Short Axis']*\
-                  (2*this_data['Long Axis']+2*this_data['Short Axis']) /\
-                  (cv2.arcLength(c, True)/self.pixels_per_metric)
-            new_data = {'CSP': csp, 'File Name': self.filename}
-            this_data.update(new_data)
-            data.append(this_data)
+            this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric, optional_object_filter_condition)
+            if this_data:
+                csp = this_data['Area'] * this_data['Short Axis'] \
+                      * (2 * this_data['Long Axis']+2 * this_data['Short Axis'])\
+                      / (cv2.arcLength(c, True)/self.pixels_per_metric)
+                new_data = {'CSP': csp, 'File Name': self.filename}
+                this_data.update(new_data)
+                data.append(this_data)
 
         data = list(filter(None, data))
         return np.asarray(data), img
@@ -132,7 +133,7 @@ def midpoint(pt_a, pt_b):
     return (pt_a[0] + pt_b[0]) * 0.5, (pt_a[1] + pt_b[1]) * 0.5
 
 
-def draw_box_from_conts(contour, img, pixels_per_metric):
+def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_condition=False):
     img_processed = img.copy()
     # if cv2.contourArea(contour) < 750:
     #     return [], img
@@ -191,21 +192,25 @@ def draw_box_from_conts(contour, img, pixels_per_metric):
     # if dim_l > 100:
     #     return [], img
 
-    data = {'Long Axis': dim_l, 'Short Axis': dim_w, 'Area': area, 'Center Points': (center_point[0], center_point[1]), 'Orientation': orientation}
+    if eval(optional_object_filter_condition):
+        return [], img
+    else:
 
-    cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
-                (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
-                0.65, (255, 255, 255), 2)
-    cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
-                (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
-                0.65, (255, 255, 255), 2)
+        data = {'Long Axis': dim_l, 'Short Axis': dim_w, 'Area': area, 'Center Points': (center_point[0], center_point[1]), 'Orientation': orientation}
 
-    cv2.drawContours(img_processed, [box.astype("int")], -1, (0, 255, 0), 2)
-    cv2.drawContours(img_processed, contour, -1, (255, 0, 0), 2)
-    # cv2.imshow('a', img_processed)
-    # cv2.waitKey(0)
+        cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
+                    (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.65, (255, 255, 255), 2)
+        cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
+                    (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.65, (255, 255, 255), 2)
 
-    return data, img_processed
+        cv2.drawContours(img_processed, [box.astype("int")], -1, (0, 255, 0), 2)
+        cv2.drawContours(img_processed, contour, -1, (255, 0, 0), 2)
+        # cv2.imshow('a', img_processed)
+        # cv2.waitKey(0)
+
+        return data, img_processed
 
 
 def main():

@@ -71,21 +71,25 @@ def initialize_data(fldr, fldr_list):
         os.mkdir(fldr+'Fall/processed')
     except FileExistsError:
         pass
+
+    streak_filter_cond = streak_filter_cond = 'dim_w > 4 or (np.asarray([b[0] for b in box])>(img.shape[1]-8)).any() \
+                          or (np.asarray([b[1] for b in box])>(img.shape[0]-8)).any() or (box < 8).any()'
+
     for i, filename in enumerate(fldr_list):
         if '_cropped' in filename:
             img = MicroImg('Streak', fldr+'Fall', filename,
-                           thresh_type=('Bin', -180), minsize=75, maxsize=10000, dilation=1)
+                           thresh_type=('Bin', -180), minsize=75, maxsize=10000, dilation=1, optional_object_filter_condition=streak_filter_cond)
 
             dims = img.data
             conts = img.contours
 
             for dim, cont in zip(dims, conts):
-                if dim['Short Axis'] < 8:
-                    cont_real.append(cont)
-                    fall_dist.append(dim['Long Axis'])
-                    orientation.append(dim['Orientation'])
-                    centerpt.append(dim['Center Points'])
-                    time_list.append([i])
+                # if dim['Short Axis'] < 8:
+                cont_real.append(cont)
+                fall_dist.append(dim['Long Axis'])
+                orientation.append(dim['Orientation'])
+                centerpt.append(dim['Center Points'])
+                time_list.append([i])
 
             img.contours = cont_real
             print('Done processing ' + filename + ', ' + str(i+1) + ' of ' + str(len(fldr_list)) + '.')
