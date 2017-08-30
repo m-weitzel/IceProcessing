@@ -57,7 +57,7 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
         print('Time spent on Orientation Scatter Plot:' + str(t1 - t0))
         t0 = time.time()
     if dn_flag:
-        centerpt_density(centerpt, orientation, pixel_size)
+        centerpt_density(centerpt, orientation, vs, pixel_size)
         t1 = time.time()
         print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
     plt.show()
@@ -277,15 +277,17 @@ def orientation_scatter(centerpt, orientation):
     ax.set_ylabel('Angle of fall streak')
 
 
-def centerpt_density(centerpt, orientation, pxl_size):
+def centerpt_density(centerpt, orientation, vs, pxl_size):
 
-    oris = sorted(zip(orientation, centerpt), key=lambda tup: tup[1][0])
+    oris = sorted(zip(orientation, centerpt, vs), key=lambda tup: tup[1][0])
     orientation_s = [o[0] for o in oris]
     centerpt_s = [o[1] for o in oris]
+    vs_s = [o[2] for o in oris]
 
     bins_orientation = list()
+    bins_velocity = list()
 
-    bin_size = 40
+    bin_size = 60
     max_x_bin = np.ceil(830/bin_size)
     max_y_bin = np.ceil(2048/bin_size)
     x_range = np.arange(max_x_bin+1)[1:]
@@ -295,15 +297,18 @@ def centerpt_density(centerpt, orientation, pxl_size):
 
     for i in x_range - 1:
         bins_orientation.append(list())
+        bins_velocity.append(list())
         for j in y_range - 1:
             bins_orientation[int(i)].append(list())
+            bins_velocity[int(i)].append(list())
 
-    for oc in zip(orientation_s, centerpt_s):
+    for oc in zip(orientation_s, centerpt_s, vs_s):
         set_flag = 0
         for i, x in enumerate(xs):
             for j, y in enumerate(ys):
                 if (oc[1][0] < x) & (oc[1][1] < y):
                     bins_orientation[i][j].append(oc[0])
+                    bins_velocity[i][j].append(oc[2])
                     set_flag = 1
                     break
             if set_flag:
@@ -311,14 +316,18 @@ def centerpt_density(centerpt, orientation, pxl_size):
 
     binned_o = np.zeros([len(xs), len(ys)])
     binned_n = np.zeros([len(xs), len(ys)])
+    binned_v = np.zeros([len(xs), len(ys)])
 
     for i in x_range-1:
         for j in y_range-1:
             this_o = np.median(bins_orientation[int(i)][int(j)])
-            if np.isnan(this_o) or (len(bins_orientation[int(i)][int(j)])<5):
+            this_v = np.median(bins_velocity[int(i)][int(j)])
+            if np.isnan(this_o) or (len(bins_orientation[int(i)][int(j)])<4):
                 binned_o[int(i)][int(j)] = -3
+                binned_v[int(i)][int(j)] = 0
             else:
                 binned_o[int(i)][int(j)] = this_o
+                binned_v[int(i)][int(j)] = this_v
 
             binned_n[int(i)][int(j)] = len(bins_orientation[int(i)][int(j)])
 
@@ -327,7 +336,7 @@ def centerpt_density(centerpt, orientation, pxl_size):
     ax.set_xlim([xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000])
     ax.set_ylim([ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000])
     f.canvas.draw()
-    cmap = plt.cm.Spectral
+    cmap = plt.cm.YlOrRd
     cmap.set_under(color='white')
     im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0) / np.max(binned_n), cmap=cmap, vmin=0.001)
     cbar = f.colorbar(im, ticks=[0, 0.25, 0.5, 0.75, 1])
@@ -342,7 +351,9 @@ def centerpt_density(centerpt, orientation, pxl_size):
     ax.set_xlim(xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000)
     ax.set_ylim(ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000)
     f.canvas.draw()
-    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(np.rad2deg(binned_o)), 0), cmap=cmap, vmin=-45, vmax=45)
+    cmap = plt.cm.Spectral_r
+    cmap.set_under(color='white')
+    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(np.rad2deg(binned_o)), 0), cmap=cmap, vmin=-30, vmax=30)
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
     ax.set_title('Median fall streak orientation relative to verticality')
@@ -352,6 +363,21 @@ def centerpt_density(centerpt, orientation, pxl_size):
     # ticklabels = [str(t)+'$/4\cdot\pi$' for t in ticklabels]
     # cbar.ax.set_yticklabels([str(t)+'$/4\cdot\pi$' for t in list(np.linspace(-1, 1, 9))])
 
+
+    f, ax = plt.subplots(figsize=(8, 14))
+    ax.set_aspect('equal')
+    ax.set_aspect('equal')
+    ax.set_xlim(xs[0] * pxl_size / 1000, xs[-1] * pxl_size / 1000)
+    ax.set_ylim(ys[0] * pxl_size / 1000, ys[-1] * pxl_size / 1000)
+    f.canvas.draw()
+    X, Y = np.meshgrid(xs*pxl_size/1000, ys*pxl_size/1000)
+    im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=0.001, vmax=2)
+    im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)), -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v),0))
+    cbar = f.colorbar(im_pc, ticks=np.linspace(0, 2, 5))
+    cbar.set_label('v in $cm/s$', fontsize=20)
+    ax.set_xlabel('x in $mm$', fontsize=20)
+    ax.set_ylabel('y in $mm$', fontsize=20)
+    ax.set_title('Quiver plot of mean orientation and fall speed')
 
 def get_angles(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
