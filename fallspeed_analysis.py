@@ -7,6 +7,7 @@ import numpy as np
 import pickle
 from scipy.stats import norm
 import cv2
+import time
 
 folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
 pixel_size = 23.03  # in µm
@@ -34,16 +35,31 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
 
     mass_data = load_mass_data(folder)
 
+    t0 = time.time()
     if h_flag:
         mass_velocity_dim_histograms(projected_vs, mass_data, folder)
+        t1 = time.time()
+        print('Time spent on Mass Velocity Histograms:'+str(t1-t0))
+        t0 = time.time()
     if op_flag:
         orientation_polar_plot(orientation)
+        t1 = time.time()
+        print('Time spent on Orientation Polar Plot:' + str(t1 - t0))
+        t0 = time.time()
     if vt_flag:
         velocity_time_series(folder_list, time_list, projected_vs)
+        t1 = time.time()
+        print('Time spent on Velocity Time Series:' + str(t1 - t0))
+        t0 = time.time()
     if or_flag:
         orientation_scatter(centerpt, orientation)
+        t1 = time.time()
+        print('Time spent on Orientation Scatter Plot:' + str(t1 - t0))
+        t0 = time.time()
     if dn_flag:
         centerpt_density(centerpt, orientation, pixel_size)
+        t1 = time.time()
+        print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
     plt.show()
 
 
