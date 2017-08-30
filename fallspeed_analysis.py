@@ -314,15 +314,43 @@ def centerpt_density(centerpt, orientation, pxl_size):
 
     for i in x_range-1:
         for j in y_range-1:
-            binned_o[int(i)][int(j)] = np.mean(bins_orientation[int(i)][int(j)])
+            this_o = np.median(bins_orientation[int(i)][int(j)])
+            if np.isnan(this_o) or (len(bins_orientation[int(i)][int(j)])<5):
+                binned_o[int(i)][int(j)] = -3
+            else:
+                binned_o[int(i)][int(j)] = this_o
+
             binned_n[int(i)][int(j)] = len(bins_orientation[int(i)][int(j)])
 
-    plt.figure()
-    plt.pcolor(xs * pxl_size, ys * pxl_size, np.flip(np.transpose(binned_n), 0) / np.max(binned_n))
-    plt.colorbar()
-    plt.xlabel('x in $\mu m$')
-    plt.ylabel('y in $\mu m$')
-    plt.title('Relative occurence of fall streak center points')
+    f, ax = plt.subplots(figsize=(8, 14))
+    ax.set_aspect('equal')
+    ax.set_xlim([xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000])
+    ax.set_ylim([ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000])
+    f.canvas.draw()
+    cmap = plt.cm.Spectral
+    cmap.set_under(color='white')
+    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0) / np.max(binned_n), cmap=cmap, vmin=0.001)
+    cbar = f.colorbar(im, ticks=[0, 0.25, 0.5, 0.75, 1])
+    cbar.set_label('$\phi in \deg$', fontsize=20)
+    ax.set_xlabel('x in $mm$', fontsize=20)
+    ax.set_ylabel('y in $mm$', fontsize=20)
+    ax.set_title('Relative occurence of fall streak center points', fontsize=20)
+
+    # ax.axis([0, 1000, 0, 1000])
+    f, ax = plt.subplots(figsize=(8, 14))
+    ax.set_aspect('equal')
+    ax.set_xlim(xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000)
+    ax.set_ylim(ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000)
+    f.canvas.draw()
+    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(np.rad2deg(binned_o)), 0), cmap=cmap, vmin=-45, vmax=45)
+    ax.set_xlabel('x in $mm$', fontsize=20)
+    ax.set_ylabel('y in $mm$', fontsize=20)
+    ax.set_title('Median fall streak orientation relative to verticality')
+    cbar = f.colorbar(im, ticks=np.linspace(-45, 45, 7))
+    cbar.set_label('$\phi$ in $\degree$', fontsize=20)
+    # ticklabels = list(np.linspace(-1, 1, 9))
+    # ticklabels = [str(t)+'$/4\cdot\pi$' for t in ticklabels]
+    # cbar.ax.set_yticklabels([str(t)+'$/4\cdot\pi$' for t in list(np.linspace(-1, 1, 9))])
 
 
 def get_angles(img):
