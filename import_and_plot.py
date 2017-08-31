@@ -12,12 +12,14 @@ folder_list = (
     '/uni-mainz.de/homes/maweitze/CCR/2203/M2/',  # Columnar, Bullet Rosettes
     '/uni-mainz.de/homes/maweitze/CCR/3103/M1/',  # Columnar
     '/uni-mainz.de/homes/maweitze/CCR/1107/M1/',  # Dense Irregular
+    '/uni-mainz.de/homes/maweitze/CCR/0808/M1/',  # Columnar
 
     # Medium measurements
 
     '/uni-mainz.de/homes/maweitze/CCR/0604/M1/',    # Aggregates
     '/uni-mainz.de/homes/maweitze/CCR/0208/M1/',    # Dendritic, Aggregates
     '/uni-mainz.de/homes/maweitze/CCR/0208/M2/',    # Irregular, Aggregates
+    '/uni-mainz.de/homes/maweitze/CCR/0908/M1/',    # Dendritic, Irregular, Dense
 
     # Unclean measurements
 

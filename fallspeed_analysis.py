@@ -159,10 +159,10 @@ def load_mass_data(fldr):
 
 def mass_velocity_dim_histograms(vs, mass_data, fldr):
 
-    n_bins = 25
+    n_bins = 15
     v_max = 3
-    ae_max = 75
-    mxdim_max = 105
+    ae_max = 100
+    mxdim_max = 120
     # mass_max = 87500
     dropdiam_max = 75
 
@@ -173,7 +173,7 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr):
     def plot_param_hist(t_ax, list_of_vals, max_val, t_n_bins, unit):
         bins = max_val/n_bins*np.arange(t_n_bins)
         (mu, sigma) = norm.fit(list_of_vals)
-        n, bins, _ = ax.hist(list_of_vals, bins=bins)
+        n, bins, _ = t_ax.hist(list_of_vals, bins=bins)
         dx = bins[1] - bins[0]
         scale = len(list_of_vals)*dx
         y = mlab.normpdf(bins, mu, sigma) * scale
