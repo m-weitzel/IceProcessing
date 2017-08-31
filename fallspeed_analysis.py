@@ -13,6 +13,8 @@ folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
+save_flag = 1
+
 histogram_plt_flag = 0
 orientation_polar_flag = 0
 v_t_series_flag = 0
@@ -25,6 +27,10 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
     fall_folder = fldr+'Fall'
     folder_list = sorted(os.listdir(fall_folder))
     folder_list = [f for f in folder_list if '.png' in f]
+    im_for_shape_acq = MicroImg('Streak', fall_folder, folder_list[0], ('Bin', 0))
+    imsize = im_for_shape_acq.processed_image.shape
+
+    plot_descriptor_list = list()
 
     try:
         fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
@@ -40,26 +46,41 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
         mass_velocity_dim_histograms(projected_vs, mass_data, folder)
         t1 = time.time()
         print('Time spent on Mass Velocity Histograms:'+str(t1-t0))
+        plot_descriptor_list+=['histogram.png']
         t0 = time.time()
     if op_flag:
         orientation_polar_plot(orientation)
         t1 = time.time()
         print('Time spent on Orientation Polar Plot:' + str(t1 - t0))
+        plot_descriptor_list += ['orientation_polar.png']
         t0 = time.time()
     if vt_flag:
         velocity_time_series(folder_list, time_list, projected_vs)
         t1 = time.time()
         print('Time spent on Velocity Time Series:' + str(t1 - t0))
+        plot_descriptor_list += ['v_timeseries.png']
         t0 = time.time()
     if or_flag:
         orientation_scatter(centerpt, orientation)
         t1 = time.time()
         print('Time spent on Orientation Scatter Plot:' + str(t1 - t0))
+        plot_descriptor_list += ['orientation_scatter.png']
         t0 = time.time()
     if dn_flag:
-        centerpt_density(centerpt, orientation, vs, pixel_size)
+        centerpt_density(centerpt, orientation, vs, imsize, pixel_size)
         t1 = time.time()
+        plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png','quiver.png']
         print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
+
+    try:
+        os.mkdir(fldr+'plots/')
+    except FileExistsError:
+        pass
+
+    for i in plt.get_fignums():
+        plt.figure(i)
+        plt.savefig(fldr+'plots/'+plot_descriptor_list[i-1])
+
     plt.show()
 
 
@@ -192,7 +213,7 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr):
 
     plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=12)
 
-    plt.savefig(fldr + 'histogram.png')
+    # plt.savefig(fldr + 'histogram.png')
 
 
 def orientation_polar_plot(orientation):
@@ -277,7 +298,7 @@ def orientation_scatter(centerpt, orientation):
     ax.set_ylabel('Angle of fall streak')
 
 
-def centerpt_density(centerpt, orientation, vs, pxl_size):
+def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
 
     oris = sorted(zip(orientation, centerpt, vs), key=lambda tup: tup[1][0])
     orientation_s = [o[0] for o in oris]
@@ -288,8 +309,8 @@ def centerpt_density(centerpt, orientation, vs, pxl_size):
     bins_velocity = list()
 
     bin_size = 60
-    max_x_bin = np.ceil(830/bin_size)
-    max_y_bin = np.ceil(2048/bin_size)
+    max_x_bin = np.ceil(imsize[1]/bin_size)
+    max_y_bin = np.ceil(imsize[0]/bin_size)
     x_range = np.arange(max_x_bin+1)[1:]
     y_range = np.arange(max_y_bin+1)[1:]
     xs = x_range*bin_size
@@ -338,9 +359,9 @@ def centerpt_density(centerpt, orientation, vs, pxl_size):
     f.canvas.draw()
     cmap = plt.cm.YlOrRd
     cmap.set_under(color='white')
-    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0) / np.max(binned_n), cmap=cmap, vmin=0.001)
-    cbar = f.colorbar(im, ticks=[0, 0.25, 0.5, 0.75, 1])
-    cbar.set_label('$\phi in \deg$', fontsize=20)
+    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0), cmap=cmap, vmin=1)
+    cbar = f.colorbar(im)
+    # cbar.set_ticks([0, 0.25, 0.5, 0.75, 1])
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
     ax.set_title('Relative occurence of fall streak center points', fontsize=20)
