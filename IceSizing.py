@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, optional_object_filter_condition='False'):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
@@ -16,13 +16,12 @@ class MicroImg:
         self.minsize = minsize
         self.maxsize = maxsize
         self.dilation = dilation
-        # self.initial_image = cv2.cvtColor(cv2.imread(self.full_path()), cv2.COLOR_BGR2GRAY)
         self.initial_image = cv2.imread(self.full_path())
+        # self.initial_image = cv2.Laplacian(cv2.imread(self.full_path()), cv2.CV_64F)
         self.thresh_type = thresh_type
         self.bin_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
-        self.dimensions, self.processed_image = self.get_dims_and_process()
-
+        self.data, self.processed_image = self.get_data_and_process(optional_object_filter_condition)
 
     def get_contours_from_img(self):
 
@@ -31,7 +30,8 @@ class MicroImg:
 
         # sort the contours from left-to-right and initialize the
         # 'pixels per metric' calibration variable
-        (cnts, _) = contours.sort_contours(cnts)
+        if len(cnts)>0:
+            (cnts, _) = contours.sort_contours(cnts)
 
         filtered_contours = list()
         for c in cnts:
@@ -45,20 +45,21 @@ class MicroImg:
                     filtered_contours.append(c)
         return filtered_contours
 
-    def get_dims_and_process(self):
-        dims = list()
+    def get_data_and_process(self, optional_object_filter_condition):
+        data = list()
         img = self.initial_image.copy()
         for c in self.contours:
-            this_dimensions, img = draw_box_from_conts(c, img, self.pixels_per_metric)
-            csp = this_dimensions['Area']*this_dimensions['Short Axis']*\
-                  (2*this_dimensions['Long Axis']+2*this_dimensions['Short Axis']) /\
-                  (cv2.arcLength(c, True)/self.pixels_per_metric)
-            new_info = {'CSP': csp}
-            this_dimensions.update(new_info)
-            dims.append(this_dimensions)
+            this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric, optional_object_filter_condition)
+            if this_data:
+                csp = this_data['Area'] * this_data['Short Axis'] \
+                      * (2 * this_data['Long Axis']+2 * this_data['Short Axis'])\
+                      / (cv2.arcLength(c, True)/self.pixels_per_metric)
+                new_data = {'CSP': csp, 'File Name': self.filename}
+                this_data.update(new_data)
+                data.append(this_data)
 
-        dims = list(filter(None, dims))
-        return np.asarray(dims), img
+        data = list(filter(None, data))
+        return np.asarray(data), img
 
     def full_path(self):
         return self.folder+'/'+self.filename
@@ -67,12 +68,13 @@ class MicroImg:
 
         img = self.initial_image
 
-        if (self.type_phase=='Drop')|(self.type_phase=='drop'):
+        if (self.type_phase == 'Drop') | (self.type_phase == 'drop'):
 
             blue = img[:, :, 2]
             rt, thresh = cv2.threshold(blue, 250, 255, cv2.THRESH_BINARY)
         else:
             if len(img.shape) > 2:
+                # img = cv2.convertScaleAbs(img)
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             else:
                 gray = img
@@ -94,8 +96,14 @@ class MicroImg:
                 else:
                     rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
             elif self.thresh_type[0] == "Otsu":
-                threshold = gray.mean()-1.5*gray.std()
-                rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                if self.thresh_type[1] != 0:
+                    threshold = self.thresh_type[1]
+                else:
+                    threshold = gray.mean()-1.5*gray.std()
+                if np.sign(self.thresh_type[1]) == -1:
+                    rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                else:
+                    rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             elif self.thresh_type[0] == "Adaptive":
                 block_size = self.thresh_type[1]
                 # block_size = 751
@@ -126,7 +134,7 @@ def midpoint(pt_a, pt_b):
     return (pt_a[0] + pt_b[0]) * 0.5, (pt_a[1] + pt_b[1]) * 0.5
 
 
-def draw_box_from_conts(contour, img, pixels_per_metric):
+def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_condition=False):
     img_processed = img.copy()
     # if cv2.contourArea(contour) < 750:
     #     return [], img
@@ -166,6 +174,11 @@ def draw_box_from_conts(contour, img, pixels_per_metric):
     d_a = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
     d_b = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
+    if d_a > d_b:
+        orientation = np.arctan((blbrX-tltrX)/(blbrY-tltrY))
+    else:
+        orientation = np.arctan((tlblX-trbrX)/(tlblY-trbrY))
+
     l = np.max([d_a, d_b])
     w = np.min([d_a, d_b])
 
@@ -180,21 +193,26 @@ def draw_box_from_conts(contour, img, pixels_per_metric):
     # if dim_l > 100:
     #     return [], img
 
-    dimensions = {'Long Axis': dim_l, 'Short Axis': dim_w, 'Area': area, 'Center Points': (center_point[0], center_point[1])}
+    if eval(optional_object_filter_condition):
+        return [], img
+    else:
 
-    cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
-                (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
-                0.65, (255, 255, 255), 2)
-    cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
-                (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
-                0.65, (255, 255, 255), 2)
+        data = {'Long Axis': dim_l, 'Short Axis': dim_w, 'Area': area, 'Center Points': (center_point[0], center_point[1]), 'Orientation': orientation}
 
-    cv2.drawContours(img_processed, [box.astype("int")], -1, (0, 255, 0), 2)
-    cv2.drawContours(img_processed, contour, -1, (255, 0, 0), 2)
-    # cv2.imshow('a', img_processed)
-    # cv2.waitKey(0)
+        cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
+                    (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.65, (255, 255, 255), 2)
+        cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
+                    (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.65, (255, 255, 255), 2)
 
-    return dimensions, img_processed
+        cv2.drawContours(img_processed, [box.astype("int")], -1, (0, 255, 0), 2)
+        cv2.drawContours(img_processed, contour, -1, (255, 0, 0), 2)
+        # cv2.imshow('a', img_processed)
+        # cv2.waitKey(0)
+
+        return data, img_processed
+
 
 def main():
     None

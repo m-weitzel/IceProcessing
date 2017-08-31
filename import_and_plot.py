@@ -12,12 +12,14 @@ folder_list = (
     '/uni-mainz.de/homes/maweitze/CCR/2203/M2/',  # Columnar, Bullet Rosettes
     '/uni-mainz.de/homes/maweitze/CCR/3103/M1/',  # Columnar
     '/uni-mainz.de/homes/maweitze/CCR/1107/M1/',  # Dense Irregular
+    '/uni-mainz.de/homes/maweitze/CCR/0808/M1/',  # Columnar
 
     # Medium measurements
 
     '/uni-mainz.de/homes/maweitze/CCR/0604/M1/',    # Aggregates
     '/uni-mainz.de/homes/maweitze/CCR/0208/M1/',    # Dendritic, Aggregates
     '/uni-mainz.de/homes/maweitze/CCR/0208/M2/',    # Irregular, Aggregates
+    '/uni-mainz.de/homes/maweitze/CCR/0908/M1/',    # Dendritic, Irregular, Dense
 
     # Unclean measurements
 
@@ -76,7 +78,7 @@ for folder, i in zip(folder_list, np.arange(1,len(folder_list)+1)):
 
 full_dim_list, full_mass_list, index_list = zip(*sorted(zip(full_dim_list, full_mass_list, index_list)))
 
-symbols = ["o", "8", "s", "p", "*", "h", "H", "+", "x", "X", "D"]
+symbols = ["o", "8", "s", "p", "h", "H", "D"]
 # symbols = ["o", "s", "+", "x", "D"]
 symbolcycler = cycle(symbols)
 colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
@@ -90,7 +92,8 @@ fig, ax = plt.subplots(1)
 
 for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_dim_list, folders_mass_list, folders_aspr_list, folder_list):
     # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=next(colorcycler), marker=next(symbolcycler), alpha=1, edgecolor=almost_black, linewidth=0.15)
-    col_list = [[1 / (max_aspr - 1) * (c - 1), 1 / (max_aspr - 1) * (max_aspr - c), 0] for c in this_aspr_list]
+    # col_list = [[1 / (max_aspr - 1) * (c - 1), 1 / (max_aspr - 1) * (max_aspr - c), 0] for c in this_aspr_list]
+    col_list = [[1, 0, 0] if 1.5 < c < 2.5 else [0, 0, 1] if c < 1.5 else [0, 1, 0] for c in this_aspr_list]
     ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=col_list, marker=next(symbolcycler), alpha=1,
                edgecolors=almost_black, linewidth=1)
 if logscale:
@@ -146,11 +149,13 @@ dims_spaced = np.arange(maxsize)
 mass_bulk = np.pi / 6 * (dims_spaced) ** 3 * 0.9167
 brown_franc = 0.0185 * dims_spaced ** 1.9 * 1000
 mitchell = 0.022*dims_spaced**2*1000
+# heymsfield = 0.176*dims_spaced**2.2*1000
 
 ax.plot(dims_spaced, powerlaw(dims_spaced, amp, index), label='Power Law')
 ax.plot(dims_spaced, mass_bulk, label='Bulk Ice', linestyle='--')
 ax.plot(dims_spaced, brown_franc, label='Brown&Francis', linestyle='--')
 ax.plot(dims_spaced, mitchell, label='Mitchell 90', linestyle='--')
+# ax.plot(dims_spaced, heymsfield, label='Heymsfield 2011', linestyle='--')
 # plt.plot(dims_spaced, dims_spaced)
 plt.xlabel('Long Axis in um')
 plt.ylabel('Mass in some g')
