@@ -133,7 +133,7 @@ def main():
             cv2.imshow(('Comparison'+str(abs(int(ice_file[-6:-4])))), img_preview)
             cv2.waitKey(1000)
 
-            input_remove = input('Old removes: ['+"".join(remove)+'] - Enter new list of objects to remove or keep.')
+            input_remove = input('Old removes: ['+"".join(str(remove))+'] - Enter new list of objects to remove or keep.')
 
             if input_remove:
                 try:
@@ -177,7 +177,7 @@ def main():
         x_shift_global_list[i - 1] = x_shift
         y_shift_global_list[i - 1] = y_shift
 
-        remove_list += this_remove_list
+        remove_list += [this_remove_list]
         crystal_list += this_crystal_list
 
         cv2.imwrite((folder+'/IDCouple-'+str(abs(int(ice_file[-6:-4])))+'.png'), img_comparison)
