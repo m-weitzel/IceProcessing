@@ -123,9 +123,10 @@ class MicroImg:
             # load the initial_image, convert it to grayscale, and blur it slightly
 
             dilation = self.dilation
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation, dilation))
-            thresh = cv2.dilate(thresh, kernel, iterations=1)
-            thresh = cv2.erode(thresh, kernel, iterations=1)
+            if dilation > 0:
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation, dilation))
+                thresh = cv2.dilate(thresh, kernel, iterations=1)
+                thresh = cv2.erode(thresh, kernel, iterations=1)
 
         return thresh
 
@@ -199,12 +200,14 @@ def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_
 
         data = {'Long Axis': dim_l, 'Short Axis': dim_w, 'Area': area, 'Center Points': (center_point[0], center_point[1]), 'Orientation': orientation}
 
+        # if d_a > d_b:
         cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
                     (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
                     0.65, (255, 255, 255), 2)
+        # else:
         cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
-                    (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
-                    0.65, (255, 255, 255), 2)
+                (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
+                0.65, (255, 255, 255), 2)
 
         cv2.drawContours(img_processed, [box.astype("int")], -1, (0, 255, 0), 2)
         cv2.drawContours(img_processed, contour, -1, (255, 0, 0), 2)
