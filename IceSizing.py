@@ -128,6 +128,15 @@ class MicroImg:
                 thresh = cv2.dilate(thresh, kernel, iterations=1)
                 thresh = cv2.erode(thresh, kernel, iterations=1)
 
+            h, w = thresh.shape[:2]
+            mask = np.zeros((h + 2, w + 2), np.uint8)
+
+            thresh_floodfill = thresh.copy()
+            cv2.floodFill(thresh_floodfill, mask, (0, 0), 255);
+            thresh_floodfill_inv = cv2.bitwise_not(thresh_floodfill)
+
+            thresh = thresh | thresh_floodfill_inv
+
         return thresh
 
 
