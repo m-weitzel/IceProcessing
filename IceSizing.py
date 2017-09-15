@@ -135,7 +135,12 @@ class MicroImg:
             cv2.floodFill(thresh_floodfill, mask, (0, 0), 255);
             thresh_floodfill_inv = cv2.bitwise_not(thresh_floodfill)
 
-            thresh = thresh | thresh_floodfill_inv
+            thresh_filled = thresh | thresh_floodfill_inv
+
+            if np.any((thresh|thresh_floodfill_inv) < 255):
+                thresh = thresh_filled
+            else:
+                print('Fill holes failed.')
 
         return thresh
 
