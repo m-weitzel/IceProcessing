@@ -69,7 +69,7 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
     if dn_flag:
         centerpt_density(centerpt, orientation, vs, imsize, pixel_size)
         t1 = time.time()
-        plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png','quiver.png']
+        plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png', 'quiver.png']
         print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
 
     try:
@@ -109,7 +109,7 @@ def initialize_data(fldr, fldr_list):
     except FileExistsError:
         pass
 
-    streak_filter_cond = streak_filter_cond = 'dim_w > 4 or (np.asarray([b[0] for b in box])>(img.shape[1]-8)).any() \
+    streak_filter_cond = 'dim_w > 4 or (np.asarray([b[0] for b in box])>(img.shape[1]-8)).any() \
                           or (np.asarray([b[1] for b in box])>(img.shape[0]-8)).any() or (box < 8).any()'
 
     for i, filename in enumerate(fldr_list):
@@ -225,7 +225,7 @@ def orientation_polar_plot(orientation):
     width = (2*np.pi)/n_bins
     theta = np.linspace(-np.pi+np.pi/n_bins, np.pi+np.pi/n_bins, n_bins, endpoint=False)
     # max_height = 8
-    # ori = [np.deg2rad(a) for a in np.sort(orientation) if ~np.isnan(np.deg2rad(a))]
+    # ori = [np.deg2rad(a) for a in np.sort(orientation) if not(np.isnan(np.deg2rad(a)))]
     # ori = orientation
     radii = np.histogram(orientation, theta)
     bars = ax.bar(radii[1][:-1], radii[0], width=width, bottom=20)

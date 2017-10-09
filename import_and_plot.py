@@ -31,12 +31,12 @@ folder_list = (
     # '/uni-mainz.de/homes/maweitze/CCR/1907/M3/',    # Dendritic
 )
 
-minsize=5
-maxsize = (120/2)**2*np.pi
-logscale = True
-plot_binned = True
+minsize=0
+maxsize = 150
+logscale = False
+plot_binned = False
 plot_massdim = True
-fontsize_base = 30
+fontsize_base = 15
 
 # folder_list = ('/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1907/M3/',
 #                '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/2203/M2/')
@@ -62,21 +62,17 @@ for folder, i in zip(folder_list, np.arange(1,len(folder_list)+1)):
                      # (float(a['Long Axis'])/float(a['Short Axis']))                                                        # Aspect Ratio
                      # a['Area']                                                                                             # Area
                      2*np.sqrt(float(a['Area'])/np.pi)                                                                     # Area-equivalent diameter
-
-                     for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize)]
-                     # for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize) & (
-                     #                           float(a['Long Axis'])/float(a['Short Axis']) < 1.5)]
+                     for a in crystal_list
+                    ]
 
     this_mass_list = [
-                      np.pi/6*a['Drop Diameter']**3                                                                       # Mass
+                      np.pi/6*a['Drop Diameter']**3                                                   # Mass
                       # float(a['Short Axis'])                                                                              # Short Axis
                       # float(a['Drop Diameter'])                                                                           # Drop Diameter
+                      for a in crystal_list
+                     ]
 
-                      for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize)]
-                      # for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize) & (
-                      #                           float(a['Long Axis']) / float(a['Short Axis']) < 1.5)]
-
-    this_aspr_list = [float(a['Long Axis']) / float(a['Short Axis'])
+    this_aspr_list = [float(a['Long Axis']) / float(a['Short Axis']) for a in crystal_list]
 
                       for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize)]
                       # for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize) & (

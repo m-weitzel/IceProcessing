@@ -7,6 +7,7 @@ import pickle
 import os
 from copy import deepcopy
 
+
 def main():
     folder = '/uni-mainz.de/homes/maweitze/CCR/0908/M1/'
     file_list = os.listdir(folder)
@@ -31,8 +32,9 @@ def main():
 
     try:
         tmp = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
-        if len(tmp) == 6:
+        if len(tmp) == 6 or len(tmp) == 5:
             (x_shift_global_list, y_shift_global_list, _, _, _) = tmp
+            remove_global_list = [list() for f in ice_file_list]
         # elif len(tmp) == 3:
         else:
             x_shift_global_list = tmp['x_shift']
