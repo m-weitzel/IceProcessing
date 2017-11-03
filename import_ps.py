@@ -87,6 +87,10 @@ def get_cmap(n, name='hsv'):
 def main():
     a=sio.loadmat('/uni-mainz.de/homes/maweitze/FallSpeedHolograms/2510_2/ps.mat')
 
+    tmp = a['xp']
+    a['xp'] = a['yp']
+    a['yp'] = tmp
+
     pxl_size = 4.8
 
     p_list = list()
@@ -106,7 +110,7 @@ def main():
 
     while p_list:
         this_prtcl = p_list[0]
-        velocity_guess= [-0.005, 0, 0]  # cm in 1/60 s
+        velocity_guess= [0, -0.005, 0]  # cm in 1/60 s
         new_streak = PrtclStreak(this_prtcl, velocity_guess)
         p_list.remove(this_prtcl)
         extended = True
