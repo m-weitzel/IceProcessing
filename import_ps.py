@@ -138,15 +138,23 @@ def main():
     short_streaks = [a for a in streak_list if len(a.prtcl_streak)<5]
 
     cmap = get_cmap(len(only_long_streaks))
+
+    fig, ax = plt.subplots(1)
     for i, streak in enumerate(only_long_streaks):
         pos = [p.spatial_position for p in streak.prtcl_streak]
-        plt.scatter([p[0] for p in pos], [p[1] for p in pos], c=cmap(i))
+        ax.scatter([p[0] for p in pos], [p[1] for p in pos], c=cmap(i))
+        this_gaps = [q-p for (p,q) in zip(pos[:-2], pos[1:])]
+        v_list.append(np.mean([np.sqrt(g[1]**2+g[0]**2) for g in this_gaps]))
+        dim_list.append(np.mean([s.majsiz for s in streak.prtcl_streak]))
 
-    plt.figure()
+    fig, ax = plt.subplots(1)
     for streak in short_streaks:
         pos = [p.spatial_position for p in streak.prtcl_streak]
-        plt.scatter([p[0] for p in pos], [p[1] for p in pos], c='b', marker='<')
+        ax.scatter([p[0] for p in pos], [p[1] for p in pos], c='b', marker='<')
 
+    fig, ax = plt.subplots(1)
+    ax.scatter(dim_list, v_list)
+    ax.set_xlim(0, max(dim_list))
     plt.show()
 
 
