@@ -19,9 +19,17 @@ class PrtclStreak:
         self.initial_prtcl = initial_prtcl
         self.prtcl_streak = [initial_prtcl]
         self.vel_vector = first_guess_velocity
+        self.streak_length = self.get_streak_length()
 
     def add_particle(self, prtcl):
         self.prtcl_streak.append(prtcl)
+
+    def get_streak_length(self):
+        first_pos = self.prtcl_streak[0].spatial_position
+        last_pos = self.prtcl_streak[-1].spatial_position
+        dist = np.sqrt((self.prtcl_streak[0].xpos - self.prtcl_streak[-1].xpos) ** 2 + (self.prtcl_streak[0].ypos - self.prtcl_streak[-1].ypos) ** 2 + (
+            self.prtcl_streak[0].zpos - self.prtcl_streak[-1].zpos) ** 2)
+        return dist
 
 
 def find_streak_particles(this_streak, prtcl_list, velocity, max_dist=0.01):
@@ -93,6 +101,10 @@ def main():
 
     pxl_size = 4.8
 
+    min_len = 0
+
+    min_streak_length = 5
+
     p_list = list()
     for k in range(0, len(a['times'])):
         p_list.append(FallPrtcl(a['times'][k][0], 0, a['xp'][k][0]*pxl_size, a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size, a['majsiz'][k][0], a['minsiz'][k][0]))
@@ -134,8 +146,12 @@ def main():
 
     lens = [len(a.prtcl_streak) for a in streak_list]
 
-    only_long_streaks = [a for a in streak_list if len(a.prtcl_streak)>=5]
+    only_long_streaks = [a for a in streak_list if (len(a.prtcl_streak) >= min_streak_length)&(a.get_streak_length() > min_len)]
+
     short_streaks = [a for a in streak_list if len(a.prtcl_streak)<5]
+
+    v_list = list()
+    dim_list = list()
 
     cmap = get_cmap(len(only_long_streaks))
 
