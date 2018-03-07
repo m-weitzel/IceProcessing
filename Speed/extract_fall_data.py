@@ -1,4 +1,7 @@
 import os
+import sys
+sys.path.append('../utilities')
+sys.path.append('../Mass')
 from IceSizing import MicroImg
 import cv2
 import pickle
