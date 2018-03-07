@@ -6,8 +6,12 @@ from scipy import optimize
 from scipy import stats
 from itertools import cycle
 # from pylab import *
+from matplotlib import style
+# style.use('dark_background')
+
 
 folder_list = (
+
     # Clean Measurements
 
     '/uni-mainz.de/homes/maweitze/CCR/2203/M1/',  # Columnar
@@ -22,6 +26,7 @@ folder_list = (
     '/uni-mainz.de/homes/maweitze/CCR/0208/M1/',    # Dendritic, Aggregates
     '/uni-mainz.de/homes/maweitze/CCR/0208/M2/',    # Irregular, Aggregates
     '/uni-mainz.de/homes/maweitze/CCR/0908/M1/',    # Dendritic, Irregular, Dense
+    '/uni-mainz.de/homes/maweitze/CCR/01Mar/',      # Dendritic (aggregates)
 
     # Unclean measurements
 
@@ -31,12 +36,14 @@ folder_list = (
     # '/uni-mainz.de/homes/maweitze/CCR/1907/M3/',    # Dendritic
 )
 
+compare_list_folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'     # Dendritic (aggregates)
+
 minsize=0
 maxsize = 150
 logscale = False
 plot_binned = False
 plot_massdim = True
-fontsize_base = 15
+fontsize_base = 20
 
 # folder_list = ('/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/1907/M3/',
 #                '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/2203/M2/')
@@ -57,11 +64,11 @@ for folder, i in zip(folder_list, np.arange(1,len(folder_list)+1)):
     crystal_list = tmp['crystal']
 
     this_dim_list = [
-                     # float(a['Long Axis'])                                                                                 # Maximum dimension
+                     float(a['Long Axis'])                                                                                 # Maximum dimension
                      # (float(a['Long Axis'])+float(a['Short Axis']))/2                                                      # Mean of Maximum and Minimum dimension
                      # (float(a['Long Axis'])/float(a['Short Axis']))                                                        # Aspect Ratio
                      # a['Area']                                                                                             # Area
-                     2*np.sqrt(float(a['Area'])/np.pi)                                                                     # Area-equivalent diameter
+                     # 2*np.sqrt(float(a['Area'])/np.pi)                                                                     # Area-equivalent diameter
                      for a in crystal_list
                     ]
 
@@ -74,17 +81,24 @@ for folder, i in zip(folder_list, np.arange(1,len(folder_list)+1)):
 
     this_aspr_list = [float(a['Long Axis']) / float(a['Short Axis']) for a in crystal_list]
 
-                      for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize)]
-                      # for a in crystal_list if (float(a['Long Axis']) > minsize) & (float(a['Long Axis']) < maxsize) & (
-                      #                           float(a['Long Axis']) / float(a['Short Axis']) < 1.5)]
+    filtered_lists = [(a, b, c) for (a, b, c) in zip(this_dim_list, this_mass_list, this_aspr_list) if ((float(a) > minsize) & (float(a) < maxsize))]
+    this_dim_list = [a[0] for a in filtered_lists]
+    this_mass_list = [a[1] for a in filtered_lists]
+    this_aspr_list = [a[2] for a in filtered_lists]
 
     folders_dim_list.append(this_dim_list)
     folders_mass_list.append(this_mass_list)
     folders_aspr_list.append(this_aspr_list)
-
+    print('Added '+str(len(this_dim_list))+' from '+folder+'.')
     full_dim_list += this_dim_list
     full_mass_list += this_mass_list
     index_list += [i]*len(this_dim_list)
+
+tmp = pickle.load(open(compare_list_folder+'mass_dim_data.dat', 'rb'))
+compare_list= tmp['crystal']
+
+comp_dim_list = [float(a['Long Axis']) for a in compare_list]
+comp_mass_list = [np.pi/6*a['Drop Diameter']**3 for a in compare_list]
 
 full_dim_list, full_mass_list, index_list = zip(*sorted(zip(full_dim_list, full_mass_list, index_list)))
 
@@ -115,7 +129,7 @@ if logscale:
     ydist_factor = 2
     ydist0 = 1/2
     plt.xlim(xlim, 1.5 * np.max(full_dim_list))
-    plt.ylim(300, 1.5 * np.max(full_mass_list))
+    plt.ylim(1e-9, 500*1e-9)
     ax.set_xscale('log')
     ax.set_yscale('log')
 
@@ -128,15 +142,15 @@ if logscale:
 else:
     xmin = 0
     # xmax = 1.1*np.max(full_dim_list)
-    xmax = 115
+    xmax = 200
     ymin = 0
     # ymax = 1.1*np.max(full_mass_list)
-    ymax = 200e-9
+    ymax = 300e-9
 
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
     xloc = 1
-    yloc_base = 0.7
+    yloc_base = 0.8
     yloc_factor = 1.1
     yloc = [yloc_base, yloc_base-0.05*yloc_factor, yloc_base-0.1*yloc_factor, yloc_base-0.15*yloc_factor]
     legloc = 2
@@ -213,17 +227,25 @@ loc_count = 0
 #          bbox=dict(facecolor='blue', alpha=0.2), fontsize=fontsize_base*0.7)
 # loc_count += 1
 
-# if not(plot_binned):
-#     plt.text(xloc, ymax*yloc[loc_count],
-#              # 'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$\n Blue: AR < 1.5, Red: 1.5 < AR < 2.5, Green: 2.5 < AR'.format(max_aspr),
-#              'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$'.format(max_aspr),
-#              bbox=dict(facecolor='green', alpha=0.2), fontsize=fontsize_base*0.7)
-#     loc_count += 1
+if not(plot_binned):
+    plt.text(xloc, ymax*yloc[loc_count],
+             'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$\n Blue: AR < 1.5, Red: 1.5 < AR < 2.5, Green: 2.5 < AR'.format(max_aspr),
+             # 'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$'.format(max_aspr),
+             bbox=dict(facecolor='green', alpha=0.2), fontsize=fontsize_base*0.7)
+    loc_count += 1
 loc_count += 1
 
-# plt.text(xloc+45.5, ymax*0.95*yloc[loc_count], 'Brown&Francis: m$=0.0185\cdot $D$^{1.9}$\n'+' Mitchell: m$=0.022\cdot $D$^{2.0}$\n'+'Power Law Fit full data: m$ = {2:.4f}\cdot $D$^{{{3:.3f}}}$\nn = ${4}$, RMSE = ${5:4.2f}$ ng'.format(1.9, 2.0, amp_full/1000, index_full, n, rmse_of_fit*1e-12*1e9), bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base*0.9, ha='right')
-plt.text(35, 100e-9, 'Power Law Fit full data: m$ = {2:.4f}\cdot $D$^{{{3:.3f}}}$'.format(1.9, 2.0, amp_full/1000, index_full)+
+n = len(full_mass_list)
+
+if plot_massdim & plot_binned:
+    plt.text(35, 100e-9, 'Power Law Fit full data: m$ = {2:.4f}\cdot $D$^{{{3:.3f}}}$'.format(1.9, 2.0, amp_full/1000, index_full)+
          '\nPower Law Fit binned data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$'.format(amp_bins/1000, index_bins), bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base*0.9, ha='right')
+else:
+    # plt.text(xloc + 45.5, ymax * 0.95 * yloc[loc_count],
+    plt.text(xloc, ymax * 0.98 * yloc[loc_count],
+             'Brown&Francis: m$=0.0185\cdot $D$^{1.9}$\n' + ' Mitchell: m$=0.022\cdot $D$^{2.0}$\n' + 'Power Law Fit full data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$\nn = ${2}$, RMSE = ${3:4.2f}$ ng'.format(
+                 amp_full / 1000, index_full, n, rmse_of_fit * 1e-12 * 1e9),
+                 bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base * 0.9, ha='left')
 
 if plot_binned:
     ax.plot(dims_spaced, powerlaw(dims_spaced, amp_bins, index_bins)*1e-12, label='Power Law Binned Data', linewidth=3, zorder=1)
@@ -252,16 +274,18 @@ for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_di
         ax.scatter(dim_bins, [f*1e-12 for f in avg_masses], alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
     else:
         ax.scatter(full_dim_list, [f*1e-12 for f in full_mass_list], alpha=1,
-                   edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
+                   edgecolors=almost_black, linewidth=1, zorder=0, c=col_list)
     # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
+
+ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
 
 plt.xlabel('Area equivalent diameter in $\mathrm{\mu m}$', fontsize=fontsize_base)
 plt.ylabel('Mass in ng', fontsize=fontsize_base)
 ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y*1e9))
 ax.yaxis.set_major_formatter(ticks_y)
 ax.tick_params(axis='both', which='major', labelsize=fontsize_base)
-ax.set_xticks([25,50,75,100])
-ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
+# ax.set_xticks([25,50,75,100])
+# ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
 # ttl = plt.title('Mass Dimension Relation', fontsize=fontsize_base*1.5)
 # ttl.set_position([0.5, 1.025])
 
