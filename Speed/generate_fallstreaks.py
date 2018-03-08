@@ -166,9 +166,9 @@ def fit_powerlaw(x, y):
 
 
 def main():
-    # path = '/uni-mainz.de/homes/maweitze/FallSpeedHolograms/2510/whole/whole/ps_byhand.mat'
-    # path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Tests_21Feb/ps_bypredict.mat'
-    # path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/ps_bypredict.mat'
+    # path = '/uni-mainz.de/homes/maweitze/FallSpeedHolograms/2510/whole/whole/'
+    # path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Tests_21Feb/'
+    # path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/'
     path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/'
     filename_ps = 'ps_bypredict.mat'
 
