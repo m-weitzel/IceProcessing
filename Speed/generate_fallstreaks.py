@@ -238,6 +238,7 @@ def main():
 
     v_list = list()
     dim_list = list()
+    cap_list = list()
 
     v_std_list = list()
     dim_std_list = list()
@@ -257,8 +258,11 @@ def main():
         v_std_list.append(np.std(vs))
 
         s_majsiz = [s.majsiz*1e6 for s in streak.particle_streak]
+        s_minsiz = [s.minsiz*1e6 for s in streak.particle_streak]
         dim_list.append(np.median(s_majsiz))
         dim_std_list.append(np.std(s_majsiz))
+        cap_list.append(0.134*np.median([0.58*min/2*(1+0.95*(maj/min)**0.75) for min, maj in zip(s_minsiz, s_majsiz)]))
+
         # streak.plot_props()
 
     # for streak in short_streaks:
@@ -289,7 +293,8 @@ def main():
 
     fig, ax = plt.subplots(1)
     # ax.errorbar(dim_list, v_list, xerr=dim_std_list, yerr=v_std_list, fmt='o')
-    ax.scatter(dim_list, v_list)
+    # ax.scatter(dim_list, v_list)
+    ax.scatter(cap_list, v_list)
     ax.grid('on')
     # ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Full', linewidth=3,
     #         zorder=1)
