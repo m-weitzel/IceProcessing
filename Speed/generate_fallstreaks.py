@@ -172,121 +172,114 @@ def main():
     path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/'
     filename_ps = 'ps_bypredict.mat'
 
+    a = sio.loadmat(path+filename_ps)
 
-    try:
-        tmp = pickle.load(open(path+'vs_dim_data.dat', 'rb'))
-        dim_list = tmp['dims']
-        v_list = tmp['vs']
-    except (FileNotFoundError, EOFError):
+    tmp = a['xp']*1000
+    a['xp'] = a['yp']*1000
+    a['yp'] = tmp
 
-        a = sio.loadmat(path+filename_ps)
+    pxl_size = 1
+    min_streak_length = 5
+    maxsize = 200
+    max_sizdiff = 0.05
+    max_dist_from_predict = 0.5
+    base_velocity_guess = [0, 0, 0]
 
-        tmp = a['xp']*1000
-        a['xp'] = a['yp']*1000
-        a['yp'] = tmp
+    p_list = list()
+    for k in range(0, len(a['times'])):
+        p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size, a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size, a['majsiz'][k][0], a['minsiz'][k][0]))
 
-        pxl_size = 1
-        min_streak_length = 5
-        maxsize = 200
-        max_sizdiff = 0.05
-        max_dist_from_predict = 0.5
-        base_velocity_guess = [0, 0, 0]
+    last_holonum = p_list[-1].holonum
 
-        p_list = list()
-        for k in range(0, len(a['times'])):
-            p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size, a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size, a['majsiz'][k][0], a['minsiz'][k][0]))
+    holonums = range(0, last_holonum+1)
 
-        last_holonum = p_list[-1].holonum
+    ps_in_holos = [[] for _ in holonums]
 
-        holonums = range(0, last_holonum+1)
+    for p in p_list:
+        ps_in_holos[p.holonum].append(p)
 
-        ps_in_holos = [[] for _ in holonums]
+    streak_list = list()
 
-        for p in p_list:
-            ps_in_holos[p.holonum].append(p)
-
-        streak_list = list()
-
-        while p_list:
-            this_particle = p_list[0]
-            velocity_guess = base_velocity_guess
-            new_streak = particleStreak(this_particle, velocity_guess)
-            p_list.remove(this_particle)
-            extended = True
-            count_test = 0
-            while extended:
-                try:
-                    if len(ps_in_holos[new_streak.particle_streak[-1].holonum+1])<1:
-                        extended=False
-                        ext_by = []
-                        print('Empty hologram, ending streaks.')
-                    else:
-                        new_streak, extended, ext_by = find_streak_particles(new_streak, ps_in_holos[new_streak.particle_streak[-1].holonum+1],
-                                                                             velocity_guess, max_dist=max_dist_from_predict, max_sizdiff=max_sizdiff)
-                        count_test += 1
-                except IndexError:
-                    print('Last hologram reached, quitting...')
-                    extended = False
+    while p_list:
+        this_particle = p_list[0]
+        velocity_guess = base_velocity_guess
+        new_streak = particleStreak(this_particle, velocity_guess)
+        p_list.remove(this_particle)
+        extended = True
+        count_test = 0
+        while extended:
+            try:
+                if len(ps_in_holos[new_streak.particle_streak[-1].holonum+1])<1:
+                    extended=False
                     ext_by = []
+                    print('Empty hologram, ending streaks.')
+                else:
+                    new_streak, extended, ext_by = find_streak_particles(new_streak, ps_in_holos[new_streak.particle_streak[-1].holonum+1],
+                                                                         velocity_guess, max_dist=max_dist_from_predict, max_sizdiff=max_sizdiff)
+                    count_test += 1
+            except IndexError:
+                print('Last hologram reached, quitting...')
+                extended = False
+                ext_by = []
 
-                if extended:
-                    p_list.remove(ext_by)
-                    ps_in_holos[new_streak.particle_streak[-2].holonum+1].remove(ext_by)
-                    if len(new_streak.particle_streak) > 2:
-                        velocity_guess = new_streak.particle_streak[-1].spatial_position-new_streak.particle_streak[-2].spatial_position
-                        print('Applying self-determined velocity guess. {}'.format(tuple(velocity_guess)))
-            streak_list.append(new_streak)
-            if not extended:
-                print('Completed streak with '+str(len(new_streak.particle_streak))+' elements.')
+            if extended:
+                p_list.remove(ext_by)
+                ps_in_holos[new_streak.particle_streak[-2].holonum+1].remove(ext_by)
+                if len(new_streak.particle_streak) > 2:
+                    velocity_guess = new_streak.particle_streak[-1].spatial_position-new_streak.particle_streak[-2].spatial_position
+                    print('Applying self-determined velocity guess. {}'.format(tuple(velocity_guess)))
+        streak_list.append(new_streak)
+        if not extended:
+            print('Completed streak with '+str(len(new_streak.particle_streak))+' elements.')
 
-        only_long_streaks = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]#&(a.get_streak_length() > min_streak_length)]
-        # short_streaks = [a for a in streak_list if len(a.particle_streak) < min_streak_length]
-        short_streaks = [a for a in streak_list if a not in only_long_streaks]
+    only_long_streaks = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]#&(a.get_streak_length() > min_streak_length)]
+    # short_streaks = [a for a in streak_list if len(a.particle_streak) < min_streak_length]
+    short_streaks = [a for a in streak_list if a not in only_long_streaks]
 
-        v_list = list()
-        dim_list = list()
+    v_list = list()
+    dim_list = list()
 
-        v_std_list = list()
-        dim_std_list = list()
+    v_std_list = list()
+    dim_std_list = list()
 
-        cmap = get_cmap(len(only_long_streaks))
+    cmap = get_cmap(len(only_long_streaks))
 
-        fig, ax = plt.subplots(1)
-        ax.set_aspect('equal')
-        for i, streak in enumerate(only_long_streaks[:50]):
-            pos = sorted([p.spatial_position for p in streak.particle_streak], key=lambda pos_entry: pos_entry[1])
-            ax.scatter([p[0] for p in pos], [p[1] for p in pos], c=cmap(i), s=50)
-            ax.plot([p[0] for p in pos], [p[1] for p in pos], c=cmap(i))#, linewidth=streak.mean_diam*1e5)
-            this_gaps = [q-p for (p,q) in zip(pos[:-2], pos[1:])]
+    fig, ax = plt.subplots(1)
+    ax.set_aspect('equal')
+    for i, streak in enumerate(only_long_streaks[100:150]):
+        pos = sorted([p.spatial_position for p in streak.particle_streak], key=lambda pos_entry: pos_entry[1])
+        ax.scatter([p[0] for p in pos], [p[1] for p in pos], c=cmap(i), s=50)
+        ax.plot([p[0] for p in pos], [p[1] for p in pos], c=cmap(i))#, linewidth=streak.mean_diam*1e5)
+        this_gaps = [q-p for (p,q) in zip(pos[:-2], pos[1:])]
 
-            vs = [np.sqrt(g[1]**2+g[0]**2)*100 for g in this_gaps]
-            v_list.append(np.median(vs))
-            v_std_list.append(np.std(vs))
+        vs = [np.sqrt(g[1]**2+g[0]**2)*100 for g in this_gaps]
+        v_list.append(np.median(vs))
+        v_std_list.append(np.std(vs))
 
-            s_majsiz = [s.majsiz*1e6 for s in streak.particle_streak]
-            dim_list.append(np.median(s_majsiz))
-            dim_std_list.append(np.std(s_majsiz))
-            # streak.plot_props()
+        s_majsiz = [s.majsiz*1e6 for s in streak.particle_streak]
+        dim_list.append(np.median(s_majsiz))
+        dim_std_list.append(np.std(s_majsiz))
+        # streak.plot_props()
 
-        # for streak in short_streaks:
-        #     pos = [p.spatial_position for p in streak.particle_streak]
-        #     ax.scatter([p[0] for p in pos], [p[1] for p in pos], c='b', marker='<', alpha=0.3)
+    # for streak in short_streaks:
+    #     pos = [p.spatial_position for p in streak.particle_streak]
+    #     ax.scatter([p[0] for p in pos], [p[1] for p in pos], c='b', marker='<', alpha=0.3)
 
 
-        ax.set_title('Sample fall tracks from holograms measurement 1, Feb 23 2018 (unfiltered)', fontsize=20)
-        ax.set_xlabel('x in mm', fontsize=20)
-        ax.set_ylabel('y in mm', fontsize=20)
-        # ax.set_title('Streaks in Exp. 1, detected with Auto Threshold = 1.0, 60 fps')
-        ax.grid('on')
-        ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_title('Sample fall tracks from holograms measurement 1, Feb 23 2018 (unfiltered)', fontsize=20)
+    ax.set_xlabel('x in mm', fontsize=20)
+    ax.set_ylabel('y in mm', fontsize=20)
+    # ax.set_title('Streaks in Exp. 1, detected with Auto Threshold = 1.0, 60 fps')
+    ax.grid('on')
+    ax.tick_params(axis='both', which='major', labelsize=20)
 
-        ax.set_xlim([-2.5, 2.5])
-        ax.set_ylim([-3, 3])
+    ax.set_xlim([-2.5, 2.5])
+    ax.set_ylim([-3, 3])
 
-        # fig, ax = plt.subplots(1)
-        # for streak in short_streaks:
-        #     pos = [p.spatial_position for p in streak.particle_streak]
-        #     ax.scatter([p[0] for p in pos], [p[1] for p in pos], c='b', marker='<')
+    # fig, ax = plt.subplots(1)
+    # for streak in short_streaks:
+    #     pos = [p.spatial_position for p in streak.particle_streak]
+    #     ax.scatter([p[0] for p in pos], [p[1] for p in pos], c='b', marker='<')
 
     amp_full, index_full = fit_powerlaw(dim_list, v_list)
     powerlaw = lambda x, amp, index: amp * (x ** index)
@@ -298,9 +291,9 @@ def main():
     # ax.errorbar(dim_list, v_list, xerr=dim_std_list, yerr=v_std_list, fmt='o')
     ax.scatter(dim_list, v_list)
     ax.grid('on')
-    ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Full', linewidth=3,
-            zorder=1)
-    ax.set_xlim(0, max(dim_list)*1.1, ax.set_ylim(0, max(v_list)*1.1))
+    # ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Full', linewidth=3,
+    #         zorder=1)
+    # ax.set_xlim(0, max(dim_list)*1.1, ax.set_ylim(0, max(v_list)*1.1))
 
     save_flag = input('Save data to file?')
     if save_flag == 'Yes' or save_flag == 'yes':
