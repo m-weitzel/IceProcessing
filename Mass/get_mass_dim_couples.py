@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+sys.path.append('../utilities')
 from IceSizing import MicroImg
 import find_couples
 from matplotlib import pyplot as plt
@@ -9,7 +11,7 @@ from copy import deepcopy
 
 
 def main():
-    folder = '/uni-mainz.de/homes/maweitze/CCR/0908/M1/'
+    folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'
     file_list = os.listdir(folder)
 
     ice_file_list = list()
@@ -50,10 +52,32 @@ def main():
         print('No old data file found, starting from scratch.')
         x_shift_global_list = [0]*len(ice_file_list)
         y_shift_global_list = [0]*len(ice_file_list)
+        remove_global_list = [list() for f in ice_file_list]
 
     for ice_file, drop_file, x_shift, y_shift, remove, i in \
             zip(ice_file_list, drop_file_list, x_shift_global_list, y_shift_global_list, remove_global_list, np.arange(1, len(ice_file_list)+1)):
-        img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 1001), 750, 100000)
+
+        window_title = ('Comparison' + str(abs(int(ice_file[-6:-4]))))
+        cv2.namedWindow(window_title, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(window_title, 768, 768)
+
+        start_val_thresh = 63
+        cv2.createTrackbar('AdaptiveWindow', window_title, start_val_thresh, 1000, nothing)
+        cv2.createTrackbar('Dilation', window_title, 30, 100, nothing)
+        while 1:
+            adaptive_window = cv2.getTrackbarPos('AdaptiveWindow', window_title)
+            dilation = cv2.getTrackbarPos('Dilation', window_title)
+            # img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 2*adaptive_window+1), 750, 100000, dilation)
+            # img_ice = MicroImg('Ice', folder, ice_file, ('Bin', 2*adaptive_window+1), 750, 100000, dilation)
+            img_ice = MicroImg('Ice', folder, ice_file, ('Gradient', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
+            cv2.imshow(window_title, img_ice.processed_image)
+            k = cv2.waitKey(1500) & 0xFF  # Set refresh time for plot to 5 ms
+            if (k == 13) | (k == 10):  # Arbitrary end loop time
+                break
+            # else:
+                # print(k)
+
+
         img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 750, 100000)
 
         dims_ice_list = [x['Center Points'] for x in img_ice.data]
@@ -63,29 +87,37 @@ def main():
 
         while editing_flag:
 
-            img_comparison = img_ice.initial_image.copy()
-            preview_img_contours = deepcopy(img_drop.contours)
+            cv2.createTrackbar('X Shift', window_title, 1000+int(x_shift), 2000, nothing)
 
-            img_comparison = shift_contours(img_comparison, preview_img_contours, x_shift, y_shift)
-            for c in img_ice.contours:
-                cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
-            cv2.namedWindow(('Comparison' + str(abs(int(ice_file[-6:-4])))), cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(('Comparison' + str(abs(int(ice_file[-6:-4])))), 768, 768)
-            cv2.imshow(('Comparison' + str(abs(int(ice_file[-6:-4])))), img_comparison)
-            cv2.waitKey(1000)
+            while 1:
+                img_comparison = img_ice.initial_image.copy()
+                preview_img_contours = deepcopy(img_drop.contours)
 
-            x_shift_list = list()
-            pairs_list = list()
+                img_comparison = shift_contours(img_comparison, preview_img_contours, x_shift, y_shift)
+                for c in img_ice.contours:
+                    cv2.drawContours(img_comparison, c, -1, (0, 255, 0), 2)
 
-            this_input = input('Keep '+str(x_shift)+', '+str(y_shift)+' as xshift, yshift or enter new (<-Drop: neg., Drop->: pos.).')
-            try:
-                x_shift = int(this_input)
-                try:
-                    y_shift = int(input('yshift:'))
-                except ValueError:
-                    print('Invalid or empty input, keeping old yshift ' + str(y_shift) + '.')
-            except ValueError:
-                print('Invalid or empty input, keeping old xshift '+str(x_shift)+', '+str(y_shift)+'.')
+                cv2.imshow(window_title, img_comparison)
+
+                x_shift_list = list()
+                pairs_list = list()
+
+                x_shift = -1000+cv2.getTrackbarPos('X Shift', window_title)
+                k = cv2.waitKey(500) & 0xFF  # Set refresh time for plot to 5 ms
+                if (k == 13) | (k == 10):  # Arbitrary end loop time
+                    break
+                # else:
+                #     print(k)
+
+            # this_input = input('Keep '+str(x_shift)+', '+str(y_shift)+' as xshift, yshift or enter new (<-Drop: neg., Drop->: pos.).')
+            # try:
+            #     x_shift = int(this_input)
+            #     try:
+            #         y_shift = int(input('yshift:'))
+            #     except ValueError:
+            #         print('Invalid or empty input, keeping old yshift ' + str(y_shift) + '.')
+            # except ValueError:
+            #     print('Invalid or empty input, keeping old xshift '+str(x_shift)+', '+str(y_shift)+'.')
 
             # Actual call to finding matching drop for all crystals in current image
             for crystal in dims_ice_list:
@@ -190,7 +222,7 @@ def main():
     # plt.xlim((0, 1.1*np.max(dim_list)))
     # plt.ylim((0, 1.1*np.max(mass_list)))
 
-    save_flag = input('Save data?')
+    save_flag = input('Save data to file?')
     if save_flag == 'Yes' or save_flag == 'yes':
 
         save_dict = {"x_shift": x_shift_global_list, "y_shift": y_shift_global_list, 'remove': remove_list, "crystal": crystal_list}
@@ -198,10 +230,13 @@ def main():
         print('Data saved in '+folder+'mass_dim_data.dat.')
 
         plt.savefig(folder + 'plots/graph.png')
-        print('Graph saved in ' + folder + 'plots/graph.png.')
+        print('Graph saved in ' + folder + 'plots/mass_graph.png.')
 
     plt.show()
 
+
+def nothing(x):
+    pass
 
 def shift_contours(img, contours, x_shift, y_shift):
     for c in contours:

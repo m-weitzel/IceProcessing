@@ -8,6 +8,7 @@ import pickle
 from scipy.stats import norm
 import cv2
 import time
+import extract_fall_data
 
 folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
 pixel_size = 23.03  # in µm
@@ -18,7 +19,7 @@ save_flag = 1
 histogram_plt_flag = 0
 orientation_polar_flag = 0
 v_t_series_flag = 0
-ori_scatter_flag = 1
+ori_scatter_flag = 0
 centerpt_density_flag = 1
 
 
@@ -35,10 +36,12 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
     try:
         fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
     except FileNotFoundError:
-        fall_dist, orientation, centerpt, time_list = initialize_data(fldr, folder_list)
+        # fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
+        list_of_file_data = extract_fall_data.initialize_data(fldr, folder_list[1:10])
+
     vs = np.asarray(fall_dist) * pxl_size / exp_time * 100  # in cm/s
     projected_vs = [v * np.cos(o) for (v, o) in zip(vs, orientation)]
-
+    print('Number of fall streaks: '+str(len(projected_vs)))
     mass_data = load_mass_data(folder)
 
     t0 = time.time()
@@ -91,50 +94,6 @@ def load_v_data(fldr):
     orientation = list_of_lists[2]
     centerpt = list_of_lists[3]
     time_list = list_of_lists[4]
-
-    return fall_dist, orientation, centerpt, time_list
-
-
-def initialize_data(fldr, fldr_list):
-
-    cont_real = list()
-    fall_dist = list()
-    orientation = list()
-    centerpt = list()
-    time_list = list()
-
-    print('No old data file found, starting from scratch.')
-    try:
-        os.mkdir(fldr+'Fall/processed')
-    except FileExistsError:
-        pass
-
-    streak_filter_cond = 'dim_w > 4 or (np.asarray([b[0] for b in box])>(img.shape[1]-8)).any() \
-                          or (np.asarray([b[1] for b in box])>(img.shape[0]-8)).any() or (box < 8).any()'
-
-    for i, filename in enumerate(fldr_list):
-        if '_cropped' in filename:
-            img = MicroImg('Streak', fldr+'Fall', filename,
-                           thresh_type=('Bin', -180), minsize=75, maxsize=10000, dilation=1, optional_object_filter_condition=streak_filter_cond)
-
-            dims = img.data
-            conts = img.contours
-
-            for dim, cont in zip(dims, conts):
-                # if dim['Short Axis'] < 8:
-                cont_real.append(cont)
-                fall_dist.append(dim['Long Axis'])
-                orientation.append(dim['Orientation'])
-                centerpt.append(dim['Center Points'])
-                time_list.append([i])
-
-            img.contours = cont_real
-            print('Done processing ' + filename + ', ' + str(i+1) + ' of ' + str(len(fldr_list)) + '.')
-            # plt.imshow(img.processed_image)
-            cv2.imwrite(fldr+'Fall/processed/'+filename+'_processed.png', img.processed_image)
-
-    list_of_lists = (cont_real, fall_dist, orientation, centerpt, time_list)
-    pickle.dump(list_of_lists, open(fldr+'fall_speed_data.dat', 'wb'))
 
     return fall_dist, orientation, centerpt, time_list
 
@@ -245,7 +204,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
         if time == [curr_val]:
             temp_vals.append(v)
         if time != [curr_val]:
-            if len(temp_vals) > 0:
+            if len(temp_vals) > 5:
                 mean_vals[curr_val] = np.mean(temp_vals)
                 std_vals[curr_val] = np.std(temp_vals)
                 curr_val += 1
@@ -282,6 +241,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     plt.plot(time_fl, rm_vs, color='b')
     plt.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std, color='b', linestyle='--')
     plt.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]-rm_std, color='b', linestyle='--')
+    plt.ylim([0, np.max(rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std)])
     plt.title('Running Mean of Fall Speed over Time')
     plt.xlabel('Time in seconds')
     plt.ylabel('Running mean of fall velocity in cm/s')
