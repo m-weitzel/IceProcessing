@@ -204,6 +204,8 @@ def main():
     base_velocity_guess = [0, 0, 0]
     angle_leniency_deg = 10
     length_leniency_pct = 10
+    starting_streak = 250
+    num_streaks_processed = 75
 
     p_list = list()
     for k in range(0, len(a['times'])):
@@ -255,6 +257,14 @@ def main():
     streak_list = refine_streaks(streak_list, angle_leniency_deg, length_leniency_pct)
 
     only_long_streaks = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]#&(a.get_streak_length() > min_streak_length)]
+    if len(only_long_streaks)<(starting_streak+num_streaks_processed):
+        first_processed_streak = len(only_long_streaks)-num_streaks_processed
+        last_processed_streak = len(only_long_streaks)
+        print('Processing last {} streaks'.format(num_streaks_processed))
+    else:
+        first_processed_streak = starting_streak
+        last_processed_streak = starting_streak+num_streaks_processed
+
     # short_streaks = [a for a in streak_list if len(a.particle_streak) < min_streak_length]
     short_streaks = [a for a in streak_list if a not in only_long_streaks]
 
@@ -269,7 +279,7 @@ def main():
 
     fig, ax = plt.subplots(1)
     ax.set_aspect('equal')
-    for i, streak in enumerate(only_long_streaks[100:150]):
+    for i, streak in enumerate(only_long_streaks[first_processed_streak:last_processed_streak]):
         pos = sorted([p.spatial_position for p in streak.particle_streak], key=lambda pos_entry: pos_entry[1])
         ax.scatter([p[0] for p in pos], [p[1] for p in pos], c=cmap(i), s=50)
         ax.plot([p[0] for p in pos], [p[1] for p in pos], c=cmap(i))#, linewidth=streak.mean_diam*1e5)
