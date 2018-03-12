@@ -3,25 +3,29 @@ import numpy as np
 from scipy.spatial import distance as dist
 from imutils import perspective
 from imutils import contours
+from sklearn.cluster import KMeans
 import os
 from matplotlib import pyplot as plt
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, optional_object_filter_condition='False'):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, fill_flag=True, optional_object_filter_condition='False', min_dist_to_edge=4):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
         self.pixels_per_metric = 3
+        self.mindisttoedge = min_dist_to_edge
         self.minsize = minsize
         self.maxsize = maxsize
         self.dilation = dilation
+        self.fill_flag = fill_flag
         self.initial_image = cv2.imread(self.full_path())
         # self.initial_image = cv2.Laplacian(cv2.imread(self.full_path()), cv2.CV_64F)
         self.thresh_type = thresh_type
         self.bin_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
         self.data, self.processed_image = self.get_data_and_process(optional_object_filter_condition)
+
 
     def get_contours_from_img(self):
 
@@ -41,7 +45,7 @@ class MicroImg:
                 box = cv2.boxPoints(box)
                 box = np.array(box, dtype="int")
 
-                if ~((box > 2045).any() or (box < 4).any()):
+                if ~((box > (self.bin_img.shape[0]-self.mindisttoedge)).any() or (box < self.mindisttoedge).any()):
                     filtered_contours.append(c)
         return filtered_contours
 
@@ -78,7 +82,7 @@ class MicroImg:
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             else:
                 gray = img
-            gray = cv2.GaussianBlur(gray, (7, 7), 0)
+            gray = cv2.GaussianBlur(gray, (15, 15), 0)
 
             if self.thresh_type[0] == "Canny":
                 if self.thresh_type[1] == 0:
@@ -90,25 +94,68 @@ class MicroImg:
                 if self.thresh_type[1] != 0:
                     threshold = self.thresh_type[1]
                 else:
-                    threshold = gray.mean()-1.5*gray.std()
+                    threshold = gray.mean()-0.5*gray.std()
                 if np.sign(self.thresh_type[1]) == -1:
                     rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY)
                 else:
                     rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
             elif self.thresh_type[0] == "Otsu":
-                if self.thresh_type[1] != 0:
-                    threshold = self.thresh_type[1]
-                else:
-                    threshold = gray.mean()-1.5*gray.std()
-                if np.sign(self.thresh_type[1]) == -1:
-                    rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-                else:
-                    rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                    rt, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             elif self.thresh_type[0] == "Adaptive":
                 block_size = self.thresh_type[1]
                 # block_size = 751
                 adpt_constant = 7
                 thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, block_size, adpt_constant)
+            elif self.thresh_type[0] == "Gradient":
+                # grad_img = np.uint8(np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
+                grad_img = cv2.Laplacian(gray, cv2.CV_8U)
+                # if self.thresh_type[1] != 0:
+                #     threshold = self.thresh_type[1]
+                # else:
+                #     threshold = np.max((5, grad_img.mean()-0.5*grad_img.std()))
+                # rt, thresh = cv2.threshold(grad_img, threshold, 255, cv2.THRESH_BINARY)
+
+                grad_img = cv2.GaussianBlur(grad_img, (15, 15), 0)
+                # thresh = cv2.adaptiveThreshold(grad_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 501, 0)
+                rt, thresh = cv2.threshold(grad_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                # thresh_G = cv2.GaussianBlur(thresh, (15, 15), 0)
+                # _, thresh = cv2.threshold(thresh_G, 200, 255, cv2.THRESH_BINARY)
+
+                # dilation = self.dilation
+                # if dilation > 0:
+                #     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation, dilation))
+                #     thresh = cv2.dilate(thresh, kernel, iterations=1)
+                #     thresh = cv2.erode(thresh, kernel, iterations=1)
+                #
+                # h, w = thresh.shape[:2]
+                # fill_mask = np.zeros((h + 2, w + 2), np.uint8)
+                # working_img = thresh.copy()
+                #
+                # cv2.floodFill(working_img, fill_mask, (0, 0), 255)
+                # im_floodfill_inv = cv2.bitwise_not(working_img)
+
+                # thresh = thresh | im_floodfill_inv
+            elif self.thresh_type[0] == "kmeans":
+                im_list = img.reshape(img.shape[0] * img.shape[1], 3)
+                im_list_arr = np.asarray(im_list)
+                if self.thresh_type[1] == 0:
+                    n = 2
+                else:
+                    n = self.thresh_type[1]
+                pos_label = self.thresh_type[2]
+                kmeans = KMeans(n_clusters=n)
+                kmeans.fit(im_list_arr)
+
+                centroids = kmeans.cluster_centers_
+                # centroids = ms.cluster_centers_
+                # labels = ms.labels_
+                labels = kmeans.labels_
+
+                la = [1 if l == pos_label else 0 for l in labels]
+
+                thresh = np.reshape(la, [img.shape[0], img.shape[1]]).astype('uint8')
+
+
             # elif self.thresh_type[0] == "Color":
             #     lower_range = np.array([110, 50, 50])
             #     upper_range = np.array([130, 255, 255])
@@ -131,18 +178,18 @@ class MicroImg:
             h, w = thresh.shape[:2]
             mask = np.zeros((h + 2, w + 2), np.uint8)
 
-            # if fill_flag:
-            #     thresh_floodfill = thresh.copy()
-            #     cv2.floodFill(thresh_floodfill, mask, (0, 0), 255);
-            #     thresh_floodfill_inv = cv2.bitwise_not(thresh_floodfill)
-            #     if np.any(thresh_floodfill > 0):
-            #         print('Floodfill had any effect whatsoever.')
-            #     thresh_filled = thresh | thresh_floodfill_inv
-            #
-            #     if np.any((thresh|thresh_floodfill_inv) < 255):
-            #         thresh = thresh_filled
-            #     else:
-            #         print('Fill holes failed.')
+            if self.fill_flag:
+                thresh_floodfill = thresh.copy()
+                cv2.floodFill(thresh_floodfill, mask, (0, 0), 255);
+                thresh_floodfill_inv = cv2.bitwise_not(thresh_floodfill)
+                if np.any(thresh_floodfill > 0):
+                    print('Floodfill had any effect whatsoever.')
+                thresh_filled = thresh | thresh_floodfill_inv
+
+                if np.any((thresh|thresh_floodfill_inv) < 255):
+                    thresh = thresh_filled
+                else:
+                    print('Fill holes failed.')
 
         return thresh
 
