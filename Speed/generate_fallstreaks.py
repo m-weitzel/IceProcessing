@@ -165,6 +165,24 @@ def fit_powerlaw(x, y):
     return amp, index
 
 
+def refine_streaks(streak_list, angle_leniency, length_leniency):
+    for streak in streak_list:
+        if len(streak.particle_streak) > 1:
+            angles = [np.angle(s1.xpos - s2.xpos + 1j * (s1.ypos - s2.ypos), deg=True) for s1, s2 in
+                      zip(streak.particle_streak[:-1], streak.particle_streak[1:])]
+            median_ang = np.median(angles)
+            # outlier = np.where((np.asarray(angles) > (median_ang+angle_leniency)) or (np.asarray(angles) < (median_ang-angle_leniency)))
+            outlier = np.where(np.abs(np.asarray(angles)-median_ang) > angle_leniency)
+            # rem_angles = [angles[o] for o in outlier[0].tolist()]
+            for o in outlier[0].tolist()[::-1]:
+                if o == 0:
+                    del streak.particle_streak[0]
+                else:
+                    del streak.particle_streak[o+1]
+                print('Streak fixed.')
+    return streak_list
+
+
 def main():
     # path = '/uni-mainz.de/homes/maweitze/FallSpeedHolograms/2510/whole/whole/'
     # path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Tests_21Feb/'
@@ -184,6 +202,8 @@ def main():
     max_sizdiff = 0.05
     max_dist_from_predict = 0.5
     base_velocity_guess = [0, 0, 0]
+    angle_leniency_deg = 10
+    length_leniency_pct = 10
 
     p_list = list()
     for k in range(0, len(a['times'])):
@@ -231,6 +251,8 @@ def main():
         streak_list.append(new_streak)
         if not extended:
             print('Completed streak with '+str(len(new_streak.particle_streak))+' elements.')
+
+    streak_list = refine_streaks(streak_list, angle_leniency_deg, length_leniency_pct)
 
     only_long_streaks = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]#&(a.get_streak_length() > min_streak_length)]
     # short_streaks = [a for a in streak_list if len(a.particle_streak) < min_streak_length]
