@@ -2,13 +2,12 @@ import scipy.io as sio
 from scipy import optimize
 from matplotlib import pyplot as plt
 import numpy as np
-import time
 import pickle
 import os
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/'
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(path+filename_ps)
@@ -22,22 +21,24 @@ def main():
     pxl_size = 1
 
     # Properties for finding streaks
-    max_size_diff = 0.05
-    max_dist_from_predict = 0.5
-    base_velocity_guess = [0, 0, 0]
+    max_size_diff = 0.1
+    max_dist_from_predict = 1
+    base_velocity_guess = [0, -0.08, 0]
     min_streak_length = 5   # for separation between short and long streaks
 
     # Properties for filtering streaks
     angle_leniency_deg = 10
     length_leniency_pct = 10
     starting_streak = 250
-    num_streaks_processed = 75
+    num_streaks_processed = 15000
 
     # End of properties
 
     p_list = list()
     for k in range(0, len(a['times'])):
-        p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size, a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size, a['majsiz'][k][0], a['minsiz'][k][0]))
+        p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size,
+                                   a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size,
+                                   a['majsiz'][k][0], a['minsiz'][k][0]))
 
     last_holonum = p_list[-1].holonum
 
@@ -80,16 +81,14 @@ def main():
         streak_list.append(new_streak)
 
     streak_list = refine_streaks(streak_list, angle_leniency_deg, length_leniency_pct)
-
     only_long_streaks = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]
-    if len(only_long_streaks) < (starting_streak+num_streaks_processed):
-        first_processed_streak = len(only_long_streaks)-num_streaks_processed
+    if len(only_long_streaks) < (starting_streak+np.max([num_streaks_processed, len(only_long_streaks)])):
+        first_processed_streak = len(only_long_streaks)-np.min([num_streaks_processed, len(only_long_streaks)])
         last_processed_streak = len(only_long_streaks)
-        print('Processing last {} streaks'.format(num_streaks_processed))
+        print('Processing last {} out of {} streaks'.format(last_processed_streak-first_processed_streak, len(only_long_streaks)))
     else:
         first_processed_streak = starting_streak
         last_processed_streak = starting_streak+num_streaks_processed
-
     short_streaks = [a for a in streak_list if a not in only_long_streaks]
 
     v_list = list()
