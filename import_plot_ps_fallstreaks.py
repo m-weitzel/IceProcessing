@@ -4,10 +4,11 @@ import numpy as np
 import pickle
 from scipy import optimize
 from scipy import stats
-from itertools import cycle
-# from pylab import *
+from Speed.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks
 from matplotlib import style
 # style.use('dark_background')
+
+
 
 
 # Loading data ############################
@@ -22,20 +23,40 @@ folder_list = (
 
 )
 
+
+
 compare_list_folder = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/'  # Dendritic
+
+# Properties for filtering streaks
+angle_leniency_deg = 10
+length_leniency_pct = 10
+starting_streak = 250
+num_streaks_processed = 15000
+min_streak_length = 5   # for separation between short and long streaks
+
 
 full_dim_list = list()
 full_v_list = list()
 
 for folder in folder_list:
-    tmp = pickle.load(open(folder + 'vs_dim_data.dat', 'rb'))
-    dim_list = tmp['dims']
-    v_list = tmp['vs']
+    # tmp = pickle.load(open(folder + 'vs_dim_data.dat', 'rb'))
+    tmp = pickle.load(open(folder + 'streak_data.dat', 'rb'))
+    streak_list = tmp['streaks']
+    streak_list = refine_streaks(streak_list, angle_leniency_deg, length_leniency_pct)
+    streak_list = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]
 
-    full_dim_list += dim_list
-    full_v_list += v_list
+    full_dim_list += [np.median([p.majsiz*1e6 for p in s.particle_streak]) for s in streak_list]
+    this_v_list = list()
+    for s in streak_list:
+        pos = sorted([p.spatial_position for p in s.particle_streak], key=lambda pos_entry: pos_entry[1])
+        this_gaps = [q - p for (p, q) in zip(pos[:-2], pos[1:])]
 
-    print('Added {} streaks from {}.'.format(len(dim_list), folder))
+        vs = [np.sqrt(g[1]**2+g[0]**2)*100 for g in this_gaps]
+        this_v_list.append(np.median(vs))
+
+    full_v_list += this_v_list
+
+    print('Added {} streaks from {}.'.format(len(streak_list), folder))
 
 
 full_dim_list, full_v_list = zip(*sorted(zip(full_dim_list, full_v_list)))
@@ -78,7 +99,7 @@ amp_full, index_full = fit_powerlaw(full_dim_list, full_v_list)
 
 # Plotting things ############################
 
-dims_spaced = np.arange(np.ceil(np.max(dim_list)/10)*10)
+dims_spaced = np.arange(np.ceil(1.1*np.max(full_dim_list)/10)*10)
 almost_black = '#262626'
 fig, ax = plt.subplots(1)
 for this_dim_list, this_v_list in zip(full_dim_list, full_v_list):
