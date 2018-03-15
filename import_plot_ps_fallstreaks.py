@@ -16,12 +16,13 @@ folder_list = (
 
     # Clean Measurements
 
-    '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
+    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
     '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
+    '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
 
 )
 
-compare_list_folder = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/'  # Dendritic
+compare_list_folder = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/'  # Dendritic
 
 full_dim_list = list()
 full_v_list = list()
@@ -33,6 +34,8 @@ for folder in folder_list:
 
     full_dim_list += dim_list
     full_v_list += v_list
+
+    print('Added {} streaks from {}.'.format(len(dim_list), folder))
 
 
 full_dim_list, full_v_list = zip(*sorted(zip(full_dim_list, full_v_list)))
@@ -79,12 +82,18 @@ dims_spaced = np.arange(np.ceil(np.max(dim_list)/10)*10)
 almost_black = '#262626'
 fig, ax = plt.subplots(1)
 for this_dim_list, this_v_list in zip(full_dim_list, full_v_list):
-        ax.scatter(full_dim_list, full_v_list, alpha=1,
-                   edgecolors=almost_black, linewidth=1, zorder=0)
+    ax.scatter(this_dim_list, this_v_list, alpha=1,
+               edgecolors=almost_black, linewidth=1, zorder=0)
     # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
 ax.scatter(comp_dim_list, comp_v_list, alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
 
+ax.grid()
 ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Full', linewidth=3, zorder=1)
+ax.set_xlim([0, np.max(dims_spaced)])
+ax.set_xlabel('Maximum diameter in µm', fontsize=20)
+ax.set_ylim([0, 1.1*np.max(comp_v_list)])
+ax.set_ylabel('Fall speed in mm/s', fontsize=20)
+ax.tick_params(axis='both', which='major', labelsize=20)
 
 plt.show()
