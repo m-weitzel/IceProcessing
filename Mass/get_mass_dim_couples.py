@@ -1,8 +1,6 @@
 import numpy as np
-import sys
-sys.path.append('../utilities')
 from IceSizing import MicroImg
-import find_couples
+import utilities.find_couples as find_couples
 from matplotlib import pyplot as plt
 import cv2
 import pickle

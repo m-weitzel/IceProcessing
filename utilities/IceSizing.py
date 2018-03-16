@@ -4,8 +4,6 @@ from scipy.spatial import distance as dist
 from imutils import perspective
 from imutils import contours
 from sklearn.cluster import KMeans
-import os
-from matplotlib import pyplot as plt
 
 
 class MicroImg:

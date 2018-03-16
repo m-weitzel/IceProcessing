@@ -1,8 +1,6 @@
-import os
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
-import pickle
 from IceSizing import MicroImg
 
 folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'

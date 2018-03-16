@@ -5,7 +5,6 @@ import pickle
 from scipy import optimize
 from scipy import stats
 from itertools import cycle
-# from pylab import *
 from matplotlib import style
 # style.use('dark_background')
 
