@@ -30,7 +30,7 @@ def main():
     for k in range(0, len(a['times'])):
         p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size,
                                    a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size,
-                                   a['majsiz'][k][0], a['minsiz'][k][0]))
+                                   a['majsiz'][k][0], a['minsiz'][k][0], a['ims'][k][0]))
 
     last_holonum = p_list[-1].holonum
 
@@ -162,7 +162,7 @@ def main():
 
 
 class FallParticle:
-    def __init__(self, holonum, index_in_hologram, xpos, ypos, zpos, majsiz, minsiz):
+    def __init__(self, holonum, index_in_hologram, xpos, ypos, zpos, majsiz, minsiz, *args):
         self.holonum = holonum
         self.index_in_hologram = index_in_hologram
         self.xpos = xpos
@@ -172,6 +172,8 @@ class FallParticle:
         self.majsiz = majsiz
         self.minsiz = minsiz
         self.aspr = majsiz/minsiz
+        if len(args) > 0:
+            self.partimg = args[0]
 
 
 class ParticleStreak:

@@ -10,7 +10,7 @@ from Speed.generate_fallstreaks import ParticleStreak, FallParticle, refine_stre
 # Loading data ############################
 folder_list = (
     # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
-    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
+    '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
     '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
 )
 
@@ -21,12 +21,12 @@ starting_streak = 250
 num_streaks_processed = 15000
 min_streak_length = 5   # for separation between short and long streaks
 
-
 list_of_dim_lists = list()
 list_of_v_lists = list()
 list_of_cap_lists = list()
 list_of_aspr_lists = list()
 list_of_streakid_lists = list()
+list_of_im_lists = list()
 
 streak_id = 0
 
@@ -41,6 +41,7 @@ for folder in folder_list:
     this_aspr_list = list()
     this_cap_list = list()
     this_streakid_list = list()
+    this_im_list = list()
 
     for s in streak_list:
         pos = sorted([p.spatial_position for p in s.particle_streak], key=lambda pos_entry: pos_entry[1])
@@ -53,6 +54,7 @@ for folder in folder_list:
         this_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])
         this_cap_list.append(([0.134 *(0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)) for p in s.particle_streak]))
         this_streakid_list.append([streak_id]*len(s.particle_streak))
+        this_im_list.append([p.partimg for p in s.particle_streak])
         streak_id += 1
 
     list_of_dim_lists.append(this_dim_list)
@@ -60,6 +62,7 @@ for folder in folder_list:
     list_of_cap_lists.append(this_cap_list)
     list_of_aspr_lists.append(this_aspr_list)
     list_of_streakid_lists.append(this_streakid_list)
+    list_of_im_lists.append(this_im_list)
 
     print('Added {} streaks from {}.'.format(len(streak_list), folder))
 
@@ -139,18 +142,30 @@ ax.tick_params(axis='both', which='major', labelsize=20)
 
 def onpick(event):
 
-    if event.artist != line: return True
+    if event.artist != line:
+        return True
 
-    N = len(event.ind)
-    if not N: return True
+    # n = len(event.ind)
 
-    fig_i = plt.figure()
+    # if not n: return True
+
+
+    cmap = plt.get_cmap('bone')
     for subplotnum, dataind in enumerate(event.ind):
-        ax = fig_i.add_subplot(N,1,subplotnum+1)
-        ax.plot(list_of_dim_lists[full_streakid_list[dataind]])
-        # ax.set_ylim(1, 3)
-    fig_i.show()
+        fig_i = plt.figure()
+        for m, im in enumerate(list_of_im_lists[0][full_streakid_list[dataind]]):
+            n = len(list_of_im_lists[0][full_streakid_list[dataind]])
+            ax = fig_i.add_subplot(1, n, m+1)
+            # ax.plot(list_of_dim_lists[full_streakid_list[dataind]])
+            ax.imshow(np.abs(im), cmap=cmap)
+            # ax.set_ylim(1, 3)
+            # ax.set_xlabel('Index of particle in streak', fontsize=20)
+            # ax.set_ylabel('Maximum diameter in µm', fontsize=20)
+            # ax.set_title('Index evolution of particle size', fontsize=20)
+
+        fig_i.show()
     return True
+
 
 fig.canvas.mpl_connect('pick_event', onpick)
 
