@@ -67,18 +67,26 @@ for folder in folder_list:
     print('Added {} streaks from {}.'.format(len(streak_list), folder))
 
 full_dim_list = list()
+full_dim_median_list = list()
 full_v_list = list()
+full_v_median_list = list()
 full_cap_list = list()
 full_streakid_list = list()
+full_im_list = list()
 
-for d, v, c, s in zip(list_of_dim_lists, list_of_v_lists, list_of_cap_lists, list_of_streakid_lists):
+
+for d, v, c, s, i in zip(list_of_dim_lists, list_of_v_lists, list_of_cap_lists, list_of_streakid_lists, list_of_im_lists):
     for d1, v1, c1, s1 in zip(d, v, c, s):
-        full_dim_list.append(np.median(d1))
-        full_v_list.append(np.median(v1))
+        full_dim_median_list.append(np.median(d1))
+        full_v_median_list.append(np.median(v1))
         full_cap_list.append(np.median(c1))
         full_streakid_list.append(s1[0])
+    full_im_list.extend(i)
+    full_dim_list.extend(d)
+    full_v_list.extend(v)
 
-full_dim_list, full_v_list, full_cap_list, full_streakid_list = zip(*sorted(zip(full_dim_list, full_v_list, full_cap_list, full_streakid_list)))
+full_dim_list, full_dim_median_list, full_v_list, full_v_median_list, full_cap_list, full_streakid_list, full_im_list = \
+    zip(*sorted(zip(full_dim_list, full_dim_median_list, full_v_list, full_v_median_list, full_cap_list, full_streakid_list, full_im_list)))
 full_dim_list = list(full_dim_list)
 full_v_list = list(full_v_list)
 full_cap_list = list(full_cap_list)
@@ -114,11 +122,11 @@ def fit_powerlaw(x, y):
     return amp, index
 
 
-amp_full, index_full = fit_powerlaw(full_dim_list, full_v_list)
+amp_full, index_full = fit_powerlaw(full_dim_median_list, full_v_median_list)
 
 # Plotting things ############################
 
-dims_spaced = np.arange(np.ceil(1.1 * np.max(full_dim_list) / 10) * 10)
+dims_spaced = np.arange(np.ceil(1.1 * np.max(full_dim_median_list) / 10) * 10)
 almost_black = '#262626'
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -128,14 +136,14 @@ ax = fig.add_subplot(111)
 #                edgecolors=almost_black, linewidth=1, zorder=0, picker=5)
 #     # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
-line = ax.scatter(full_dim_list, full_v_list, alpha=1,
+line = ax.scatter(full_dim_median_list, full_v_median_list, alpha=1,
                   edgecolors=almost_black, linewidth=1, zorder=0, picker=5)
 
 ax.grid()
 ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Full', linewidth=3, zorder=1)
 ax.set_xlim([0, np.max(dims_spaced)])
 ax.set_xlabel('Maximum diameter in µm', fontsize=20)
-ax.set_ylim([0, 1.1 * np.max(full_v_list)])
+ax.set_ylim([0, 1.1 * np.max(full_v_median_list)])
 ax.set_ylabel('Fall speed in mm/s', fontsize=20)
 ax.tick_params(axis='both', which='major', labelsize=20)
 
@@ -153,16 +161,25 @@ def onpick(event):
     cmap = plt.get_cmap('bone')
     for subplotnum, dataind in enumerate(event.ind):
         fig_i = plt.figure()
-        for m, im in enumerate(list_of_im_lists[0][full_streakid_list[dataind]]):
-            n = len(list_of_im_lists[0][full_streakid_list[dataind]])
-            ax = fig_i.add_subplot(1, n, m+1)
-            # ax.plot(list_of_dim_lists[full_streakid_list[dataind]])
+        fig_i.suptitle('Particle {}'.format(full_streakid_list[dataind]), fontsize=20)
+        for m, im in enumerate(full_im_list[full_streakid_list[dataind]]):
+            n = len(full_im_list[full_streakid_list[dataind]])
+            ax = plt.subplot2grid((2, n), (0, m))
             ax.imshow(np.abs(im), cmap=cmap)
             # ax.set_ylim(1, 3)
             # ax.set_xlabel('Index of particle in streak', fontsize=20)
             # ax.set_ylabel('Maximum diameter in µm', fontsize=20)
             # ax.set_title('Index evolution of particle size', fontsize=20)
-
+        ax1 = plt.subplot2grid((2, n), (1, 0), colspan=n)
+        fdl = full_dim_list[full_streakid_list[dataind]]
+        ax1.plot(fdl, color='b')
+        ax1.axhline(y=full_dim_median_list[full_streakid_list[dataind]], color='b', linewidth=3)
+        ax1.set_ylim(0, 1.1*np.max(fdl))
+        ax2 = ax1.twinx()
+        fvl = full_v_list[full_streakid_list[dataind]]
+        ax2.plot(range(1, len(fvl)+1), fvl, color='g')
+        ax2.axhline(y=full_v_median_list[full_streakid_list[dataind]], color='g', linewidth=3)
+        ax2.set_ylim(0, 1.1*np.max(fvl))
         fig_i.show()
     return True
 
