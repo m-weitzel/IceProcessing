@@ -11,7 +11,7 @@ from Speed.generate_fallstreaks import ParticleStreak, FallParticle, refine_stre
 # Loading data ############################
 folder_list = (
     # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
-    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
+    '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
     '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
 )
 
@@ -25,84 +25,63 @@ xlims = [-2.3, 2.3]
 ylims = [-2.9, 2.9]
 
 list_of_dim_lists = list()
-list_of_pos_lists = list()
-list_of_v_lists = list()
-list_of_cap_lists = list()
-list_of_aspr_lists = list()
-list_of_streakid_lists = list()
-list_of_im_lists = list()
-
-streak_id = 0
+list_of_streak_lists = list()
+info_list = list()
 
 for folder in folder_list:
     tmp = pickle.load(open(folder + 'streak_data.dat', 'rb'))
     streak_list = tmp['streaks']
     streak_list = refine_streaks(streak_list, angle_leniency_deg, length_leniency_pct)
     streak_list = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]
-
     this_dim_list = list()
-    this_pos_list = list()
-    this_v_list = list()
-    this_aspr_list = list()
-    this_cap_list = list()
-    this_streakid_list = list()
-    this_im_list = list()
-
-    for s in streak_list:
-        pos = sorted([p.spatial_position for p in s.particle_streak], key=lambda pos_entry: pos_entry[1])
-        this_gaps = [q - p for (p, q) in zip(pos[:-1], pos[1:])]
-        s_majsiz = [t.majsiz * 1e6 for t in s.particle_streak]
-        s_minsiz = [t.minsiz*1e6 for t in s.particle_streak]
-
+    for i, s in enumerate(streak_list):
         this_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
-        this_pos_list.append([p.spatial_position for p in s.particle_streak])
-        this_v_list.append([np.sqrt(g[1] ** 2 + g[0] ** 2) * 100 for g in this_gaps])
-        this_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])
-        this_cap_list.append(([0.134 *(0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)) for p in s.particle_streak]))
-        this_streakid_list.append([streak_id]*len(s.particle_streak))
-        this_im_list.append([p.partimg for p in s.particle_streak])
-        streak_id += 1
-
+        info_list.append({'folder': folder, 'local_index': i})
     list_of_dim_lists.append(this_dim_list)
-    list_of_pos_lists.append(this_pos_list)
-    list_of_v_lists.append(this_v_list)
-    list_of_cap_lists.append(this_cap_list)
-    list_of_aspr_lists.append(this_aspr_list)
-    list_of_streakid_lists.append(this_streakid_list)
-    list_of_im_lists.append(this_im_list)
+    list_of_streak_lists.append(streak_list)
+
 
     print('Added {} streaks from {}.'.format(len(streak_list), folder))
 
-full_dim_list = list()
 full_dim_median_list = list()
+full_streak_list = list()
+
+for d, s in zip(list_of_dim_lists, list_of_streak_lists):
+    for d1, s1 in zip(d, s):
+        full_dim_median_list.append(np.median(d1))
+        full_streak_list.append(s1)
+
+full_dim_median_list, full_streak_list, info_list = zip(*sorted(zip(full_dim_median_list, full_streak_list, info_list)))
+
+full_dim_list = list()
 full_pos_list = list()
+full_aspr_list = list()
 full_v_list = list()
 full_v_median_list = list()
 full_cap_list = list()
 full_streakid_list = list()
 full_im_list = list()
 
+streak_id = 0
 
-for d, p, v, c, s, i in zip(list_of_dim_lists, list_of_pos_lists, list_of_v_lists, list_of_cap_lists, list_of_streakid_lists, list_of_im_lists):
-    for d1, v1, c1, s1 in zip(d, v, c, s):
-        full_dim_median_list.append(np.median(d1))
-        full_v_median_list.append(np.median(v1))
-        full_cap_list.append(np.median(c1))
-        full_streakid_list.append(s1[0])
-    full_im_list.extend(i)
-    full_dim_list.extend(d)
-    full_pos_list.extend(p)
-    full_v_list.extend(v)
+for s in full_streak_list:
+    # pos = sorted([p.spatial_position for p in s.particle_streak], key=lambda pos_entry: pos_entry[1])
+    pos = [p.spatial_position for p in s.particle_streak]
+    this_gaps = [q - p for (p, q) in zip(pos[:-1], pos[1:])]
+    s_majsiz = [t.majsiz * 1e6 for t in s.particle_streak]
+    s_minsiz = [t.minsiz * 1e6 for t in s.particle_streak]
 
-full_dim_list, full_dim_median_list, full_pos_list, full_v_list, full_v_median_list, full_cap_list, full_streakid_list, full_im_list = \
-    zip(*sorted(zip(full_dim_list, full_dim_median_list, full_pos_list, full_v_list, full_v_median_list, full_cap_list, full_streakid_list, full_im_list)))
-full_dim_list = list(full_dim_list)
-full_pos_list = list(full_pos_list)
-full_v_list = list(full_v_list)
-full_cap_list = list(full_cap_list)
-full_streakid_list = list(full_streakid_list)
-list_of_aspr_lists = list_of_aspr_lists[0]
-list_of_dim_lists = list_of_dim_lists[0]
+    full_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
+    full_pos_list.append([p.spatial_position for p in s.particle_streak])
+    full_v_list.append([np.sqrt(g[1] ** 2 + g[0] ** 2) * 100 for g in this_gaps])
+    full_v_median_list.append(np.median(full_v_list[-1]))
+    full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])
+    full_cap_list.append(
+        ([0.134 * (0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)) for p in s.particle_streak]))
+    # full_streakid_list.append([streak_id] * len(s.particle_streak))
+    full_streakid_list.append(streak_id)
+    full_im_list.append([p.partimg for p in s.particle_streak])
+    streak_id += 1
 
 # Fitting power law ############################
 powerlaw = lambda x, amp, index: amp * (x**index)
@@ -172,7 +151,7 @@ def onpick(event):
         fig_i = plt.figure()
         n = len(full_im_list[full_streakid_list[dataind]])
         fig_fullshape = (2, n+2)
-        fig_i.suptitle('Particle {}'.format(full_streakid_list[dataind]), fontsize=20)
+        fig_i.suptitle('Particle {} in folder {}, local index {}'.format(full_streakid_list[dataind], info_list[dataind]['folder'][-6:-1], info_list[dataind]['local_index']), fontsize=14)
         for m, im in enumerate(full_im_list[full_streakid_list[dataind]]):
             ax = plt.subplot2grid(fig_fullshape, (0, m))
             ax.imshow(np.abs(im), cmap=cmap)
