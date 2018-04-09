@@ -151,11 +151,19 @@ def onpick(event):
         fig_i = plt.figure()
         n = len(full_im_list[full_streakid_list[dataind]])
         fig_fullshape = (2, n+2)
-        fig_i.suptitle('Particle {} in folder {}, local index {}'.format(full_streakid_list[dataind], info_list[dataind]['folder'][-6:-1], info_list[dataind]['local_index']), fontsize=14)
-        for m, im in enumerate(full_im_list[full_streakid_list[dataind]]):
+        fig_i.suptitle('Particle {} in folder {}, local index {}'.format(full_streakid_list[dataind], info_list[dataind]['folder'][36:46], info_list[dataind]['local_index']), fontsize=14)
+
+        iml = full_im_list[full_streakid_list[dataind]]
+        im_maxsize = max([im.shape for im in iml])
+
+        for m, im in enumerate(iml):
             ax = plt.subplot2grid(fig_fullshape, (0, m))
             ax.imshow(np.abs(im), cmap=cmap)
-            # ax.set_ylim(1, 3)
+            frame1 = plt.gca()
+            frame1.axes.xaxis.set_ticklabels([])
+            frame1.axes.yaxis.set_ticklabels([])
+            ax.set_ylim(0, im_maxsize[0])
+            ax.set_xlim(0, im_maxsize[1])
             # ax.set_xlabel('Index of particle in streak', fontsize=20)
             # ax.set_ylabel('Maximum diameter in µm', fontsize=20)
             # ax.set_title('Index evolution of particle size', fontsize=20)
