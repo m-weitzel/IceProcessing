@@ -56,6 +56,7 @@ full_dim_median_list, full_streak_list, info_list = zip(*sorted(zip(full_dim_med
 full_dim_list = list()
 full_pos_list = list()
 full_aspr_list = list()
+full_angle_list = list()
 full_v_list = list()
 full_v_median_list = list()
 full_cap_list = list()
@@ -65,7 +66,7 @@ full_im_list = list()
 streak_id = 0
 
 for s in full_streak_list:
-    # pos = sorted([p.spatial_position for p in s.particle_streak], key=lambda pos_entry: pos_entry[1])
+    pos = sorted([p.spatial_position for p in s.particle_streak], key=lambda pos_entry: pos_entry[1])
     pos = [p.spatial_position for p in s.particle_streak]
     this_gaps = [q - p for (p, q) in zip(pos[:-1], pos[1:])]
     s_majsiz = [t.majsiz * 1e6 for t in s.particle_streak]
@@ -73,15 +74,30 @@ for s in full_streak_list:
 
     full_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
     full_pos_list.append([p.spatial_position for p in s.particle_streak])
-    full_v_list.append([np.sqrt(g[1] ** 2 + g[0] ** 2) * 100 for g in this_gaps])
-    full_v_median_list.append(np.median(full_v_list[-1]))
     full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])
+    full_angle_list.append([np.arctan(g[0]/g[1]) for g in this_gaps])
+    full_v_list.append([np.sqrt(g[1] ** 2 + g[0] ** 2) * 100 for g in this_gaps])
+    # full_v_list.append([np.sqrt(g[1] ** 2) * 100 for g in this_gaps])
+    # full_v_list.append([-g[1] * 100 for g in this_gaps])
+
     full_cap_list.append(
         ([0.134 * (0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)) for p in s.particle_streak]))
     # full_streakid_list.append([streak_id] * len(s.particle_streak))
     full_streakid_list.append(streak_id)
     full_im_list.append([p.partimg for p in s.particle_streak])
     streak_id += 1
+
+
+def fall_speed_projection(v_list, angle_list):
+    mean_mean_angle = np.mean([np.mean(c) for c in full_angle_list])
+    new_angles = [a-mean_mean_angle for a in angle_list]
+    v_list = [v*np.cos(beta) for v, beta in zip(v_list, new_angles)]
+
+    return v_list, mean_mean_angle
+
+
+full_v_list, mean_angle = fall_speed_projection(full_v_list, full_angle_list)
+full_v_median_list = [np.median(v) for v in full_v_list]
 
 # Fitting power law ############################
 powerlaw = lambda x, amp, index: amp * (x**index)
@@ -162,8 +178,10 @@ def onpick(event):
             frame1 = plt.gca()
             frame1.axes.xaxis.set_ticklabels([])
             frame1.axes.yaxis.set_ticklabels([])
+            ax.set_xlabel(m, fontsize=20)
             ax.set_ylim(0, im_maxsize[0])
             ax.set_xlim(0, im_maxsize[1])
+            plt.subplots_adjust(wspace=0.8)
             # ax.set_xlabel('Index of particle in streak', fontsize=20)
             # ax.set_ylabel('Maximum diameter in µm', fontsize=20)
             # ax.set_title('Index evolution of particle size', fontsize=20)
@@ -173,6 +191,8 @@ def onpick(event):
         ax1.axhline(y=full_dim_median_list[full_streakid_list[dataind]], ls='--', c='b')
         ax1.set_ylim(0, 1.1*np.max(fdl))
         ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax1.set_xlabel('Index', fontsize=20)
+        ax1.set_ylabel('Particle Max Diameter ($\mu$m)', fontsize=20)
 
         ax2 = ax1.twinx()
         fvl = full_v_list[full_streakid_list[dataind]]
@@ -181,6 +201,7 @@ def onpick(event):
         ax2.axhline(y=full_v_median_list[full_streakid_list[dataind]], ls='--', c='g')
         ax2.set_ylim(0, 1.1*np.max(fvl))
         ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax2.set_ylabel('Fall Speed (mm/s)', fontsize=20)
 
         fpl = full_pos_list[full_streakid_list[dataind]]
         ax3 = plt.subplot2grid(fig_fullshape, (0, n), rowspan=2, colspan=2)
@@ -188,11 +209,16 @@ def onpick(event):
         ax3.grid()
         ax3.set_xlim(xlims)
         ax3.set_ylim(ylims)
+        ax3.yaxis.tick_right()
+        ax3.yaxis.set_label_position('right')
+        ax3.set_xlabel('Particle x position', fontsize=20)
+        ax3.set_ylabel('Particle y (vertical) position', fontsize=20)
 
         fig_i.show()
     return True
 
 
+# print('Mean Fall Angle: {}°'.format(mean_angle))
 fig.canvas.mpl_connect('pick_event', onpick)
 
 plt.show()
