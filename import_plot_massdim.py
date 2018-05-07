@@ -1,3 +1,7 @@
+""" Plotting script for m(D) relationship and parameterization. Loads mass_dim_data.dat from all listed folders,
+puts all mass and dimension values in a list and scatter plots them. Then defines a parameterization that is also plotted,
+along with parameterizations from literature."""
+
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 import numpy as np
@@ -5,7 +9,7 @@ import pickle
 from scipy import optimize
 from scipy import stats
 from itertools import cycle
-from matplotlib import style
+# from matplotlib import style
 # style.use('dark_background')
 
 

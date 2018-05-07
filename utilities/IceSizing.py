@@ -1,3 +1,18 @@
+""" Contains the MicroImg class.
+Central code for the sizing of microscopic images of ice crystals and water drops.
+The MicroImg constructor expects the following inputs:
+type_phase: Phase of the objects in the image. 'Drop' lets thresholding default to binary color thresholding
+folder: Folder containing the image
+filename: File name of the image to be investigated
+thresh_type: 2-tuple of the threshold identifier ('Bin', 'Otsu', 'Adaptive', 'Canny', 'kmeans', 'Gradient') and
+            an associated parameter (e.g. threshold value for "Bin" or window size for "adaptive"
+minsize, maxsize: minimum and maximum size of detected objects
+dilation: width of dilation and erosion in pixels
+fill_flag: boolean toggling whether holes within objects are to be manually filled or not
+min_dist_to_edge: particles closer to the image edges are disregarded
+optional_object_filter: manual string containing a condition used to filter out detected objects
+"""
+
 import cv2
 import numpy as np
 from scipy.spatial import distance as dist
@@ -7,7 +22,7 @@ from sklearn.cluster import KMeans
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, fill_flag=True, optional_object_filter_condition='False', min_dist_to_edge=4):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, fill_flag=True, min_dist_to_edge=4, optional_object_filter_condition='False'):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
@@ -23,7 +38,6 @@ class MicroImg:
         self.bin_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
         self.data, self.processed_image = self.get_data_and_process(optional_object_filter_condition)
-
 
     def get_contours_from_img(self):
 
@@ -280,6 +294,7 @@ def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_
 
 def main():
     None
+
 
 if __name__ == "__main__":
     main()

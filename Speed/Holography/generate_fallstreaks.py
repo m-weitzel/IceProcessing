@@ -1,3 +1,11 @@
+""" Contains the classes FallParticle and ParticleStreak.
+Loads a "ps_bypredict.mat" file which contains a matlab array of particle objects with descriptive properties. From those,
+ find_streak_particles tries to find objects in (temporally) consecutive holograms with a predetermined vague spatial
+ relationship to each other. Generally, this relationship is determined from an estimated velocity as a certain distance
+ away following gravity. Objects within a certain distance of that estimated location are then accepted.
+ Groups of thusly connected FallParticles are considered a ParticleStreak.
+ A dictionary of ParticleStreaks is eventually saved as "streak_data.dat" if the user confirms."""
+
 import scipy.io as sio
 from matplotlib import pyplot as plt
 import numpy as np

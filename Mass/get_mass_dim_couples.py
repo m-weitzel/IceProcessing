@@ -1,11 +1,18 @@
-import numpy as np
-from IceSizing import MicroImg
-import utilities.find_couples as find_couples
-from matplotlib import pyplot as plt
-import cv2
-import pickle
+""" Interactive ice crystal detection script that shows the user an ice image (from folder) with adjustable sliders for threshold
+and dilation properties. Subsequently, corresponding drop image is shown and matching of drop to crystl can be adjusted.
+Couple images are saved after every image. mass_dim_data.dat and graph.png are only saved if, after the last couple,
+saving flag is confirmed by user input."""
+
+
 import os
+import pickle
 from copy import deepcopy
+
+import cv2
+import numpy as np
+from utilities.IceSizing import MicroImg
+import Mass.find_couples as find_couples
+from matplotlib import pyplot as plt
 
 
 def main():
@@ -74,7 +81,6 @@ def main():
                 break
             # else:
                 # print(k)
-
 
         img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 750, 100000)
 
@@ -236,12 +242,14 @@ def main():
 def nothing(x):
     pass
 
+
 def shift_contours(img, contours, x_shift, y_shift):
     for c in contours:
         c[:, :, 0] += int(x_shift)
         c[:, :, 1] += int(y_shift)
         cv2.drawContours(img, c, -1, (255, 0, 0), 2)
     return img
+
 
 if __name__ == "__main__":
     main()

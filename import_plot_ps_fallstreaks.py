@@ -1,9 +1,11 @@
+""" Creates v(D) plot of all fall track (Holography) data ('streak_data.dat') from all folders listed in folder list."""
+
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pickle
 from scipy import optimize
-from Speed.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks
+from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks
 # from matplotlib import style
 # style.use('dark_background')
 

@@ -1,3 +1,8 @@
+""" Compares different object detection methods applied to the same ice crystal image, overlaying them as diversely colored
+contours on top of the image itself. Is also capable of loading a "ground truth" image and adding its contours as a reference.
+The method "eval_contour_quality" can then quantitatively compare how the compared methods misdetect the objects."""
+
+
 import os
 import cv2
 import numpy as np

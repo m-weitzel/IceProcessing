@@ -1,6 +1,10 @@
+""" Class and method to find matching ice crystals and drops.
+     Takes lists of properties of ice crystals and drops in an image couple as input. Uses x_shift_dist and y_shift_dist
+     to define how much spatial offset is between both images. Then tries to find the closest drop for each crystal
+     in the list."""
+
 import cv2
 import numpy as np
-# from IceSizing import MicroImg
 
 
 class IceDropCouple:
@@ -62,7 +66,6 @@ def find_closest_drop(crystal, drop_list, x_shift_dist=0, y_shift_dist = 0, max_
 
 
 def main(ice_contours, drop_contours, x_shift_guess=-200, maxdist=250):
-
     ice_crystal_list = list()
     drop_list = list()
     x_shift_list = list()
@@ -120,6 +123,7 @@ def main(ice_contours, drop_contours, x_shift_guess=-200, maxdist=250):
     #         cv2.circle(img_comparison, pair.drop_center, 7, (255, 0, 0), -1)
     #         cv2.line(img_comparison, pair.drop_center, pair.ice_center, (255, 255, 255))
     return pairs_list
+
 
 if __name__ == "__main__":
     main()
