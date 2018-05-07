@@ -6,7 +6,7 @@ from utilities.IceSizing import MicroImg
 
 
 def main():
-    label_img = True
+    label_img = False
 
     # folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'
     folder = '../../../Dropbox/Dissertation/Ergebnisse/EisMainz/CNN/Training/3103M1/'
@@ -64,7 +64,8 @@ def main():
         for c in conts:
             cv2.fillPoly(object_detected_img, pts=[c], color=0)
 
-        eval_contour_quality(img_data, object_detected_img, label_img, filter)
+        if label_img:
+            eval_contour_quality(img_data, object_detected_img, label_img, filter)
 
     cols = ((255, 0, 0), (0, 200, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255))
     col_label = (255, 255, 255)
