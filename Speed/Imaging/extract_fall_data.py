@@ -55,23 +55,27 @@ def initialize_data(fldr, fldr_list):
     # list_of_lists = (cont_real, fall_dist, orientation, centerpt, time_list)
     # pickle.dump(list_of_lists, open(fldr+'fall_speed_data.dat', 'wb'))
 
-    pickle.dump(list_of_file_data, open(fldr+'fall_streak_data.dat', 'wb'))
+    pickle.dump(list_of_file_data, open(fldr+'fall_speed_data.dat', 'wb'))
 
     list_of_file_data = condense_streaks(list_of_file_data)
 
+    cont_list = list()
     fall_dist = list()
     orientation = list()
     centerpt = list()
     time_list = list()
 
     for file in list_of_file_data:
+        cont_list.extend(file[1])
         fall_dist.extend(file[2])
         orientation.extend(file[3])
         centerpt.extend(file[4])
         time_list.extend(file[5])
 
-    return fall_dist, orientation, centerpt, time_list
-    # return list_of_file_data
+    list_of_lists = cont_list, fall_dist, orientation, centerpt, time_list
+    pickle.dump(list_of_lists, open(fldr+'fall_speed_data.dat', 'wb'))
+
+    return list_of_lists
 
 
 def condense_streaks(list_of_file_data):

@@ -9,27 +9,30 @@ import pickle
 from scipy import optimize
 from scipy import stats
 from itertools import cycle
+import os
+from utilities.find_ccr_folder import find_ccr
 # from matplotlib import style
 # style.use('dark_background')
 
 
+basedir = find_ccr()
 folder_list = (
 
     # Clean Measurements
 
-    '/uni-mainz.de/homes/maweitze/CCR/2203/M1/',  # Columnar
-    '/uni-mainz.de/homes/maweitze/CCR/2203/M2/',  # Columnar, Bullet Rosettes
-    '/uni-mainz.de/homes/maweitze/CCR/3103/M1/',  # Columnar
-    '/uni-mainz.de/homes/maweitze/CCR/1107/M1/',  # Dense Irregular
-    '/uni-mainz.de/homes/maweitze/CCR/0808/M1/',  # Columnar
+    os.path.join(basedir, '2203/M1/'),  # Columnar
+    os.path.join(basedir, '2203/M2/'),  # Columnar, Bullet Rosettes
+    os.path.join(basedir, '3103/M1/'),  # Columnar
+    os.path.join(basedir, '1107/M1/'),  # Dense Irregular
+    os.path.join(basedir, '0808/M1/'),  # Columnar
 
     # Medium measurements
 
-    '/uni-mainz.de/homes/maweitze/CCR/0604/M1/',    # Aggregates
-    '/uni-mainz.de/homes/maweitze/CCR/0208/M1/',    # Dendritic, Aggregates
-    '/uni-mainz.de/homes/maweitze/CCR/0208/M2/',    # Irregular, Aggregates
-    '/uni-mainz.de/homes/maweitze/CCR/0908/M1/',    # Dendritic, Irregular, Dense
-    '/uni-mainz.de/homes/maweitze/CCR/01Mar/',      # Dendritic (aggregates)
+    os.path.join(basedir, '0604/M1/'),    # Aggregates
+    os.path.join(basedir, '0208/M1/'),    # Dendritic, Aggregates
+    os.path.join(basedir, '0208/M2/'),    # Irregular, Aggregates
+    os.path.join(basedir, '0908/M1/'),    # Dendritic, Irregular, Dense
+    os.path.join(basedir, '01Mar/'),      # Dendritic (aggregates)
 
     # Unclean measurements
 
@@ -39,9 +42,9 @@ folder_list = (
     # '/uni-mainz.de/homes/maweitze/CCR/1907/M3/',    # Dendritic
 )
 
-compare_list_folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'     # Dendritic (aggregates)
+compare_list_folder = os.path.join(basedir, '01Mar/')     # Dendritic (aggregates)
 
-minsize=0
+minsize = 0
 maxsize = 150
 logscale = False
 plot_binned = False

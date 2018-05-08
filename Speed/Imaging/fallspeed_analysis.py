@@ -1,31 +1,25 @@
-''' Imports fall_speed_data.dat (fall streaks) from a specified folder and creates characteristic plots describing the average properties.
+""" Imports fall_speed_data.dat (fall streaks) from a specified folder and creates characteristic plots describing the average properties.
 These plots show the characteristic spatial distribution of average fall speed, angle and other properties.
-'''
-
+"""
 
 import sys
 import os
-
-dir = os.path.dirname(__file__)
-sys.path.append(os.path.join(dir, '..', '..', 'utilities'))
-sys.path.append(os.path.join(dir, '..', '..', 'Mass'))
-
-from IceSizing import MicroImg
-
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-
-import os
 import numpy as np
 import pickle
 from scipy.stats import norm
 import cv2
 import time
+sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
+sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Mass')
+from find_ccr_folder import find_ccr
 import extract_fall_data
+from IceSizing import MicroImg
 
-
-folder = '/uni-mainz.de/homes/maweitze/CCR/0808/M1/'
+folder = find_ccr()
+folder = folder+'/0808/M1/'
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
@@ -51,7 +45,7 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
     try:
         fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
     except FileNotFoundError:
-        fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
+        _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
         # list_of_file_data = extract_fall_data.initialize_data(fldr, folder_list)
 
     vs = np.asarray(fall_dist) * pxl_size / exp_time * 100  # in cm/s
