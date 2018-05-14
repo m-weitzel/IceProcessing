@@ -13,10 +13,11 @@ import numpy as np
 from utilities.IceSizing import MicroImg
 import Mass.find_couples as find_couples
 from matplotlib import pyplot as plt
+from utilities.find_ccr_folder import find_ccr
 
 
 def main():
-    folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'
+    folder = '/ipa2/holo/mweitzel/Windkanal/Ice/0808/M1'
     file_list = os.listdir(folder)
 
     ice_file_list = list()

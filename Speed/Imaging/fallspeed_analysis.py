@@ -19,7 +19,7 @@ import extract_fall_data
 from IceSizing import MicroImg
 
 folder = find_ccr()
-folder = folder+'/0808/M1/'
+folder = folder+'/0908/M1/'
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
@@ -58,7 +58,7 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
         mass_velocity_dim_histograms(projected_vs, mass_data, folder)
         t1 = time.time()
         print('Time spent on Mass Velocity Histograms:'+str(t1-t0))
-        plot_descriptor_list+=['histogram.png']
+        plot_descriptor_list += ['histogram.png']
         t0 = time.time()
     if op_flag:
         orientation_polar_plot(orientation)
@@ -209,10 +209,10 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     std_vals = np.zeros(len(folder_list))
     curr_val = 0
 
-    for time, v in zip(time_list, projected_vs):
-        if time == [curr_val]:
+    for t_time, v in zip(time_list, projected_vs):
+        if t_time == [curr_val]:
             temp_vals.append(v)
-        if time != [curr_val]:
+        if t_time != [curr_val]:
             if len(temp_vals) > 5:
                 mean_vals[curr_val] = np.mean(temp_vals)
                 std_vals[curr_val] = np.std(temp_vals)
@@ -288,7 +288,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     for i in x_range - 1:
         bins_orientation.append(list())
         bins_velocity.append(list())
-        for j in y_range - 1:
+        for _ in y_range - 1:
             bins_orientation[int(i)].append(list())
             bins_velocity[int(i)].append(list())
 
@@ -312,7 +312,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
         for j in y_range-1:
             this_o = np.median(bins_orientation[int(i)][int(j)])
             this_v = np.median(bins_velocity[int(i)][int(j)])
-            if np.isnan(this_o) or (len(bins_orientation[int(i)][int(j)])<4):
+            if np.isnan(this_o) or (len(bins_orientation[int(i)][int(j)]) < 4):
                 binned_o[int(i)][int(j)] = -3
                 binned_v[int(i)][int(j)] = 0
             else:
@@ -353,7 +353,6 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     # ticklabels = [str(t)+'$/4\cdot\pi$' for t in ticklabels]
     # cbar.ax.set_yticklabels([str(t)+'$/4\cdot\pi$' for t in list(np.linspace(-1, 1, 9))])
 
-
     f, ax = plt.subplots(figsize=(8, 14))
     ax.set_aspect('equal')
     ax.set_aspect('equal')
@@ -362,12 +361,13 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     f.canvas.draw()
     X, Y = np.meshgrid(xs*pxl_size/1000, ys*pxl_size/1000)
     im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=0.001, vmax=2)
-    im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)), -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v),0))
+    im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)), -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0))
     cbar = f.colorbar(im_pc, ticks=np.linspace(0, 2, 5))
     cbar.set_label('v in $cm/s$', fontsize=20)
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
     ax.set_title('Quiver plot of mean orientation and fall speed')
+
 
 def get_angles(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

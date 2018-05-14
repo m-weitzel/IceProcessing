@@ -11,7 +11,7 @@ from utilities.IceSizing import MicroImg
 
 
 def main():
-    label_img = False
+    label_img = True
 
     # folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'
     folder = '../../../Dropbox/Dissertation/Ergebnisse/EisMainz/CNN/Training/3103M1/'
@@ -20,9 +20,9 @@ def main():
     # img_path_list = ('Ice-1-104.png','Ice-2-172.png')
 
     # img_path = 'Ice-4.png'
-    img_path = 'Ice-1_color.png'
+    img_path = 'Ice-2_color.png'
     if label_img:
-        label_path = 'Ice-1_label.png'
+        label_path = 'Ice-2_label.png'
         label_filter = 'Bin'
 
     # for label_path, img_path in zip(label_path_list, img_path_list):
@@ -38,18 +38,18 @@ def main():
     # filter_list = [('Adaptive', int(t)) for t in (401, 601, 801, 1001, 1201, 1401)]
 
     thresh = 0
-    # filter_list = (('Bin', thresh), ('Otsu', thresh), ('Adaptive', 1001), ('Canny', 0), ('Gradient', 0), ('kmeans', 0, 1))
+    filter_list = (('Bin', thresh), ('Otsu', thresh), ('Adaptive', 1001), ('Canny', 0), ('Gradient', 0), ('kmeans', 0, 1))
     # filter_list = list()
     # filter_list.append(('Bin', thresh))
 
-    filter_list = (('Otsu', 255), ('Adaptive', 1001))
+    # filter_list = (('Otsu', 255), ('Adaptive', 1001))
 
     # f, axarr = plt.subplots(np.floor_divide(len(filter_list), 3)+1, 3)
 
     cont_list = list()
 
-    for i, filter in enumerate(filter_list):
-        img_data = MicroImg('ice', folder, img_path, filter, maxsize=np.inf, dilation=20, fill_flag=False, min_dist_to_edge=0)
+    for i, t_filter in enumerate(filter_list):
+        img_data = MicroImg('ice', folder, img_path, t_filter, maxsize=np.inf, dilation=20, fill_flag=False, min_dist_to_edge=0)
         # img_data.image = cv2.cvtColor(img_data.image, cv2.COLOR_BGR2GRAY)
 
         # object_detected_img = img_data.image.copy()
@@ -70,7 +70,7 @@ def main():
             cv2.fillPoly(object_detected_img, pts=[c], color=0)
 
         if label_img:
-            eval_contour_quality(img_data, object_detected_img, label_img, filter)
+            eval_contour_quality(img_data, object_detected_img, label_img, t_filter)
 
     cols = ((255, 0, 0), (0, 200, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255))
     col_label = (255, 255, 255)

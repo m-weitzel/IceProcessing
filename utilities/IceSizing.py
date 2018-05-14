@@ -107,6 +107,7 @@ class MicroImg:
                     threshold = self.thresh_type[1]
                 else:
                     threshold = gray.mean()-0.5*gray.std()
+                    print('Using threshold value of {} (mean grey value minus 0.5*sigma)'.format(threshold))
                 if np.sign(self.thresh_type[1]) == -1:
                     rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY)
                 else:
