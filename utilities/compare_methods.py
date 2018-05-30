@@ -14,19 +14,25 @@ def main():
     label_img = False
 
     # folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'
-    folder = '../../../Dropbox/Dissertation/Ergebnisse/EisMainz/CNN/Training/3103M1/'
+    # folder = '../../../Dropbox/Dissertation/Ergebnisse/EisMainz/CNN/Training/3103M1/'
+    folder = '/ipa2/holo/mweitzel/Windkanal/Ice/CCR/2804/M1'
 
     # label_path_list = ('Ice-1-104_features.png', 'Ice-2_features.png')
     # img_path_list = ('Ice-1-104.png','Ice-2-172.png')
 
+<<<<<<< Updated upstream
     # img_path = 'Ice-4.png'
     img_path = 'Ice-1_color.png'
+=======
+    img_path = 'Ice-12.png'
+    # img_path = 'Ice-2_color.png'
+>>>>>>> Stashed changes
     if label_img:
         label_path = 'Ice-1_label.png'
         label_filter = 'Bin'
 
     # for label_path, img_path in zip(label_path_list, img_path_list):
-        label_img = MicroImg('label', folder, label_path, (label_filter, 0), maxsize=np.inf, dilation=0, fill_flag=False)
+        label_img = MicroImg('label', folder, label_path, (label_filter, 0), maxsize=np.inf, dilation=0, fill_flag=False, min_dist_to_edge=0)
 
     # img_mean = cv2.meanStdDev(cv2.cvtColor(label_img.initial_image, cv2.COLOR_BGR2GRAY))
     # thresh = [img_mean[0]-c*img_mean[1] for c in (0, 1/4, 1/2, 3/4, 1)]
@@ -40,7 +46,8 @@ def main():
     thresh = 0
     # filter_list = (('Bin', thresh), ('Otsu', thresh), ('Adaptive', 1001), ('Canny', 0), ('Gradient', 0), ('kmeans', 0, 1))
     # filter_list = list()
-    # filter_list.append(('Bin', thresh))
+    # filter_list.append(('kmeans', 4, 2))
+    # filter_list = (('kmeans', 0, 1, 'Single'), ('kmeans', 0, 1, 'Multi'))
 
     filter_list = (('Otsu', 255), ('Adaptive', 1001))
 

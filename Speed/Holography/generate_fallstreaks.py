@@ -14,7 +14,7 @@ import os
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/'
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(path+filename_ps)
@@ -29,7 +29,7 @@ def main():
 
     # Properties for finding streaks
     max_size_diff = 0.1
-    max_dist_from_predict = 1
+    max_dist_from_predict = 0.5
     base_velocity_guess = [0, -0.08, 0]
 
     # End of properties

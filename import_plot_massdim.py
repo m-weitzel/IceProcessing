@@ -17,19 +17,20 @@ folder_list = (
 
     # Clean Measurements
 
-    '/uni-mainz.de/homes/maweitze/CCR/2203/M1/',  # Columnar
-    '/uni-mainz.de/homes/maweitze/CCR/2203/M2/',  # Columnar, Bullet Rosettes
-    '/uni-mainz.de/homes/maweitze/CCR/3103/M1/',  # Columnar
-    '/uni-mainz.de/homes/maweitze/CCR/1107/M1/',  # Dense Irregular
-    '/uni-mainz.de/homes/maweitze/CCR/0808/M1/',  # Columnar
+    os.path.join(basedir, '2203/M1/'),  # Columnar Irregular
+    os.path.join(basedir, '2203/M2/'),  # Columnar, Bullet Rosettes
+    os.path.join(basedir, '3103/M1/'),  # Columnar
+    os.path.join(basedir, '1107/M1/'),  # Dense Irregular
+    os.path.join(basedir, '0808/M1/'),  # Columnar
 
     # Medium measurements
 
-    '/uni-mainz.de/homes/maweitze/CCR/0604/M1/',    # Aggregates
-    '/uni-mainz.de/homes/maweitze/CCR/0208/M1/',    # Dendritic, Aggregates
-    '/uni-mainz.de/homes/maweitze/CCR/0208/M2/',    # Irregular, Aggregates
-    '/uni-mainz.de/homes/maweitze/CCR/0908/M1/',    # Dendritic, Irregular, Dense
-    '/uni-mainz.de/homes/maweitze/CCR/01Mar/',      # Dendritic (aggregates)
+    os.path.join(basedir, '0604/M1/'),    # Aggregates
+    os.path.join(basedir, '0208/M1/'),    # Dendritic, Aggregates
+    os.path.join(basedir, '0208/M2/'),    # Irregular, Aggregates
+    os.path.join(basedir, '0908/M1/'),    # Dendritic, Irregular, Dense
+    os.path.join(basedir, '01Mar/'),      # Dendritic (aggregates)
+    # os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
 
     # Unclean measurements
 
@@ -39,9 +40,9 @@ folder_list = (
     # '/uni-mainz.de/homes/maweitze/CCR/1907/M3/',    # Dendritic
 )
 
-compare_list_folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'     # Dendritic (aggregates)
+compare_list_folder = os.path.join(basedir, '2804/M1/')     # Dendritic (aggregates)
 
-minsize=0
+minsize = 0
 maxsize = 150
 logscale = False
 plot_binned = False
@@ -277,7 +278,7 @@ for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_di
         ax.scatter(dim_bins, [f*1e-12 for f in avg_masses], alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
     else:
         ax.scatter(full_dim_list, [f*1e-12 for f in full_mass_list], alpha=1,
-                   edgecolors=almost_black, linewidth=1, zorder=0, c=col_list)
+                   edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
     # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
 ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')

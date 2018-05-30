@@ -13,10 +13,13 @@ from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, 
 # Loading data ############################
 folder_list = (
     # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
-    '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
-    '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
+    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
+    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
+    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/'
 )
 
+folder_list = list()
+folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
 # Properties for filtering streaks
 angle_leniency_deg = 10
 length_leniency_pct = 10
@@ -38,7 +41,7 @@ for folder in folder_list:
     this_dim_list = list()
     for i, s in enumerate(streak_list):
         this_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
-        info_list.append({'folder': folder, 'local_index': i})
+        info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
     list_of_dim_lists.append(this_dim_list)
     list_of_streak_lists.append(streak_list)
 
@@ -75,6 +78,7 @@ for s in full_streak_list:
     s_minsiz = [t.minsiz * 1e6 for t in s.particle_streak]
 
     full_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
+    # full_dim_list.append([0.58*p.minsiz/2*(1+0.95*(p.majsiz/p.minsiz)**0.75) for p in s.particle_streak])
     full_pos_list.append([p.spatial_position for p in s.particle_streak])
     full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])
     full_angle_list.append([np.arctan(g[0]/g[1]) for g in this_gaps])

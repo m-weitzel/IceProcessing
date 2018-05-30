@@ -5,18 +5,23 @@ saving flag is confirmed by user input."""
 
 
 import os
+import sys
 import pickle
 from copy import deepcopy
 
 import cv2
 import numpy as np
-from utilities.IceSizing import MicroImg
-import Mass.find_couples as find_couples
+import find_couples
 from matplotlib import pyplot as plt
+
+sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
+
+from IceSizing import MicroImg
+# from find_ccr_folder import find_ccr
 
 
 def main():
-    folder = '/uni-mainz.de/homes/maweitze/CCR/01Mar/'
+    folder = '/ipa2/holo/mweitzel/Windkanal/Ice/CCR/2804/M1/'
     file_list = os.listdir(folder)
 
     ice_file_list = list()
@@ -72,9 +77,10 @@ def main():
         while 1:
             adaptive_window = cv2.getTrackbarPos('AdaptiveWindow', window_title)
             dilation = cv2.getTrackbarPos('Dilation', window_title)
-            # img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 2*adaptive_window+1), 750, 100000, dilation)
-            # img_ice = MicroImg('Ice', folder, ice_file, ('Bin', 2*adaptive_window+1), 750, 100000, dilation)
-            img_ice = MicroImg('Ice', folder, ice_file, ('Gradient', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
+            img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 2*adaptive_window+1), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=1)
+            # img_ice = MicroImg('Ice', folder, ice_file, ('Bin', 0), 750, 100000, dilation)
+            # img_ice = MicroImg('Ice', folder, ice_file, ('Otsu', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
+            # img_ice = MicroImg('Ice', folder, ice_file, ('Gradient', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
             cv2.imshow(window_title, img_ice.processed_image)
             k = cv2.waitKey(1500) & 0xFF  # Set refresh time for plot to 5 ms
             if (k == 13) | (k == 10):  # Arbitrary end loop time
