@@ -122,49 +122,46 @@ class MicroImg:
             elif self.thresh_type[0] == "Gradient":
                 # grad_img = np.uint8(np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
                 grad_img = cv2.Laplacian(gray, cv2.CV_8U)
-                # if self.thresh_type[1] != 0:
-                #     threshold = self.thresh_type[1]
-                # else:
-                #     threshold = np.max((5, grad_img.mean()-0.5*grad_img.std()))
-                # rt, thresh = cv2.threshold(grad_img, threshold, 255, cv2.THRESH_BINARY)
 
                 grad_img = cv2.GaussianBlur(grad_img, (15, 15), 0)
                 # thresh = cv2.adaptiveThreshold(grad_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 501, 0)
                 rt, thresh = cv2.threshold(grad_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-                # thresh_G = cv2.GaussianBlur(thresh, (15, 15), 0)
-                # _, thresh = cv2.threshold(thresh_G, 200, 255, cv2.THRESH_BINARY)
 
-                # dilation = self.dilation
-                # if dilation > 0:
-                #     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation, dilation))
-                #     thresh = cv2.dilate(thresh, kernel, iterations=1)
-                #     thresh = cv2.erode(thresh, kernel, iterations=1)
-                #
-                # h, w = thresh.shape[:2]
-                # fill_mask = np.zeros((h + 2, w + 2), np.uint8)
-                # working_img = thresh.copy()
-                #
-                # cv2.floodFill(working_img, fill_mask, (0, 0), 255)
-                # im_floodfill_inv = cv2.bitwise_not(working_img)
-
-                # thresh = thresh | im_floodfill_inv
             elif self.thresh_type[0] == "kmeans":
-                im_list = img.reshape(img.shape[0] * img.shape[1], 3)
-                im_list_arr = np.asarray(im_list)
+                if self.thresh_type[3]=="Multi":
+                    print('\nUsing multidimensional cluster for kmeans.')
+                    # grad_img = np.uint8(
+                    #     np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
+                    grad_img = cv2.Laplacian(gray, cv2.CV_8U)
+                    p_r = cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(gray))))))))
+                    p_r = np.abs(p_r-gray)
+
+                    im_list = gray.reshape(gray.shape[0] * gray.shape[1])
+                    grad_list = grad_img.reshape(grad_img.shape[0] * grad_img.shape[1])
+                    p_r_list = p_r.reshape(p_r.shape[0] * p_r.shape[1])
+                    comp_list = list()
+                    for i, g, p in zip(im_list, grad_list, p_r_list):
+                        comp_list.append((i, g, p))
+                    clustered_data = np.asarray(comp_list)
+
+                else:
+                    print('\nUsing only greyscale data for kmeans.')
+                    clustered_data = img.reshape(gray.shape[0] * gray.shape[1], 3)
+
                 if self.thresh_type[1] == 0:
                     n = 2
                 else:
                     n = self.thresh_type[1]
                 pos_label = self.thresh_type[2]
                 kmeans = KMeans(n_clusters=n)
-                kmeans.fit(im_list_arr)
+                kmeans.fit(clustered_data)
 
                 centroids = kmeans.cluster_centers_
                 # centroids = ms.cluster_centers_
                 # labels = ms.labels_
                 labels = kmeans.labels_
 
-                la = [1 if l == pos_label else 0 for l in labels]
+                la = [1 if ((l == pos_label) or (l == 1)) else 0 for l in labels]
 
                 thresh = np.reshape(la, [img.shape[0], img.shape[1]]).astype('uint8')
 
