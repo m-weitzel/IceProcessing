@@ -1,5 +1,6 @@
 """ Creates v(D) plot of all fall track (Holography) data ('streak_data.dat') from all folders listed in folder list."""
 
+import os
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
@@ -15,33 +16,46 @@ folder_list = (
     # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
     # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
     # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
-    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/'
+    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
+    # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
+)
+
+habit_list = (
+    # 'Columnar,'
+    'Dendritic',
+    'Dendritic',
+    'Columnar',
+    'Columnar'
 )
 
 folder_list = list()
-folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
+folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
 # Properties for filtering streaks
 angle_leniency_deg = 10
-length_leniency_pct = 10
-starting_streak = 250
-num_streaks_processed = 15000
-min_streak_length = 5   # for separation between short and long streaks
+length_leniency_pct = 5
+# starting_streak = 250
+# num_streaks_processed = 15000
+min_streak_length = 3  # for separation between short and long streaks
 xlims = [-2.3, 2.3]
 ylims = [-2.9, 2.9]
+
+plot_angle_hist = True
+plot_aspr_hist = True
+plot_z_histogram = True
 
 list_of_dim_lists = list()
 list_of_streak_lists = list()
 info_list = list()
 
-for folder in folder_list:
-    tmp = pickle.load(open(folder + 'streak_data.dat', 'rb'))
+for folder, habit in zip(folder_list, habit_list):
+    tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
     streak_list = tmp['streaks']
     streak_list = refine_streaks(streak_list, angle_leniency_deg, length_leniency_pct)
     streak_list = [a for a in streak_list if (len(a.particle_streak) >= min_streak_length)]
     this_dim_list = list()
     for i, s in enumerate(streak_list):
         this_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
-        info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
+        info_list.append({'folder': folder, 'habit': habit, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
     list_of_dim_lists.append(this_dim_list)
     list_of_streak_lists.append(streak_list)
 
@@ -56,7 +70,11 @@ for d, s in zip(list_of_dim_lists, list_of_streak_lists):
         full_dim_median_list.append(np.median(d1))
         full_streak_list.append(s1)
 
-full_dim_median_list, full_streak_list, info_list = zip(*sorted(zip(full_dim_median_list, full_streak_list, info_list)))
+indexes = list(range(len(full_dim_median_list)))
+indexes.sort(key=full_dim_median_list.__getitem__)
+full_dim_median_list = list(map(full_dim_median_list.__getitem__, indexes))
+full_streak_list = list(map(full_streak_list.__getitem__, indexes))
+info_list = list(map(info_list.__getitem__, indexes))
 
 full_dim_list = list()
 full_pos_list = list()
@@ -81,7 +99,7 @@ for s in full_streak_list:
     # full_dim_list.append([0.58*p.minsiz/2*(1+0.95*(p.majsiz/p.minsiz)**0.75) for p in s.particle_streak])
     full_pos_list.append([p.spatial_position for p in s.particle_streak])
     full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])
-    full_angle_list.append([np.arctan(g[0]/g[1]) for g in this_gaps])
+    full_angle_list.append([np.arctan(-g[0]/g[1]) for g in this_gaps])
     full_v_list.append([np.sqrt(g[1] ** 2 + g[0] ** 2) * 100 for g in this_gaps])
     # full_v_list.append([np.sqrt(g[1] ** 2) * 100 for g in this_gaps])
     # full_v_list.append([-g[1] * 100 for g in this_gaps])
@@ -90,7 +108,7 @@ for s in full_streak_list:
         ([0.134 * (0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)) for p in s.particle_streak]))
     # full_streakid_list.append([streak_id] * len(s.particle_streak))
     full_streakid_list.append(streak_id)
-    full_im_list.append([p.partimg for p in s.particle_streak])
+    full_im_list.append([np.transpose(p.partimg) for p in s.particle_streak])
     streak_id += 1
 
 
@@ -104,6 +122,7 @@ def fall_speed_projection(v_list, angle_list):
 
 full_v_list, mean_angle = fall_speed_projection(full_v_list, full_angle_list)
 full_v_median_list = [np.median(v) for v in full_v_list]
+full_aspr_median_list = [np.median(c) for c in full_aspr_list]
 
 # Fitting power law ############################
 powerlaw = lambda x, amp, index: amp * (x**index)
@@ -135,7 +154,52 @@ def fit_powerlaw(x, y):
 
 amp_full, index_full = fit_powerlaw(full_dim_median_list, full_v_median_list)
 
+# dims_t = np.transpose(full_dim_median_list)
+# fitfunc = lambda params, dims_t: params[0]*dims_t
+# errfunc = lambda p, x, y: fitfunc(p, x) - y
+# init_m = 0.1
+# init_p = np.array((init_m))
+# p1, success = optimize.leastsq(errfunc, init_p.copy(), args=(dims_t, full_v_median_list))
+# f = fitfunc(p1, dims_t)
+
 # Plotting things ############################
+
+if plot_angle_hist:
+    fig_h = plt.figure()
+    mean_angle_list = [np.median(c) for c in full_angle_list]
+    n_bins = 50
+    ax = fig_h.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
+    angle_range = np.arange(-0.5*np.pi, 0.5*np.pi, np.pi / n_bins)
+    angle_range = np.append(angle_range, 2 * np.pi)
+    a = plt.hist(mean_angle_list, angle_range)
+    ax.set_theta_zero_location("S")
+    ax.set_thetamin(-90)
+    ax.set_thetamax(90)
+    ax.bar(angle_range, a[1])
+
+if plot_aspr_hist:
+    fig_a = plt.figure()
+    mean_aspr_list = [np.median(c) for c in full_aspr_list]
+    n_bins = 20
+    ax = fig_a.add_subplot(111)
+    a = plt.hist(mean_aspr_list, 1.0+.25*np.arange(20), edgecolor='black', linewidth=1.2)
+
+if plot_z_histogram:
+    is_in_folder = [[] for f in folder_list]
+    for pl, t_info in zip(full_pos_list, info_list):
+        zs = [p[2] for p in pl]
+        z_mean = np.mean(zs)
+        z_var = np.std(zs)
+        t_folder = t_info['folder']
+        is_in_folder[folder_list.index(t_folder)].append(z_mean)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    bins = 0.005*np.arange(12)
+
+    ax.hist(is_in_folder, bins, weights=[np.zeros_like(np.asarray(fol))+1./len(np.asarray(fol)) for fol in is_in_folder]
+            , alpha=0.5, label=folder_list, edgecolor='black', linewidth=1.3, align='left')
+    ax.legend(loc='upper right')
+    ax.grid()
 
 dims_spaced = np.arange(np.ceil(1.1 * np.max(full_dim_median_list) / 10) * 10)
 almost_black = '#262626'
@@ -148,15 +212,19 @@ ax = fig.add_subplot(111)
 #     # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
 line = ax.scatter(full_dim_median_list, full_v_median_list, alpha=1,
-                  edgecolors=almost_black, linewidth=1, zorder=0, picker=5)
+                  edgecolors=almost_black, linewidth=1, zorder=0, picker=5, c=np.asarray(['r' if c['habit'] == 'Columnar' else 'b' for c in info_list]))
 
 ax.grid()
-ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Full', linewidth=3, zorder=1)
+ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
+# ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
 ax.set_xlim([0, np.max(dims_spaced)])
+# ax.set_xlim([0, 200])
 ax.set_xlabel('Maximum diameter in µm', fontsize=20)
 ax.set_ylim([0, 1.1 * np.max(full_v_median_list)])
+# ax.set_ylim([0, 115])
 ax.set_ylabel('Fall speed in mm/s', fontsize=20)
 ax.tick_params(axis='both', which='major', labelsize=20)
+ax.legend()
 
 
 def onpick(event):
