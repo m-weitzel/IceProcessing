@@ -14,15 +14,16 @@ import os
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/'
     filename_ps = 'ps_bypredict.mat'
 
-    a = sio.loadmat(path+filename_ps)
+    a = sio.loadmat(os.path.join(path, filename_ps))
 
     # Adjust to how the camera was tilted to have true spatial directions in fall images, multiply by 1000 to get mm
     tmp = a['xp']*1000
     a['xp'] = a['yp']*1000
     a['yp'] = tmp
+    a['zp'] = a['zp']*1000
 
     # General parameters
     pxl_size = 1
@@ -30,9 +31,16 @@ def main():
     # Properties for finding streaks
     max_size_diff = 0.1
     max_dist_from_predict = 0.5
-    base_velocity_guess = [0, -0.08, 0]
+    # base_velocity_guess = [0, -0.08, 0]
+    static_velocity = False
 
-    # End of properties
+    if static_velocity:
+        base_velocity_guess = [0, -1.6, 0]
+    else:
+        y_vel = lambda x: 0.8*x
+
+
+        # End of properties
 
     p_list = list()
     for k in range(0, len(a['times'])):
@@ -53,7 +61,12 @@ def main():
 
     while p_list:
         this_particle = p_list[0]
-        velocity_guess = base_velocity_guess
+        if static_velocity:
+            velocity_guess = base_velocity_guess
+        else:
+            y_velocity = y_vel(this_particle.majsiz)
+            velocity_guess = [0, y_velocity, 0]
+
         new_streak = ParticleStreak(this_particle, velocity_guess)
         p_list.remove(this_particle)
         extended = True
@@ -158,13 +171,13 @@ def main():
     save_flag = input('Save data to file?')
     if save_flag == 'Yes' or save_flag == 'yes':
 
-        plot_dir = path+'plots'
+        plot_dir = os.path.join(path, 'plots')
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
 
         save_dict = {"folder": path, "streaks": streak_list}
-        pickle.dump(save_dict, open(path + 'streak_data.dat', 'wb'), -1)
-        print('Data saved in '+path+'streak_data.dat.')
+        pickle.dump(save_dict, open(os.path.join(path, 'streak_data.dat'), 'wb'), -1)
+        print('Data saved in '+os.path.join(path+'streak_data.dat.'))
 
     plt.show()
 
@@ -208,7 +221,8 @@ def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_
     predicted_particle.xpos = predicted_position[0]
     predicted_particle.ypos = predicted_position[1]
     predicted_particle.zpos = predicted_position[2]
-    dists = [dist(predicted_particle, pb) for pb in particle_list]
+    dists = [dist(predicted_particle, pb, ignore_zpos=True) for pb in particle_list]
+
     size_diffs = [abs(pb.majsiz-predicted_particle.majsiz)/predicted_particle.majsiz for pb in particle_list]
     dists_s, sizes_s = (list(x) for x in zip(*sorted(zip(dists, size_diffs), key=lambda pair: pair[0])))
     try:
@@ -233,8 +247,12 @@ def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_
         return this_streak, [], []
 
 
-def dist(particle_a, particle_b):
-    distance = np.sqrt((particle_a.xpos-particle_b.xpos)**2+(particle_a.ypos-particle_b.ypos)**2+(particle_a.zpos-particle_b.zpos)**2)
+def dist(particle_a, particle_b, ignore_zpos=False):
+    if ignore_zpos:
+        distance = np.sqrt((particle_a.xpos-particle_b.xpos)**2+(particle_a.ypos-particle_b.ypos)**2)
+    else:
+        distance = np.sqrt((particle_a.xpos - particle_b.xpos)**2+(particle_a.ypos - particle_b.ypos)**2
+                   +(particle_a.zpos - particle_b.zpos) ** 2)
     return distance
 
 
@@ -279,7 +297,7 @@ def refine_streaks(streak_list, angle_leniency, length_leniency):
                 if o == 0:
                     del streak.particle_streak[0]
                 else:
-                    del streak.particle_streak[o+1]
+                    del streak.particle_streak[o+1:]
     return streak_list
 
 
