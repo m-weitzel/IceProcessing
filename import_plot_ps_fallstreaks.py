@@ -23,7 +23,8 @@ def main():
     )
 
     folder_list = list()
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')  # Dendritic
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')  # Dendritic
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')  # Dendritic
 
     # # Properties for filtering streaks
 
@@ -55,6 +56,7 @@ def main():
 
         print('Kept {} streaks longer than {}.'.format(len(this_folders_streak_list), min_streak_length))
 
+    full_dim_list = list()
     full_dim_median_list = list()
     full_v_list = list()
     full_v_median_list = list()
@@ -62,6 +64,7 @@ def main():
 
     for d, s, v in zip(list_of_folder_dim_lists, list_of_folder_streak_lists, list_of_folder_v_lists):
         for d1, s1, v1 in zip(d, s, v):
+            full_dim_list.append(d1)
             full_dim_median_list.append(np.median(d1))
             full_v_list.append(v1)
             full_v_median_list.append(np.median(v1))
@@ -69,9 +72,14 @@ def main():
 
     indexes = list(range(len(full_dim_median_list)))
     indexes.sort(key=full_dim_median_list.__getitem__)
+    full_dim_list = list(map(full_dim_list.__getitem__, indexes))
     full_dim_median_list = list(map(full_dim_median_list.__getitem__, indexes))
     full_streak_list = list(map(full_streak_list.__getitem__, indexes))
     info_list = list(map(info_list.__getitem__, indexes))
+    full_v_list = list(map(full_v_list.__getitem__, indexes))
+    full_v_median_list = list(map(full_v_median_list.__getitem__, indexes))
+
+    # full_dim_list = list(map(full_dim_list.__getitem__, indexes))
 
     full_habit_list = [s.streak_habit for s in full_streak_list]
 
@@ -96,7 +104,7 @@ def main():
 
         streak_id += 1
 
-    full_aspr_list = [np.median(c) for c in full_aspr_list]
+    full_aspr_median_list = [np.median(c) for c in full_aspr_list]
 
     different_habits = list(set(full_habit_list))
 
@@ -119,7 +127,7 @@ def main():
         # plot_all_streaks(hab, streaks_by_habit[hab], dims_by_habit[hab], info_by_habit[hab], folder_list)
 
     # v_dim_scatter(full_dim_median_list, full_v_list, full_habit_list)
-    v_dim_scatter(selector_index_dict, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
+    v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
                   full_streakid_list, info_list, full_pos_list)
 
     plt.show()
@@ -150,11 +158,11 @@ def fit_powerlaw(x, y):
 
 
 # def v_dim_scatter(dim_list, v_list, habit_list):
-def v_dim_scatter(selector_list, dim_list, v_median_list, full_v_list, different_habits, im_list, streakid_list, info_list, pos_list):
+def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list, full_v_list, different_habits, im_list, streakid_list, info_list, pos_list):
 
     max_dim = 0
     for hab in different_habits:
-        max_dim = np.max([max_dim, np.max(list(compress(dim_list, selector_list[hab])))])
+        max_dim = np.max([max_dim, np.max(list(compress(dim_median_list, selector_list[hab])))])
 
     dims_spaced = np.arange(np.ceil(1.1 * max_dim / 10) * 10)
     almost_black = '#262626'
@@ -178,9 +186,9 @@ def v_dim_scatter(selector_list, dim_list, v_median_list, full_v_list, different
     lines = list()
 
     for i, hab in enumerate(different_habits):
-        lines.append(ax.scatter(list(compress(dim_list, selector_list[hab])), list(compress(v_median_list, selector_list[hab])), alpha=1,
-                              edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
-                              label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
+        lines.append(ax.scatter(list(compress(dim_median_list, selector_list[hab])), list(compress(v_median_list, selector_list[hab])), alpha=1,
+                                edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
+                                label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
         streakids_in_habits[hab] = list(compress(streakid_list, selector_list[hab]))
 
     ax.grid()
@@ -196,11 +204,11 @@ def v_dim_scatter(selector_list, dim_list, v_median_list, full_v_list, different
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
     ax.legend()
 
-    fig.canvas.mpl_connect('pick_event', lambda event: onpick(event, dim_list,
+    fig.canvas.mpl_connect('pick_event', lambda event: onpick(event, dim_list, dim_median_list,
                                                               im_list, streakids_in_habits, info_list, pos_list, v_median_list, full_v_list, lines, different_habits))
 
 
-def onpick(event, dim_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
+def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
 
     xlims = [-2.3, 2.3]
     ylims = [-2.9, 2.9]
@@ -246,7 +254,7 @@ def onpick(event, dim_list, im_list, streakid_list, info_list, pos_list, v_media
         ax1 = plt.subplot2grid(fig_fullshape, (1, 0), colspan=n)
         fdl = dim_list[global_streakid]
         ax1.plot(fdl, c='b', lw=3)
-        ax1.axhline(y=dim_list[global_streakid], ls='--', c='b')
+        ax1.axhline(y=dim_median_list[global_streakid], ls='--', c='b')
         ax1.set_ylim(0, 1.1*np.max(fdl))
         ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax1.set_xlabel('Index', fontsize=20)
