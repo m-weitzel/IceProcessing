@@ -23,13 +23,13 @@ def main():
     )
 
     folder_list = list()
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')  # Dendritic
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')  # Dendritic
     folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')  # Dendritic
 
     # # Properties for filtering streaks
 
-    angle_leniency_deg = 10
-    length_leniency_pct = 5
+    angle_leniency_deg = 5
+    length_leniency_pct = 3
     min_streak_length = 5  # for separation between short and long streaks
 
     list_of_folder_dim_lists = list()
@@ -108,27 +108,21 @@ def main():
 
     different_habits = list(set(full_habit_list))
 
-    streaks_by_habit = dict()
-    dims_by_habit = dict()
-    info_by_habit = dict()
-    vs_by_habit = dict()
     selector_index_dict = dict()
 
     for hab in different_habits:
         selector_index_dict[hab] = [1 if s.streak_habit == hab else 0 for s in full_streak_list]
-        # streaks_by_habit[hab] = full_streak_list[selector_index[hab]]
-        # dims_by_habit[hab] = full_dim_median_list[selector_index[hab]]
-        # info_by_habit[hab] = info_list[selector_index[hab]]
-        # vs_by_habit[hab] = full_v_list[selector_index[hab]]
+        streaks_by_habit = list(compress(full_streak_list, selector_index_dict[hab]))
+        dim_median_by_habit = list(compress(full_dim_median_list, selector_index_dict[hab]))
+        info_by_habit = list(compress(info_list, selector_index_dict[hab]))
+        aspr_by_habit = list(compress(full_aspr_median_list, selector_index_dict[hab]))
 
+        plot_hists_by_habit(hab, streaks_by_habit, dim_median_by_habit, aspr_by_habit, info_by_habit)
 
-        # list_of_properties = sorted_lists(streaks_by_habit[hab], dims_by_habit[hab], info_by_habit[hab], ('v', 'dim'))
-
-        # plot_all_streaks(hab, streaks_by_habit[hab], dims_by_habit[hab], info_by_habit[hab], folder_list)
-
-    # v_dim_scatter(full_dim_median_list, full_v_list, full_habit_list)
     v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
                   full_streakid_list, info_list, full_pos_list)
+
+
 
     plt.show()
 
@@ -284,44 +278,44 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
     return True
 
 
-# def plot_all_streaks(habit, full_streak_list, full_dim_median_list, info_list, folder_list):
-#
-#     # # Fitting power law ############################
-#     # powerlaw = lambda x, amp, index: amp * (x ** index)
-#     #
-#     # amp_full, index_full = fit_powerlaw(full_dim_median_list, full_v_median_list)
-#
-#     # dims_t = np.transpose(full_dim_median_list)
-#     # fitfunc = lambda params, dims_t: params[0]*dims_t
-#     # errfunc = lambda p, x, y: fitfunc(p, x) - y
-#     # init_m = 0.1
-#     # init_p = np.array((init_m))
-#     # p1, success = optimize.leastsq(errfunc, init_p.copy(), args=(dims_t, full_v_median_list))
-#     # f = fitfunc(p1, dims_t)
-#
-#     # Plotting things ############################
-#
-#     # Angle histogram plot
-#     fig_h = plt.figure()
-#     mean_angle_list = [np.median(c) for c in full_angle_list]
-#     n_bins = 50
-#     ax = fig_h.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
-#     angle_range = np.arange(-0.5 * np.pi, 0.5 * np.pi, np.pi / n_bins)
-#     angle_range = np.append(angle_range, 2 * np.pi)
-#     a = plt.hist(mean_angle_list, angle_range)
-#     ax.set_theta_zero_location("S")
-#     ax.set_thetamin(-90)
-#     ax.set_thetamax(90)
-#     ax.bar(angle_range, a[1])
-#     ax.set_title('Angle histogram for {}'.format(habit))
-#
-#     # Aspect ratio histogram plot
-#     fig_a = plt.figure()
-#     mean_aspr_list = [np.median(c) for c in full_aspr_list]
-#     n_bins = 20
-#     ax = fig_a.add_subplot(111)
-#     histo = plt.hist(mean_aspr_list, 1.0 + .25 * np.arange(20), edgecolor='black', linewidth=1.2)
-#     ax.set_title('Aspect ratio histogram for {}'.format(habit))
+def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_list):
+
+     # # Fitting power law ############################
+     # powerlaw = lambda x, amp, index: amp * (x ** index)
+     #
+     # amp_full, index_full = fit_powerlaw(full_dim_median_list, full_v_median_list)
+
+     # dims_t = np.transpose(full_dim_median_list)
+     # fitfunc = lambda params, dims_t: params[0]*dims_t
+     # errfunc = lambda p, x, y: fitfunc(p, x) - y
+     # init_m = 0.1
+     # init_p = np.array((init_m))
+     # p1, success = optimize.leastsq(errfunc, init_p.copy(), args=(dims_t, full_v_median_list))
+     # f = fitfunc(p1, dims_t)
+
+     # Plotting things ############################
+
+     # Angle histogram plot
+    fig_h = plt.figure()
+    mean_angle_list = [s.mean_angle for s in streak_list]
+    n_bins = 50
+    ax = fig_h.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
+    angle_range = np.arange(-0.5 * np.pi, 0.5 * np.pi, np.pi / n_bins)
+    angle_range = np.append(angle_range, 2 * np.pi)
+    a = plt.hist(mean_angle_list, angle_range)
+    ax.set_theta_zero_location("S")
+    ax.set_thetamin(-90)
+    ax.set_thetamax(90)
+    ax.bar(angle_range, a[1])
+    ax.set_title('Angle histogram for {}'.format(habit))
+
+    # Aspect ratio histogram plot
+    fig_a = plt.figure()
+    mean_aspr_list = [np.median(c) for c in aspr_list]
+    n_bins = 20
+    ax = fig_a.add_subplot(111)
+    histo = plt.hist(mean_aspr_list, 1.0 + .25 * np.arange(20), edgecolor='black', linewidth=1.2)
+    ax.set_title('Aspect ratio histogram for {}'.format(habit))
 #
 #     # z position histogram plot
 #     is_in_folder = [[] for f in folder_list]
