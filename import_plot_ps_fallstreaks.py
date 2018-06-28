@@ -20,17 +20,20 @@ def main():
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
+        # '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/'
     )
 
     folder_list = list()
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')  # Dendritic
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')  # Dendritic
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/')
 
     # # Properties for filtering streaks
 
     angle_leniency_deg = 5
     length_leniency_pct = 3
-    min_streak_length = 5  # for separation between short and long streaks
+    min_streak_length = 3  # for separation between short and long streaks
 
     hist_plots = False
     calc_means = True
