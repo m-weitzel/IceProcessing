@@ -94,12 +94,13 @@ def main():
 
                 if extended:
                     p_list.remove(ext_by)                                                 # remove the recently added particle from particle list
+                    processing_p_list.remove(ext_by)                                      # remove the recently added particle from particle list
                     ps_in_holos[new_streak.particle_streak[-2].holonum+1].remove(ext_by)  # remove particle from list of particles in current (next) hologram
                     if len(new_streak.particle_streak) > 2:
                         # Starting with the third particle, velocity guess for finding new particles is derived from the last two found particles
                         velocity_guess = new_streak.particle_streak[-1].spatial_position-new_streak.particle_streak[-2].spatial_position
-            streak_list.append(new_streak)
-
+            if len(new_streak.particle_streak) >= min_length:
+                streak_list.append(new_streak)
 
     save_flag = input('Save data to file?')
     if save_flag == 'Yes' or save_flag == 'yes':
@@ -110,7 +111,7 @@ def main():
 
         save_dict = {"folder": path, "streaks": streak_list}
         pickle.dump(save_dict, open(os.path.join(path, 'streak_data.dat'), 'wb'), -1)
-        print('{} streaks saved in '.format(len(streak_list))+os.path.join(path+'streak_data.dat.'))
+        print('{} streaks saved in '.format(len(streak_list))+os.path.join(path, 'streak_data.dat.'))
 
     plt.show()
 
