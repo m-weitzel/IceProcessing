@@ -7,7 +7,7 @@ import numpy as np
 import pickle
 from scipy import optimize
 from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks
-from itertools import cycle, compress
+from itertools import cycle, compress, chain
 # from matplotlib import style
 # style.use('dark_background')
 
@@ -31,6 +31,9 @@ def main():
     angle_leniency_deg = 5
     length_leniency_pct = 3
     min_streak_length = 5  # for separation between short and long streaks
+
+    hist_plots = False
+    calc_means = True
 
     list_of_folder_dim_lists = list()
     list_of_folder_streak_lists = list()
@@ -79,12 +82,6 @@ def main():
     full_v_list = list(map(full_v_list.__getitem__, indexes))
     full_v_median_list = list(map(full_v_median_list.__getitem__, indexes))
 
-    # full_dim_list = list(map(full_dim_list.__getitem__, indexes))
-
-    full_habit_list = [s.streak_habit for s in full_streak_list]
-
-    list_of_property_lists = list()
-
     streak_id = 0
     full_aspr_list = list()
     full_cap_list = list()
@@ -110,6 +107,8 @@ def main():
 
     selector_index_dict = dict()
 
+    # Plotting
+
     for hab in different_habits:
         selector_index_dict[hab] = [1 if s.streak_habit == hab else 0 for s in full_streak_list]
         streaks_by_habit = list(compress(full_streak_list, selector_index_dict[hab]))
@@ -117,14 +116,28 @@ def main():
         info_by_habit = list(compress(info_list, selector_index_dict[hab]))
         aspr_by_habit = list(compress(full_aspr_median_list, selector_index_dict[hab]))
 
-        plot_hists_by_habit(hab, streaks_by_habit, dim_median_by_habit, aspr_by_habit, info_by_habit)
+        if hist_plots:
+            plot_hists_by_habit(hab, streaks_by_habit, dim_median_by_habit, aspr_by_habit, info_by_habit)
 
-    v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
-                  full_streakid_list, info_list, full_pos_list)
-
-
+    ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
+                       full_streakid_list, info_list, full_pos_list)
+    if calc_means:
+        hab = different_habits[0]
+        plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[hab])),
+                             list(compress(full_v_list, selector_index_dict[hab])))
 
     plt.show()
+
+
+def plot_mean_in_scatter(ax, dim_list, v_list):
+    mean_dim = np.mean(list(chain.from_iterable(dim_list)))
+    mean_v = np.mean(list(chain.from_iterable(v_list)))
+    std_dim = np.std(list(chain.from_iterable(dim_list)))
+    std_v = np.std(list(chain.from_iterable(v_list)))
+
+    ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, label='Means', color='k')
+    ax.text(5, 175, 'v={0:.2f}+-{1:.2f}, D={2:.2f}+-{3:.2f}'.format(mean_v, std_v, mean_dim, std_dim),
+            bbox=dict(facecolor='green', alpha=0.2), fontsize=12)
 
 
 def fit_powerlaw(x, y):
@@ -151,14 +164,16 @@ def fit_powerlaw(x, y):
     return amp, index
 
 
-# def v_dim_scatter(dim_list, v_list, habit_list):
-def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list, full_v_list, different_habits, im_list, streakid_list, info_list, pos_list):
+def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
+                  full_v_list, different_habits, im_list, streakid_list, info_list, pos_list):
 
     max_dim = 0
     for hab in different_habits:
         max_dim = np.max([max_dim, np.max(list(compress(dim_median_list, selector_list[hab])))])
 
     dims_spaced = np.arange(np.ceil(1.1 * max_dim / 10) * 10)
+    locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
+    maximum_vel = (2.22*2592-200)/2*60/1000
     almost_black = '#262626'
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -167,6 +182,9 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list, full_
     marker_dict['Column         '] = 's'
     marker_dict['Aggregate      '] = ','
     marker_dict['Particle_nubbly'] = 'v'
+    marker_dict['Particle_round '] = 'o'
+    marker_dict['Plate          '] = (6, 0, 0)
+    marker_dict['Needle         '] = 'D'
 
     # for this_dim_list, this_v_list in zip(full_dim_list, full_v_list):
     #     line = ax.scatter(this_dim_list, this_v_list, alpha=1,
@@ -191,15 +209,19 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list, full_
     ax.set_xlim([0, np.max(dims_spaced)])
     # ax.set_xlim([0, 200])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
-    # ax.set_ylim([0, 1.1 * np.max(v_list)])
+    # ax.set_ylim([0, 1.1 * np.max(v_median_list)])
+    ax.set_ylim([0, 1.1*maximum_vel])
     # ax.set_ylim([0, 115])
     ax.set_ylabel('Fall speed in mm/s', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
+    ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
     ax.legend()
 
     fig.canvas.mpl_connect('pick_event', lambda event: onpick(event, dim_list, dim_median_list,
                                                               im_list, streakids_in_habits, info_list, pos_list, v_median_list, full_v_list, lines, different_habits))
+    return ax
 
 
 def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
@@ -280,22 +302,9 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
 
 def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_list):
 
-     # # Fitting power law ############################
-     # powerlaw = lambda x, amp, index: amp * (x ** index)
-     #
-     # amp_full, index_full = fit_powerlaw(full_dim_median_list, full_v_median_list)
+    # Plotting things ############################
 
-     # dims_t = np.transpose(full_dim_median_list)
-     # fitfunc = lambda params, dims_t: params[0]*dims_t
-     # errfunc = lambda p, x, y: fitfunc(p, x) - y
-     # init_m = 0.1
-     # init_p = np.array((init_m))
-     # p1, success = optimize.leastsq(errfunc, init_p.copy(), args=(dims_t, full_v_median_list))
-     # f = fitfunc(p1, dims_t)
-
-     # Plotting things ############################
-
-     # Angle histogram plot
+    # Angle histogram plot
     fig_h = plt.figure()
     mean_angle_list = [s.mean_angle for s in streak_list]
     n_bins = 50
