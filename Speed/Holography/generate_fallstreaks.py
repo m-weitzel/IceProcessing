@@ -14,7 +14,7 @@ import os
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1'
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))
@@ -27,19 +27,21 @@ def main():
 
     # General parameters
     pxl_size = 1
+    framerate = 60 #fps
 
     # Properties for finding streaks
+    min_length = 3              # minimum number of consecutive particles to be considered a streak
     max_size_diff = 0.1
     max_dist_from_predict = 0.5
-    static_velocity = False
+    static_velocity = True
 
     if static_velocity:
         base_velocity_guess = [0, -1.6, 0]
     else:
-        y_vel = lambda x: -0.08*x
+        y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
+                                                            # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
 
-
-        # End of properties
+    # End of properties
 
     p_list = list()
     for k in range(0, len(a['times'])):
@@ -50,10 +52,6 @@ def main():
 
     last_holonum = p_list[-1].holonum
     holonums = range(0, last_holonum+1)
-    ps_in_holos = [[] for _ in holonums]
-
-    for p in p_list:
-        ps_in_holos[p.holonum].append(p)
 
     habit_list = [p.habit for p in p_list]
     different_habits = list(set(habit_list))
@@ -64,8 +62,11 @@ def main():
     for hab in different_habits:
         p_by_habits[hab] = [p for p in p_list if p.habit == hab]
 
-    for hab in different_habits:
         processing_p_list = p_by_habits[hab]
+        ps_in_holos = [[] for _ in holonums]
+        for p in processing_p_list:
+            ps_in_holos[p.holonum].append(p)
+
         while processing_p_list:
             this_particle = processing_p_list[0]
             if static_velocity:
@@ -74,7 +75,7 @@ def main():
                 y_velocity = y_vel(this_particle.majsiz)
                 velocity_guess = [0, y_velocity, 0]
 
-            new_streak = ParticleStreak(this_particle, velocity_guess)
+            new_streak = ParticleStreak(this_particle, framerate)
             processing_p_list.remove(this_particle)
             extended = True
             while extended:
@@ -133,13 +134,14 @@ class FallParticle:
 
 
 class ParticleStreak:
-    def __init__(self, initial_particle, first_guess_velocity):
+    def __init__(self, initial_particle, framerate):
         self.initial_particle = initial_particle
         self.particle_streak = [initial_particle]
         self.streak_habit = initial_particle.habit
         self.streak_length = self.get_streak_length()
         self.angles = ()
         self.mean_angle = self.set_mean_angle()
+        self.framerate = framerate
 
     def add_particle(self, particle):
         self.particle_streak.append(particle)
@@ -161,11 +163,12 @@ class ParticleStreak:
         return angles
 
     def get_projected_velocity(self, mean_angle):
-        pos = sorted([p.spatial_position for p in self.particle_streak], key=lambda pos_entry: pos_entry[1])
+        pos = sorted([p.spatial_position for p in self.particle_streak], key=lambda pos_entry: pos_entry[1], reverse=True)
         this_gaps = [q - p for (p, q) in zip(pos[:-1], pos[1:])]
-        abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * 100 for g in this_gaps]  # absolute velocity
+        abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * self.framerate for g in this_gaps]  # absolute velocity
         new_angles = [a - mean_angle for a in self.angles]
         v_list = [v * np.cos(beta) for v, beta in zip(abs_v_list, new_angles)]
+
         return v_list
 
 
@@ -177,6 +180,7 @@ def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_
     predicted_particle.xpos = predicted_position[0]
     predicted_particle.ypos = predicted_position[1]
     predicted_particle.zpos = predicted_position[2]
+
     dists = [dist(predicted_particle, pb, ignore_zpos=True) for pb in particle_list]
 
     size_diffs = [abs(pb.majsiz-predicted_particle.majsiz)/predicted_particle.majsiz for pb in particle_list]
@@ -208,7 +212,7 @@ def dist(particle_a, particle_b, ignore_zpos=False):
         distance = np.sqrt((particle_a.xpos-particle_b.xpos)**2+(particle_a.ypos-particle_b.ypos)**2)
     else:
         distance = np.sqrt((particle_a.xpos - particle_b.xpos)**2+(particle_a.ypos - particle_b.ypos)**2
-                   +(particle_a.zpos - particle_b.zpos) ** 2)
+                           + (particle_a.zpos - particle_b.zpos) ** 2)
     return distance
 
 
