@@ -24,19 +24,20 @@ def main():
     )
 
     folder_list = list()
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')
     folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
 
     # # Properties for filtering streaks
 
     angle_leniency_deg = 5
-    length_leniency_pct = 3
-    min_streak_length = 3  # for separation between short and long streaks
+    min_streak_length = 4  # for separation between short and long streaks
 
     hist_plots = False
-    calc_means = True
+    calc_means = False
+    plot_powerlaws = True
+    plot_size_dist = True
 
     list_of_folder_dim_lists = list()
     list_of_folder_streak_lists = list()
@@ -47,7 +48,7 @@ def main():
         tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
         this_folders_streak_list = tmp['streaks']
         print('Added {} streaks from {}.'.format(len(this_folders_streak_list), folder))
-        this_folders_streak_list = refine_streaks(this_folders_streak_list, angle_leniency_deg, length_leniency_pct)
+        this_folders_streak_list = refine_streaks(this_folders_streak_list, angle_leniency_deg)
         this_folders_streak_list = [a for a in this_folders_streak_list if (len(a.particle_streak) >= min_streak_length)]
         this_folders_mean_angle = np.mean([s.mean_angle for s in this_folders_streak_list])
         this_folders_dim_list = list()
@@ -105,10 +106,11 @@ def main():
         streak_id += 1
 
     full_aspr_median_list = [np.median(c) for c in full_aspr_list]
-
     different_habits = list(set(full_habit_list))
-
     selector_index_dict = dict()
+    if plot_powerlaws:
+        plaw_by_habits = dict()
+        dim_dict = dict()
 
     # Plotting
 
@@ -121,13 +123,26 @@ def main():
 
         if hist_plots:
             plot_hists_by_habit(hab, streaks_by_habit, dim_median_by_habit, aspr_by_habit, info_by_habit)
+        if plot_powerlaws:
+            amp, index = fit_powerlaw(dim_median_by_habit, list(compress(full_v_median_list, selector_index_dict[hab])))
+            powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
+            plaw_by_habits[hab] = powerlaw(dim_median_by_habit, amp, index)
+            dim_dict[hab] = dim_median_by_habit
+        if plot_size_dist:
+            if len(dim_median_by_habit) > 50:
+                size_dists(dim_median_by_habit, hab)
 
     ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
+
     if calc_means:
         hab = different_habits[0]
         plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[hab])),
                              list(compress(full_v_list, selector_index_dict[hab])))
+    if plot_powerlaws:
+        for hab in different_habits:
+            ax.plot(dim_dict[hab], plaw_by_habits[hab])
+            ax.legend()
 
     plt.show()
 
@@ -176,6 +191,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
 
     dims_spaced = np.arange(np.ceil(1.1 * max_dim / 10) * 10)
     locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
+
     maximum_vel = (2.22*2592-200)/2*60/1000
     almost_black = '#262626'
     fig = plt.figure()
@@ -183,7 +199,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
 
     marker_dict = dict()
     marker_dict['Column         '] = 's'
-    marker_dict['Aggregate      '] = ','
+    marker_dict['Aggregate      '] = (10, 1, 0)
     marker_dict['Particle_nubbly'] = 'v'
     marker_dict['Particle_round '] = 'o'
     marker_dict['Plate          '] = (6, 0, 0)
@@ -209,11 +225,11 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
-    ax.set_xlim([0, np.max(dims_spaced)])
-    # ax.set_xlim([0, 200])
+    # ax.set_xlim([0, np.max(dims_spaced)])
+    ax.set_xlim([0, 125])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
-    # ax.set_ylim([0, 1.1 * np.max(v_median_list)])
-    ax.set_ylim([0, 1.1*maximum_vel])
+    ax.set_ylim([0, 1.1 * np.max(v_median_list)])
+    # ax.set_ylim([0, 1.1*maximum_vel])
     # ax.set_ylim([0, 115])
     ax.set_ylabel('Fall speed in mm/s', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
@@ -301,6 +317,20 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
 
         fig_i.show()
     return True
+
+
+def size_dists(dim_list, hab):
+    fig_h = plt.figure()
+    ax = fig_h.add_subplot(111)
+    n_bins = 20
+    if len(dim_list) < 100:
+        n_bins = 10
+
+    ax.hist(dim_list, n_bins, histtype='step', fill=False, label='N = {}'.format(len(dim_list)), linewidth=3)
+    ax.set_title('Size distribution {}'.format(hab), fontsize=24)
+    ax.set_xlabel('Particle Diameter', fontsize=20)
+    ax.set_ylabel('Count', fontsize=20)
+    ax.grid()
 
 
 def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_list):
