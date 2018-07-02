@@ -7,7 +7,10 @@ import numpy as np
 import pickle
 from scipy import optimize
 from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks
+from utilities.plot_size_distribution import plot_size_dist
 from itertools import cycle, compress, chain
+from sklearn.metrics import r2_score
+from matplotlib.widgets import CheckButtons
 # from matplotlib import style
 # style.use('dark_background')
 
@@ -17,27 +20,28 @@ def main():
     folder_list = (
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/'
+        '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
+        '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
+        '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
+        '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/'
     )
 
-    folder_list = list()
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/')
+    # folder_list = list()
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')
 
     # # Properties for filtering streaks
 
     angle_leniency_deg = 5
-    min_streak_length = 4  # for separation between short and long streaks
+    min_streak_length = 3  # for separation between short and long streaks
 
     hist_plots = False
     calc_means = False
     plot_powerlaws = True
-    plot_size_dist = True
+    psd_flag = True
 
     list_of_folder_dim_lists = list()
     list_of_folder_streak_lists = list()
@@ -111,6 +115,7 @@ def main():
     if plot_powerlaws:
         plaw_by_habits = dict()
         dim_dict = dict()
+        plaw_vals_by_habits = dict()
 
     # Plotting
 
@@ -124,13 +129,18 @@ def main():
         if hist_plots:
             plot_hists_by_habit(hab, streaks_by_habit, dim_median_by_habit, aspr_by_habit, info_by_habit)
         if plot_powerlaws:
-            amp, index = fit_powerlaw(dim_median_by_habit, list(compress(full_v_median_list, selector_index_dict[hab])))
+            plaw_vals_by_habits[hab] = fit_powerlaw(dim_median_by_habit, list(compress(full_v_median_list, selector_index_dict[hab])))
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
-            plaw_by_habits[hab] = powerlaw(dim_median_by_habit, amp, index)
+            plaw_by_habits[hab] = powerlaw(dim_median_by_habit, plaw_vals_by_habits[hab][0], plaw_vals_by_habits[hab][1])
             dim_dict[hab] = dim_median_by_habit
-        if plot_size_dist:
-            if len(dim_median_by_habit) > 50:
-                size_dists(dim_median_by_habit, hab)
+
+        if psd_flag:
+            if (len(dim_median_by_habit) > 50) | (hab == 'Particle_round '):
+                n_bins = 20
+                if len(dim_median_by_habit) < 100:
+                    n_bins = 10
+                (fig, ax) = plot_size_dist(dim_median_by_habit, n_bins)
+                ax.set_title('Size distribution {}'.format(hab), fontsize=24)
 
     ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
@@ -141,7 +151,9 @@ def main():
                              list(compress(full_v_list, selector_index_dict[hab])))
     if plot_powerlaws:
         for hab in different_habits:
-            ax.plot(dim_dict[hab], plaw_by_habits[hab])
+            # ax.plot(dim_dict[hab], plaw_by_habits[hab])
+            ax.plot(dim_dict[hab], plaw_by_habits[hab],
+                    label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(hab, plaw_vals_by_habits[hab][0], plaw_vals_by_habits[hab][1], plaw_vals_by_habits[hab][2]))
             ax.legend()
 
     plt.show()
@@ -179,7 +191,9 @@ def fit_powerlaw(x, y):
     amp = 10.0**pfinal[0]
     pl = amp * (x**index)
 
-    return amp, index
+    r2 = r2_score(y, amp*x**index)
+
+    return amp, index, r2
 
 
 def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
@@ -204,6 +218,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     marker_dict['Particle_round '] = 'o'
     marker_dict['Plate          '] = (6, 0, 0)
     marker_dict['Needle         '] = 'D'
+    marker_dict['Dendrite       '] = '*'
 
     # for this_dim_list, this_v_list in zip(full_dim_list, full_v_list):
     #     line = ax.scatter(this_dim_list, this_v_list, alpha=1,
@@ -226,7 +241,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
     # ax.set_xlim([0, np.max(dims_spaced)])
-    ax.set_xlim([0, 125])
+    ax.set_xlim([0, 175])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
     ax.set_ylim([0, 1.1 * np.max(v_median_list)])
     # ax.set_ylim([0, 1.1*maximum_vel])
@@ -238,9 +253,17 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
     ax.legend()
 
+    # check = CheckButtons(ax, different_habits, [True]*len(different_habits))
+    # check.on_clicked(func(different_habits, lines))
+
     fig.canvas.mpl_connect('pick_event', lambda event: onpick(event, dim_list, dim_median_list,
                                                               im_list, streakids_in_habits, info_list, pos_list, v_median_list, full_v_list, lines, different_habits))
     return ax
+
+
+def func(label, different_habits, lines):
+    i = different_habits.index(label)
+    lines[i].set_visible(not lines[i].get_visible())
 
 
 def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
@@ -317,20 +340,6 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
 
         fig_i.show()
     return True
-
-
-def size_dists(dim_list, hab):
-    fig_h = plt.figure()
-    ax = fig_h.add_subplot(111)
-    n_bins = 20
-    if len(dim_list) < 100:
-        n_bins = 10
-
-    ax.hist(dim_list, n_bins, histtype='step', fill=False, label='N = {}'.format(len(dim_list)), linewidth=3)
-    ax.set_title('Size distribution {}'.format(hab), fontsize=24)
-    ax.set_xlabel('Particle Diameter', fontsize=20)
-    ax.set_ylabel('Count', fontsize=20)
-    ax.grid()
 
 
 def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_list):
