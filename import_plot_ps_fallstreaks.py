@@ -2,7 +2,7 @@
 
 import os
 from matplotlib import pyplot as plt
-from matplotlib.ticker import MaxNLocator
+from matplotlib import ticker
 import numpy as np
 import pickle
 from scipy import optimize
@@ -168,15 +168,23 @@ def plot_best_vs_reynolds(v_list, dim_list):
     best_list = [best_number(r*1e-6, 3) for r in dim_list]
     reynolds_list = [reynolds_number(v/1000, r*1e-6) for v, r in zip(v_list, dim_list)]
     br_ax = fig.add_subplot(111)
-    br_ax.scatter(reynolds_list, best_list)
-    br_ax.grid()
+    br_ax.scatter(reynolds_list, best_list, label='Data')
+    rey_best_fit = fit_powerlaw(reynolds_list, best_list)
+    br_ax.plot(reynolds_list, [rey_best_fit[0]*r**rey_best_fit[1] for r in reynolds_list], label='Data Fit')
+    burgesser = [40*r**1.36 for r in reynolds_list]
+    br_ax.plot(reynolds_list, burgesser, color='r', label='Burgesser Power Law')
+    br_ax.legend()
+    br_ax.grid(b=True, which='major', linestyle='-')
+    br_ax.grid(b=True, which='minor', linestyle='--', linewidth=0.5)
     br_ax.set_xlabel('Reynolds Number', fontsize=20)
     br_ax.set_ylabel('Best Number', fontsize=20)
     br_ax.set_title('Be vs. Re', fontsize=20)
     br_ax.set_xscale('log')
     br_ax.set_yscale('log')
-    br_ax.set_xlim(0.1*min(reynolds_list), 10*max(reynolds_list))
-    br_ax.set_ylim(0.1*min(best_list), 10*max(best_list))
+    br_ax.set_xlim(0.5*min(reynolds_list), 1.5*max(reynolds_list))
+    br_ax.set_ylim(0.2*min(best_list), 5*max(best_list))
+    br_ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+    br_ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
 
     return br_ax
 
@@ -191,8 +199,8 @@ def best_number(d, aspr):
     rho = 1.341
     eta = 17.1*1e-6
     g = 9.81
-    a_m = 0.0022
-    b_m = 2.458
+    a_m = 0.008
+    b_m = 2.026
     m = a_m*(d*100)**b_m*1e-6
     best_n = 4*m*d*rho*g/(aspr*2*d*eta**2)
     return best_n
@@ -353,7 +361,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         ax1.plot(fdl, c='b', lw=3)
         ax1.axhline(y=dim_median_list[global_streakid], ls='--', c='b')
         ax1.set_ylim(0, 1.1*np.max(fdl))
-        ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax1.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         ax1.set_xlabel('Index', fontsize=20)
         ax1.set_ylabel('Particle Max Diameter ($\mu$m)', fontsize=20)
 
@@ -363,7 +371,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         ax2.plot(xrange, fvl, c='g', lw=3)
         ax2.axhline(y=v_median_list[global_streakid], ls='--', c='g')
         ax2.set_ylim(0, 1.1*np.max(fvl))
-        ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax2.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         ax2.set_ylabel('Fall Speed (mm/s)', fontsize=20)
 
         fpl = pos_list[global_streakid]
