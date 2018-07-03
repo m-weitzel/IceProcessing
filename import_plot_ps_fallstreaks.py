@@ -36,12 +36,12 @@ def main():
     # # Properties for filtering streaks
 
     angle_leniency_deg = 5
-    min_streak_length = 3  # for separation between short and long streaks
+    min_streak_length = 5  # for separation between short and long streaks
 
     hist_plots = False
     calc_means = False
-    plot_powerlaws = True
-    psd_flag = True
+    plot_powerlaws = False
+    psd_flag = False
 
     list_of_folder_dim_lists = list()
     list_of_folder_streak_lists = list()
@@ -112,38 +112,42 @@ def main():
     full_aspr_median_list = [np.median(c) for c in full_aspr_list]
     different_habits = list(set(full_habit_list))
     selector_index_dict = dict()
+    dim_dict = dict()
+    v_median_dict = dict()
+
     if plot_powerlaws:
         plaw_by_habits = dict()
-        dim_dict = dict()
         plaw_vals_by_habits = dict()
 
     # Plotting
 
     for hab in different_habits:
         selector_index_dict[hab] = [1 if s.streak_habit == hab else 0 for s in full_streak_list]
+        v_median_dict[hab] = list(compress(full_v_median_list, selector_index_dict[hab]))
+        dim_dict[hab] = list(compress(full_dim_median_list, selector_index_dict[hab]))
         streaks_by_habit = list(compress(full_streak_list, selector_index_dict[hab]))
-        dim_median_by_habit = list(compress(full_dim_median_list, selector_index_dict[hab]))
         info_by_habit = list(compress(info_list, selector_index_dict[hab]))
         aspr_by_habit = list(compress(full_aspr_median_list, selector_index_dict[hab]))
 
         if hist_plots:
-            plot_hists_by_habit(hab, streaks_by_habit, dim_median_by_habit, aspr_by_habit, info_by_habit)
+            plot_hists_by_habit(hab, streaks_by_habit, dim_dict[hab], aspr_by_habit, info_by_habit)
         if plot_powerlaws:
-            plaw_vals_by_habits[hab] = fit_powerlaw(dim_median_by_habit, list(compress(full_v_median_list, selector_index_dict[hab])))
+            plaw_vals_by_habits[hab] = fit_powerlaw(dim_dict[hab], v_median_dict[hab])
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
-            plaw_by_habits[hab] = powerlaw(dim_median_by_habit, plaw_vals_by_habits[hab][0], plaw_vals_by_habits[hab][1])
-            dim_dict[hab] = dim_median_by_habit
+            plaw_by_habits[hab] = powerlaw(dim_dict[hab], plaw_vals_by_habits[hab][0], plaw_vals_by_habits[hab][1])
 
         if psd_flag:
-            if (len(dim_median_by_habit) > 50) | (hab == 'Particle_round '):
+            if (len(dim_dict[hab]) > 50) | (hab == 'Particle_round '):
                 n_bins = 20
-                if len(dim_median_by_habit) < 100:
+                if len(dim_dict[hab]) < 100:
                     n_bins = 10
-                (fig, ax) = plot_size_dist(dim_median_by_habit, n_bins)
+                (fig, ax) = plot_size_dist(dim_dict[hab], n_bins)
                 ax.set_title('Size distribution {}'.format(hab), fontsize=24)
 
     ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
+
+    ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '] )
 
     if calc_means:
         hab = different_habits[0]
@@ -157,6 +161,41 @@ def main():
             ax.legend()
 
     plt.show()
+
+
+def plot_best_vs_reynolds(v_list, dim_list):
+    fig = plt.figure()
+    best_list = [best_number(r*1e-6, 3) for r in dim_list]
+    reynolds_list = [reynolds_number(v/1000, r*1e-6) for v, r in zip(v_list, dim_list)]
+    br_ax = fig.add_subplot(111)
+    br_ax.scatter(reynolds_list, best_list)
+    br_ax.grid()
+    br_ax.set_xlabel('Reynolds Number', fontsize=20)
+    br_ax.set_ylabel('Best Number', fontsize=20)
+    br_ax.set_title('Be vs. Re', fontsize=20)
+    br_ax.set_xscale('log')
+    br_ax.set_yscale('log')
+    br_ax.set_xlim(0.1*min(reynolds_list), 10*max(reynolds_list))
+    br_ax.set_ylim(0.1*min(best_list), 10*max(best_list))
+
+    return br_ax
+
+
+def reynolds_number(v, d):
+    rho = 1.341             # air, kg/m³ at -10°C
+    eta = 17.1*1e-6         # air, Pa*s
+    return v*d*rho/eta
+
+
+def best_number(d, aspr):
+    rho = 1.341
+    eta = 17.1*1e-6
+    g = 9.81
+    a_m = 0.0022
+    b_m = 2.458
+    m = a_m*(d*100)**b_m*1e-6
+    best_n = 4*m*d*rho*g/(aspr*2*d*eta**2)
+    return best_n
 
 
 def plot_mean_in_scatter(ax, dim_list, v_list):
@@ -248,7 +287,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.set_ylim([0, 115])
     ax.set_ylabel('Fall speed in mm/s', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
-    ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
+    # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
     ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
     ax.legend()
