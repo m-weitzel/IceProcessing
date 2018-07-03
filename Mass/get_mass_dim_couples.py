@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 import find_couples
 from matplotlib import pyplot as plt
+from utilities.find_ccr_folder import find_ccr
 
 sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
 

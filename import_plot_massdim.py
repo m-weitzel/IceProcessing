@@ -9,10 +9,13 @@ import pickle
 from scipy import optimize
 from scipy import stats
 from itertools import cycle
+import os
+from utilities.find_ccr_folder import find_ccr
 # from matplotlib import style
 # style.use('dark_background')
 
 
+basedir = find_ccr()
 folder_list = (
 
     # Clean Measurements
