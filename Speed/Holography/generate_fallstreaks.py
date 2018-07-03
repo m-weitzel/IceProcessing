@@ -14,7 +14,7 @@ import os
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar'
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))
@@ -33,13 +33,14 @@ def main():
     min_length = 3              # minimum number of consecutive particles to be considered a streak
     max_size_diff = 0.1
     max_dist_from_predict = 0.5
-    static_velocity = True
+    static_velocity = False
 
     if static_velocity:
         base_velocity_guess = [0, -1.6, 0]
     else:
-        y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
+        # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
                                                             # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
+        y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
 
     # End of properties
 
@@ -216,7 +217,7 @@ def dist(particle_a, particle_b, ignore_zpos=False):
     return distance
 
 
-def refine_streaks(streak_list, angle_leniency, length_leniency):
+def refine_streaks(streak_list, angle_leniency):
     for streak in streak_list:
         if len(streak.particle_streak) > 1:
             angles = [np.angle(s1.xpos - s2.xpos + 1j * (s1.ypos - s2.ypos), deg=True) for s1, s2 in
