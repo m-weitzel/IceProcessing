@@ -114,6 +114,7 @@ def main():
     selector_index_dict = dict()
     dim_dict = dict()
     v_median_dict = dict()
+    aspr_dict = dict()
 
     if plot_powerlaws:
         plaw_by_habits = dict()
@@ -125,9 +126,9 @@ def main():
         selector_index_dict[hab] = [1 if s.streak_habit == hab else 0 for s in full_streak_list]
         v_median_dict[hab] = list(compress(full_v_median_list, selector_index_dict[hab]))
         dim_dict[hab] = list(compress(full_dim_median_list, selector_index_dict[hab]))
+        aspr_dict[hab] = list(compress(full_aspr_median_list, selector_index_dict[hab]))
         streaks_by_habit = list(compress(full_streak_list, selector_index_dict[hab]))
         info_by_habit = list(compress(info_list, selector_index_dict[hab]))
-        aspr_by_habit = list(compress(full_aspr_median_list, selector_index_dict[hab]))
 
         if hist_plots:
             plot_hists_by_habit(hab, streaks_by_habit, dim_dict[hab], aspr_by_habit, info_by_habit)
@@ -147,7 +148,7 @@ def main():
     ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
 
-    ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '] )
+    ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
 
     if calc_means:
         hab = different_habits[0]
@@ -163,17 +164,26 @@ def main():
     plt.show()
 
 
-def plot_best_vs_reynolds(v_list, dim_list):
-    fig = plt.figure()
+def plot_best_vs_reynolds(v_list, dim_list, aspr_list, cap_flag=False):
+    fig = plt.figure(figsize=(18, 10), dpi=100)
+    almost_black = '#262626'
+
+    if cap_flag:
+        minsiz_list = [d/a for d, a in zip(dim_list, aspr_list)]
+        cap_list = [0.58*w/2*(1+0.95*(l/w)**0.75) for w, l in zip(minsiz_list, dim_list)]
+        best_list = [best_number(r * 1e-6, 3) for r in cap_list]
+        reynolds_list = [reynolds_number(v / 1000, r * 1e-6) for v, r in zip(v_list, dim_list)]
+
     best_list = [best_number(r*1e-6, 3) for r in dim_list]
     reynolds_list = [reynolds_number(v/1000, r*1e-6) for v, r in zip(v_list, dim_list)]
-    br_ax = fig.add_subplot(111)
-    br_ax.scatter(reynolds_list, best_list, label='Data')
     rey_best_fit = fit_powerlaw(reynolds_list, best_list)
+    burgesser = [40 * r ** 1.36 for r in reynolds_list]
+
+    br_ax = fig.add_subplot(111)
+    br_ax.scatter(reynolds_list, best_list, label='Data', edgecolor=almost_black)
     br_ax.plot(reynolds_list, [rey_best_fit[0]*r**rey_best_fit[1] for r in reynolds_list], label='Data Fit')
-    burgesser = [40*r**1.36 for r in reynolds_list]
     br_ax.plot(reynolds_list, burgesser, color='r', label='Burgesser Power Law')
-    br_ax.legend()
+    br_ax.legend(fontsize=16)
     br_ax.grid(b=True, which='major', linestyle='-')
     br_ax.grid(b=True, which='minor', linestyle='--', linewidth=0.5)
     br_ax.set_xlabel('Reynolds Number', fontsize=20)
@@ -181,7 +191,7 @@ def plot_best_vs_reynolds(v_list, dim_list):
     br_ax.set_title('Be vs. Re', fontsize=20)
     br_ax.set_xscale('log')
     br_ax.set_yscale('log')
-    br_ax.set_xlim(0.5*min(reynolds_list), 1.5*max(reynolds_list))
+    br_ax.set_xlim(0.7*min(reynolds_list), 1.7*max(reynolds_list))
     br_ax.set_ylim(0.2*min(best_list), 5*max(best_list))
     br_ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
     br_ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
@@ -201,7 +211,7 @@ def best_number(d, aspr):
     g = 9.81
     a_m = 0.008
     b_m = 2.026
-    m = a_m*(d*100)**b_m*1e-6
+    m = a_m*(d*100)**b_m*1e-3
     best_n = 4*m*d*rho*g/(aspr*2*d*eta**2)
     return best_n
 
@@ -255,7 +265,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
 
     maximum_vel = (2.22*2592-200)/2*60/1000
     almost_black = '#262626'
-    fig = plt.figure()
+    fig = plt.figure(figsize=(18, 10), dpi=100)
     ax = fig.add_subplot(111)
 
     marker_dict = dict()
@@ -298,7 +308,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
     ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
-    ax.legend()
+    ax.legend(fontsize=16)
 
     # check = CheckButtons(ax, different_habits, [True]*len(different_habits))
     # check.on_clicked(func(different_habits, lines))
