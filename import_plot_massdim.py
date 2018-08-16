@@ -33,17 +33,20 @@ folder_list = (
     os.path.join(basedir, '0208/M2/'),    # Irregular, Aggregates
     os.path.join(basedir, '0908/M1/'),    # Dendritic, Irregular, Dense
     os.path.join(basedir, '01Mar/'),      # Dendritic (aggregates)
-    # os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
+
 
     # Unclean measurements
 
+    # os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
     # '/uni-mainz.de/homes/maweitze/CCR/1503/M1/',    # Irregular Dendritic, Aggregates
     # '/uni-mainz.de/homes/maweitze/CCR/1907/M1/',    # Dendritic
     # '/uni-mainz.de/homes/maweitze/CCR/1907/M2/',    # Dendritic
     # '/uni-mainz.de/homes/maweitze/CCR/1907/M3/',    # Dendritic
 )
 
-compare_list_folder = os.path.join(basedir, '2804/M1/')     # Dendritic (aggregates)
+compare=False
+if compare:
+    compare_list_folder = os.path.join(basedir, '2804/M1/')     # Dendritic (aggregates)
 
 minsize = 0
 maxsize = 150
@@ -101,11 +104,12 @@ for folder, i in zip(folder_list, np.arange(1,len(folder_list)+1)):
     full_mass_list += this_mass_list
     index_list += [i]*len(this_dim_list)
 
-tmp = pickle.load(open(compare_list_folder+'mass_dim_data.dat', 'rb'))
-compare_list= tmp['crystal']
+if compare:
+    tmp = pickle.load(open(compare_list_folder+'mass_dim_data.dat', 'rb'))
+    compare_list= tmp['crystal']
 
-comp_dim_list = [float(a['Long Axis']) for a in compare_list]
-comp_mass_list = [np.pi/6*a['Drop Diameter']**3 for a in compare_list]
+    comp_dim_list = [float(a['Long Axis']) for a in compare_list]
+    comp_mass_list = [np.pi/6*a['Drop Diameter']**3 for a in compare_list]
 
 full_dim_list, full_mass_list, index_list = zip(*sorted(zip(full_dim_list, full_mass_list, index_list)))
 
@@ -205,9 +209,12 @@ dims_spaced = np.arange(maxsize)
 if plot_binned:
     amp_bins, index_bins = fit_powerlaw(dim_bins, avg_masses)
 amp_full, index_full = fit_powerlaw(full_dim_list, full_mass_list)
-mass_bulk = np.pi / 6*(dims_spaced*1e-6) ** 3 * 916.7*1000      # D in m, m in kg
+mass_bulk = np.pi / 6*(dims_spaced*1e-6) ** 3 * 916.7*1000      # D in m, m in g
 brown_franc = 0.0185 * (dims_spaced*1e-6) ** 1.9*1000     # D in m, m in kg
-mitchell = 0.022*(dims_spaced*1e-3)**2/1000     
+brown_franc_cgs = 0.00294*(dims_spaced*1e-4)**1.9         # cgs, from Heymsfield 2010
+mitchell_90 = 0.022*(dims_spaced*1e-3)**2/1000
+mitchell_2010 = 0.08274*(dims_spaced*1e-4) ** 2.814      # cgs,
+heymsfield2010 = 0.007*(dims_spaced*1e-4)**2.2           # cgs
 
 bakerlawson = 0.115*(dims_spaced*1e-6)**1.218/1000          # A in mm², m in mg
 # D in mm, m in mg
@@ -262,7 +269,10 @@ else:
 if plot_massdim:
     ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
     ax.plot(dims_spaced, brown_franc, label='Brown&Francis 95', linestyle='--', zorder=1)
-    ax.plot(dims_spaced, mitchell, label='Mitchell 90', linestyle='--', zorder=1)
+    ax.plot(dims_spaced, brown_franc_cgs, label='Brown&Francis cgs', linestyle='--', zorder=1)
+    ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1)
+    ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1)
+    ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
 else:
     ax.plot(dims_spaced, bakerlawson, label='Baker&Lawson 06', linestyle='--', zorder=1)
 # ax.plot(dims_spaced, heymsfield, label='Heymsfield 2011', linestyle='--')
@@ -284,7 +294,8 @@ for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_di
                    edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
     # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
-ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
+if compare:
+    ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
 
 plt.xlabel('Area equivalent diameter in $\mathrm{\mu m}$', fontsize=fontsize_base)
 plt.ylabel('Mass in ng', fontsize=fontsize_base)
