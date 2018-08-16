@@ -131,7 +131,7 @@ def main():
         info_by_habit = list(compress(info_list, selector_index_dict[hab]))
 
         if hist_plots:
-            plot_hists_by_habit(hab, streaks_by_habit, dim_dict[hab], aspr_by_habit, info_by_habit)
+            plot_hists_by_habit(hab, streaks_by_habit, dim_dict[hab], aspr_dict[hab], info_by_habit)
         if plot_powerlaws:
             plaw_vals_by_habits[hab] = fit_powerlaw(dim_dict[hab], v_median_dict[hab])
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
