@@ -46,7 +46,7 @@ class MicroImg:
 
         # sort the contours from left-to-right and initialize the
         # 'pixels per metric' calibration variable
-        if len(cnts)>0:
+        if len(cnts) > 0:
             (cnts, _) = contours.sort_contours(cnts)
 
         filtered_contours = list()

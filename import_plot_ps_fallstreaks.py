@@ -20,23 +20,21 @@ def main():
     folder_list = (
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
-        '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
-        '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
-        '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
-        '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/'
+        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
+        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
+        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
+        # '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/'
     )
 
-    # folder_list = list()
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')
+    folder_list = list()
+
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
 
     # # Properties for filtering streaks
 
     angle_leniency_deg = 5
-    min_streak_length = 5  # for separation between short and long streaks
+    min_streak_length = 3   # for separation between short and long streaks
 
     hist_plots = False
     calc_means = False
@@ -148,7 +146,7 @@ def main():
     ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
 
-    ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
+    # ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
 
     if calc_means:
         hab = different_habits[0]
@@ -273,6 +271,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     marker_dict['Aggregate      '] = (10, 1, 0)
     marker_dict['Particle_nubbly'] = 'v'
     marker_dict['Particle_round '] = 'o'
+    marker_dict['Particle_round'] = 'o'
     marker_dict['Plate          '] = (6, 0, 0)
     marker_dict['Needle         '] = 'D'
     marker_dict['Dendrite       '] = '*'
@@ -298,7 +297,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
     # ax.set_xlim([0, np.max(dims_spaced)])
-    ax.set_xlim([0, 175])
+    ax.set_xlim([20, 50])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
     ax.set_ylim([0, 1.1 * np.max(v_median_list)])
     # ax.set_ylim([0, 1.1*maximum_vel])
@@ -402,6 +401,14 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
 def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_list):
 
     # Plotting things ############################
+
+    # Size distribution
+    fig_h = plt.figure()
+    ax = fig_h.add_subplot(111)
+    histo = plt.hist(dim_median_list, edgecolor='black', linewidth=1.2)
+    ax.set_title('Size distribution for {}'.format(habit))
+    ax.set_xlabel('Maximum dimension in $\mu$m', fontsize=20)
+    ax.set_ylabel('Count', fontsize=20)
 
     # Angle histogram plot
     fig_h = plt.figure()
