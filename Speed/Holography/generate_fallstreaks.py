@@ -27,7 +27,6 @@ def main():
 
     # General parameters
     pxl_size = 1
-    framerate = 56 #fps
 
     # Properties for finding streaks
     min_length = 3              # minimum number of consecutive particles to be considered a streak
@@ -77,7 +76,7 @@ def main():
                 y_velocity = y_vel(this_particle.majsiz)
                 velocity_guess = [0, y_velocity, 0]
 
-            new_streak = ParticleStreak(this_particle, framerate)
+            new_streak = ParticleStreak(this_particle, a['holotimes'])
             processing_p_list.remove(this_particle)
             extended = True
             while extended:
@@ -136,14 +135,14 @@ class FallParticle:
 
 
 class ParticleStreak:
-    def __init__(self, initial_particle, framerate):
+    def __init__(self, initial_particle, holotimes):
         self.initial_particle = initial_particle
         self.particle_streak = [initial_particle]
         self.streak_habit = initial_particle.habit
         self.streak_length = self.get_streak_length()
         self.angles = ()
         self.mean_angle = self.set_mean_angle()
-        self.framerate = framerate
+        self.holotimes = holotimes
 
     def add_particle(self, particle):
         self.particle_streak.append(particle)
@@ -166,8 +165,11 @@ class ParticleStreak:
 
     def get_projected_velocity(self, mean_angle):
         pos = sorted([p.spatial_position for p in self.particle_streak], key=lambda pos_entry: pos_entry[1], reverse=True)
+        time = [self.holotimes[pn] for pn in [p.holonum for p in self.particle_streak]]
         this_gaps = [q - p for (p, q) in zip(pos[:-1], pos[1:])]
-        abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * self.framerate for g in this_gaps]  # absolute velocity
+        this_timestep = [t - s for (s, t) in zip(time[:-1], time[1:])]
+        abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * 1/t for (g, t) in zip(this_gaps, this_timestep)]  # absolute velocity
+        # abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * 56 for g in this_gaps]
         new_angles = [a - mean_angle for a in self.angles]
         v_list = [v * np.cos(beta) for v, beta in zip(abs_v_list, new_angles)]
 

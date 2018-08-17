@@ -8,6 +8,13 @@ catch
     ps_rem = ps.removeMyRepeatedParticles(ps, 5e-6);
 end
 
+
+holotimes = zeros(size(ps.filenames));
+for i=1:length(ps.filenames)
+    holotimes(i) = str2double(ps.filenames{i}(end-17:end-16))+str2double(ps.filenames{i}(end-14:end-9))*1e-6;
+end
+
+
 % selector = and(ps_rem.sI, ps.isparticlebyhand=='Particle_nubbly');
 % selector = and(ps_rem.sI, (ps.isparticlebypredict=='Particle_nubbly')|(ps.isparticlebypredict=='Aggregate')|(ps.isparticlebypredict=='Dendrite'));
 % selector = and(ps_rem.sI, (ps.isparticlebypredict=='Particle_nubbly')...
@@ -29,5 +36,5 @@ minsiz = ps.minsiz(selector);
 
 ims = ps.prtclIm(selector);
 
-save([folder,'/ps_bypredict.mat'], 'xp', 'yp', 'zp', 'prediction', 'times', 'area', 'majsiz', 'minsiz', 'ims');
+save([folder,'/ps_bypredict.mat'], 'xp', 'yp', 'zp', 'prediction', 'times', 'area', 'majsiz', 'minsiz', 'ims', 'holotimes');
 
