@@ -28,8 +28,12 @@ def main():
 
     folder_list = list()
 
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN2/')
 
     # # Properties for filtering streaks
 
@@ -37,7 +41,9 @@ def main():
     min_streak_length = 3   # for separation between short and long streaks
 
     hist_plots = False
-    calc_means = False
+    calc_means = True
+    calc_means = True
+    plot_expected = True
     plot_powerlaws = False
     psd_flag = False
 
@@ -152,6 +158,14 @@ def main():
         hab = different_habits[0]
         plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[hab])),
                              list(compress(full_v_list, selector_index_dict[hab])))
+
+    if plot_expected:
+        rho_o = 2500
+        d_mean = 30e-6
+        y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)*1e3
+        ax.axhline(-y_vel, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel))
+        ax.legend(loc='upper left')
+
     if plot_powerlaws:
         for hab in different_habits:
             # ax.plot(dim_dict[hab], plaw_by_habits[hab])
@@ -221,7 +235,7 @@ def plot_mean_in_scatter(ax, dim_list, v_list):
     std_v = np.std(list(chain.from_iterable(v_list)))
 
     ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, label='Means', color='k')
-    ax.text(5, 175, 'v={0:.2f}+-{1:.2f}, D={2:.2f}+-{3:.2f}'.format(mean_v, std_v, mean_dim, std_dim),
+    ax.text(5, 175, 'v={0:.2f}+-{1:.2f}m/s, D={2:.2f}+-{3:.2f}\mu m'.format(mean_v, std_v, mean_dim, std_dim),
             bbox=dict(facecolor='green', alpha=0.2), fontsize=12)
 
 
@@ -288,16 +302,20 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     lines = list()
 
     for i, hab in enumerate(different_habits):
-        lines.append(ax.scatter(list(compress(dim_median_list, selector_list[hab])), list(compress(v_median_list, selector_list[hab])), alpha=1,
+        t_dim = list(compress(dim_median_list, selector_list[hab]))
+        t_v = list(compress(v_median_list, selector_list[hab]))
+        lines.append(ax.scatter(t_dim, t_v, alpha=1,
                                 edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
-                                label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
+                                # label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
+                                label='v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v),
+                                                                           np.mean(t_dim), np.std(t_dim)), marker = marker_dict[hab]))
         streakids_in_habits[hab] = list(compress(streakid_list, selector_list[hab]))
 
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
     # ax.set_xlim([0, np.max(dims_spaced)])
-    ax.set_xlim([20, 50])
+    # ax.set_xlim([20, 50])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
     ax.set_ylim([0, 1.1 * np.max(v_median_list)])
     # ax.set_ylim([0, 1.1*maximum_vel])
@@ -305,7 +323,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     ax.set_ylabel('Fall speed in mm/s', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
     # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
-    ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
+    # ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
     ax.legend(fontsize=16)
 
