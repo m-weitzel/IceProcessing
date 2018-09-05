@@ -14,7 +14,7 @@ import os
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug'
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))
@@ -29,17 +29,23 @@ def main():
     pxl_size = 1
 
     # Properties for finding streaks
-    min_length = 3              # minimum number of consecutive particles to be considered a streak
+    min_length = 3             # minimum number of consecutive particles to be considered a streak
     max_size_diff = 0.1
     max_dist_from_predict = 0.5
-    static_velocity = True
+    static_velocity = False
 
     if static_velocity:
-        base_velocity_guess = [0, -1.6, 0]
+        vel_guess = lambda x, y: -x/y
+        vel_in_mm = 80
+        framerate_estimated_avg = 56
+        base_velocity_guess = [0, vel_guess(vel_in_mm, framerate_estimated_avg), 0]
     else:
         # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
                                                             # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
-        y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
+        # y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
+        rho_o = 2500
+        # y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)/60*1e3   # Stokes
+        y_vel = lambda x: -2*(13e-6/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)/56*1e3   # Stokes for fixed size
 
     # End of properties
 
