@@ -39,12 +39,14 @@ def main():
 
     angle_leniency_deg = 5
     min_streak_length = 3   # for separation between short and long streaks
+    fr_guess = 56           # guess for frame rate
 
     hist_plots = False
     calc_means = True
     calc_means = True
     plot_expected = True
     plot_powerlaws = False
+    plot_stokes = True
     psd_flag = False
 
     list_of_folder_dim_lists = list()
@@ -63,7 +65,7 @@ def main():
         this_folders_v_list = list()
         for i, s in enumerate(this_folders_streak_list):
             this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
-            this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle))
+            this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, fr_guess))
             info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
         list_of_folder_dim_lists.append(this_folders_dim_list)
         list_of_folder_streak_lists.append(this_folders_streak_list)
@@ -162,7 +164,8 @@ def main():
     if plot_expected:
         rho_o = 2500
         d_mean = 30e-6
-        y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)*1e3
+        eta = 16.22*1e-6                                # viscosity at -20°C
+        y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta)*1e3
         ax.axhline(-y_vel, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel))
         ax.legend(loc='upper left')
 
@@ -173,6 +176,13 @@ def main():
                     label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(hab, plaw_vals_by_habits[hab][0], plaw_vals_by_habits[hab][1], plaw_vals_by_habits[hab][2]))
             ax.legend()
 
+    if plot_stokes:
+        eta = 16.22*1e-6                                # viscosity at -20°C
+        ds = np.arange(np.round(1.2*np.max(dim_dict[hab])))
+        stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(2500-1.2)/(9*eta)*1000 for d in ds]
+        ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3)
+
+    plt.savefig(os.path.join(info_list[0]['folder'], 'plots/v_dim_scatter.png'))
     plt.show()
 
 
