@@ -148,7 +148,7 @@ class ParticleStreak:
         self.streak_length = self.get_streak_length()
         self.angles = ()
         self.mean_angle = self.set_mean_angle()
-        self.holotimes = holotimes
+        self.holotimes = np.insert(holotimes, 0, 0)
 
     def add_particle(self, particle):
         self.particle_streak.append(particle)
