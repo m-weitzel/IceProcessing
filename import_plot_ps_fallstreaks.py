@@ -39,15 +39,19 @@ def main():
 
     angle_leniency_deg = 5
     min_streak_length = 3   # for separation between short and long streaks
-    fr_guess = 56           # guess for frame rate
+    fr_guess = 54          # guess for frame rate
+
+    rho_o = 2500
+    d_mean = 30e-6
+    eta = 18.37*1e-6
 
     hist_plots = False
     calc_means = True
-    calc_means = True
-    plot_expected = True
+    plot_expected = False
     plot_powerlaws = False
     plot_stokes = True
     psd_flag = False
+    plot_folder_means = True
 
     list_of_folder_dim_lists = list()
     list_of_folder_streak_lists = list()
@@ -161,10 +165,7 @@ def main():
         plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[hab])),
                              list(compress(full_v_list, selector_index_dict[hab])))
 
-    if plot_expected:
-        rho_o = 2500
-        d_mean = 30e-6
-        eta = 16.22*1e-6                                # viscosity at -20°C
+    if plot_expected:                               # viscosity at -20°C
         y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta)*1e3
         ax.axhline(-y_vel, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel))
         ax.legend(loc='upper left')
@@ -177,12 +178,45 @@ def main():
             ax.legend()
 
     if plot_stokes:
-        eta = 16.22*1e-6                                # viscosity at -20°C
         ds = np.arange(np.round(1.2*np.max(dim_dict[hab])))
-        stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(2500-1.2)/(9*eta)*1000 for d in ds]
+        stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.2)/(9*eta)*1000 for d in ds]
         ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3)
 
     plt.savefig(os.path.join(info_list[0]['folder'], 'plots/v_dim_scatter.png'))
+
+    if plot_folder_means:
+        fig_mean = plt.figure(figsize=(18, 10), dpi=100)
+        ax_mean = fig_mean.add_subplot(111)
+        folder_mean_vs = list()
+        folder_std_vs = list()
+        folder_mean_dims = list()
+        folder_std_dims = list()
+        for fvl, fdl in zip(list_of_folder_v_lists, list_of_folder_dim_lists):
+            folder_mean_vs.append(np.mean([np.mean(vl) for vl in fvl]))
+            folder_std_vs.append(np.std([np.mean(vl) for vl in fvl]))
+            folder_mean_dims.append(np.mean([np.mean(dl) for dl in fdl]))
+            folder_std_dims.append(np.std([np.mean(dl) for dl in fdl]))
+        ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
+        ax_mean.set_xticks(np.arange(4))
+        ax_mean.set_xticklabels([f[47:-1] for f in folder_list], fontsize=20)
+        # ax_mean.set_xlim(0, 5)
+        ax_mean.set_ylim(0, 110)
+        ax_mean.grid(b=True, which='major', linestyle='-')
+        ax_mean.set_xlabel('Measurement name', fontsize=20)
+        ax_mean.set_ylabel('Mean velocity', fontsize=20)
+        ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
+        eta_m25 = 15.88*1e-6                                # viscosity at -205°C
+        eta_m10 = 16.65*1e-6
+        eta_p25 = 18.32*1e-6
+        # y_vel_m25 = -2*(folder_mean_dims[0]*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_m25)*1e3
+        # y_vel_p25 = -2*(folder_mean_dims[-1]*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
+        # ax_mean.plot(np.arange(2), [-y_vel_m25]*2, color='b', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-25°C'.format(-y_vel_m25))
+        # ax_mean.plot(np.arange(2, 4), [-y_vel_p25]*2, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
+        y_vel_m10 = -2*(folder_mean_dims[-1]*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
+        # y_vel_m10 = -2*(30*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
+        ax_mean.plot(np.arange(2), [-y_vel_m10]*2, color='b', lw=3, label='Expected value from Stokes for mean diameter {0:.2f} $\mu$m, v={1:.2f} mm/s for T=-10°C'.format(folder_mean_dims[-1], -y_vel_m10))
+        ax_mean.legend(loc='upper left')
+
     plt.show()
 
 
