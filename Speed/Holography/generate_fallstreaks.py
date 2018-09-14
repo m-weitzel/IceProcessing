@@ -14,7 +14,7 @@ import os
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13SepSmall'
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))
@@ -27,6 +27,13 @@ def main():
 
     # General parameters
     pxl_size = 1
+    framerate_estimated_avg = 54
+
+    # Constants
+    eta_m25 = 15.88*1e-6
+    eta_m10 = 16.65*1e-6
+    eta_null = 17.15*1e-6               # viscosity
+    eta_p25 = 18.32*1e-6
 
     # Properties for finding streaks
     min_length = 3             # minimum number of consecutive particles to be considered a streak
@@ -36,16 +43,16 @@ def main():
 
     if static_velocity:
         vel_guess = lambda x, y: -x/y
-        vel_in_mm = 80
-        framerate_estimated_avg = 56
+        vel_in_mm = 65
         base_velocity_guess = [0, vel_guess(vel_in_mm, framerate_estimated_avg), 0]
     else:
         # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
                                                             # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
         # y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
         rho_o = 2500
-        # y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)/60*1e3   # Stokes
-        y_vel = lambda x: -2*(13e-6/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)/56*1e3   # Stokes for fixed size
+        eta = eta_m10
+        y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta_m10)/framerate_estimated_avg*1e3   # Stokes
+        # y_vel = lambda x: -2*(15e-6/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)/56*1e3   # Stokes for fixed size
 
     # End of properties
 
@@ -169,11 +176,21 @@ class ParticleStreak:
         angles = [np.arctan(-g[0] / g[1]) for g in this_gaps]
         return angles
 
-    def get_projected_velocity(self, mean_angle):
+    def get_projected_velocity(self, mean_angle, fr_guess, manual_framerate):
         pos = sorted([p.spatial_position for p in self.particle_streak], key=lambda pos_entry: pos_entry[1], reverse=True)
-        time = [self.holotimes[pn] for pn in [p.holonum for p in self.particle_streak]]
         this_gaps = [q - p for (p, q) in zip(pos[:-1], pos[1:])]
-        this_timestep = [t - s for (s, t) in zip(time[:-1], time[1:])]
+        while True:
+            if manual_framerate:
+                this_timestep = [1/fr_guess]*(len(this_gaps))                                                     # if time is not saved in holograms, use guess)
+                break
+            else:
+                try:
+                    time = [self.holotimes[pn] for pn in [p.holonum for p in self.particle_streak]]
+                    this_timestep = [t - s for (s, t) in zip(time[:-1], time[1:])]
+                    break
+                except AttributeError:
+                    manual_framerate = True
+
         abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * 1/t for (g, t) in zip(this_gaps, this_timestep)]  # absolute velocity
         # abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * 56 for g in this_gaps]
         new_angles = [a - mean_angle for a in self.angles]

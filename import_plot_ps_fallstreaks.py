@@ -28,12 +28,20 @@ def main():
 
     folder_list = list()
 
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
+
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN2/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration06SepWarm/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepVentilated/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepStopfen/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13SepSmall/')
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13Sep54fps/')
 
     # # Properties for filtering streaks
 
@@ -69,7 +77,7 @@ def main():
         this_folders_v_list = list()
         for i, s in enumerate(this_folders_streak_list):
             this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
-            this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, fr_guess))
+            this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, fr_guess, True))
             info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
         list_of_folder_dim_lists.append(this_folders_dim_list)
         list_of_folder_streak_lists.append(this_folders_streak_list)
@@ -278,7 +286,7 @@ def plot_mean_in_scatter(ax, dim_list, v_list):
     std_dim = np.std(list(chain.from_iterable(dim_list)))
     std_v = np.std(list(chain.from_iterable(v_list)))
 
-    ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, label='Means', color='k')
+    ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, label='Means', color='k', capsize=5)
     ax.text(5, 175, 'v={0:.2f}+-{1:.2f}m/s, D={2:.2f}+-{3:.2f}\mu m'.format(mean_v, std_v, mean_dim, std_dim),
             bbox=dict(facecolor='green', alpha=0.2), fontsize=12)
 
@@ -319,7 +327,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     dims_spaced = np.arange(np.ceil(1.1 * max_dim / 10) * 10)
     locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
 
-    maximum_vel = (2.22*2592-200)/2*60/1000
+    # maximum_vel = (2.22*2592-200)/2*fr_guess/1000
     almost_black = '#262626'
     fig = plt.figure(figsize=(18, 10), dpi=100)
     ax = fig.add_subplot(111)
@@ -352,14 +360,14 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
                                 edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
                                 # label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
                                 label='v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v),
-                                                                           np.mean(t_dim), np.std(t_dim)), marker = marker_dict[hab]))
+                                                                           np.mean(t_dim), np.std(t_dim)), marker=marker_dict[hab]))
         streakids_in_habits[hab] = list(compress(streakid_list, selector_list[hab]))
 
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
     # ax.set_xlim([0, np.max(dims_spaced)])
-    # ax.set_xlim([20, 50])
+    ax.set_xlim([10, 40])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
     ax.set_ylim([0, 1.1 * np.max(v_median_list)])
     # ax.set_ylim([0, 1.1*maximum_vel])
@@ -376,6 +384,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
 
     fig.canvas.mpl_connect('pick_event', lambda event: onpick(event, dim_list, dim_median_list,
                                                               im_list, streakids_in_habits, info_list, pos_list, v_median_list, full_v_list, lines, different_habits))
+
     return ax
 
 
@@ -409,7 +418,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         fig_fullshape = (2, n+2)
 
         fig_i.suptitle('{} No. {} in folder {}, local index {}'.format(hab, dataind,
-                       info_list[streakid_list[hab][dataind]]['folder'][36:46], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=14)
+                       info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=14)
 
         iml = im_list[global_streakid]
         im_maxsize = max([im.shape for im in iml])
