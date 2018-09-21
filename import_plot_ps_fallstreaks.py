@@ -37,11 +37,13 @@ def main():
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration06SepWarm/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepStopfen/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepVentilated/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepStopfen/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13SepSmall/')
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13Sep54fps/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13Sep54fps/')
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration19SepStopfen/')
+    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Sep/')
 
     # # Properties for filtering streaks
 
@@ -53,10 +55,10 @@ def main():
     eta = 18.37*1e-6
 
     hist_plots = False
-    calc_means = True
+    calc_means = False
     plot_expected = False
     plot_powerlaws = False
-    plot_stokes = True
+    plot_stokes = False
     psd_flag = False
     plot_folder_means = True
 
@@ -173,7 +175,7 @@ def main():
         plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[hab])),
                              list(compress(full_v_list, selector_index_dict[hab])))
 
-    if plot_expected:                               # viscosity at -20°C
+    if plot_expected:
         y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta)*1e3
         ax.axhline(-y_vel, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel))
         ax.legend(loc='upper left')
@@ -190,7 +192,10 @@ def main():
         stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.2)/(9*eta)*1000 for d in ds]
         ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3)
 
-    plt.savefig(os.path.join(info_list[0]['folder'], 'plots/v_dim_scatter.png'))
+    ax.legend()
+    savepath = os.path.join(info_list[0]['folder'], 'plots/v_dim_scatter.png')
+    print('Saving plot to {}.'.format(savepath))
+    plt.savefig(savepath)
 
     if plot_folder_means:
         fig_mean = plt.figure(figsize=(18, 10), dpi=100)
@@ -226,6 +231,11 @@ def main():
         # ax_mean.plot(np.arange(2, 6)-0.5, [-y_vel_p25]*4, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
         # ax_mean.plot(np.arange(5, 7)-0.5, [-y_vel_m10]*2, color='g', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
         ax_mean.legend(loc='upper left')
+
+        fig_box = plt.figure(figsize=(18, 10), dpi=100)
+        ax_box = fig_box.add_subplot(111)
+        ax_box.boxplot(fvl)
+        ax_box.plot(np.arange(4)-0.5, [-y_vel_m10]*4, color='b', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
 
     plt.show()
 
@@ -368,7 +378,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
     # ax.set_xlim([0, np.max(dims_spaced)])
-    ax.set_xlim([10, 40])
+    # ax.set_xlim([20, 45])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
     ax.set_ylim([0, 1.1 * np.max(v_median_list)])
     # ax.set_ylim([0, 1.1*maximum_vel])

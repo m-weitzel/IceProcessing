@@ -15,7 +15,7 @@ from datetime import datetime
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13SepSmall'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Sep'
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))
@@ -40,7 +40,7 @@ def main():
     min_length = 3             # minimum number of consecutive particles to be considered a streak
     max_size_diff = 0.1
     max_dist_from_predict = 0.5
-    static_velocity = False
+    static_velocity = True
 
     if static_velocity:
         vel_guess = lambda x, y: -x/y
