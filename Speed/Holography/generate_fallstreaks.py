@@ -15,7 +15,8 @@ from datetime import datetime
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Sep'
+    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent'
+    temperature = 25
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))
@@ -29,12 +30,6 @@ def main():
     # General parameters
     pxl_size = 1
     fr = get_folder_framerate(path)
-
-    # Constants
-    eta_m25 = 15.88*1e-6
-    eta_m10 = 16.65*1e-6
-    eta_null = 17.15*1e-6               # viscosity
-    eta_p25 = 18.32*1e-6
 
     # Properties for finding streaks
     min_length = 3             # minimum number of consecutive particles to be considered a streak
@@ -124,7 +119,7 @@ def main():
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
 
-        save_dict = {"folder": path, "streaks": streak_list}
+        save_dict = {"folder": path, "streaks": streak_list, "temperature": temperature}
         pickle.dump(save_dict, open(os.path.join(path, 'streak_data.dat'), 'wb'), -1)
         print('{} streaks saved in '.format(len(streak_list))+os.path.join(path, 'streak_data.dat.'))
 

@@ -6,7 +6,7 @@ from matplotlib import ticker
 import numpy as np
 import pickle
 from scipy import optimize
-from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate
+from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate, eta
 from utilities.plot_size_distribution import plot_size_dist
 from itertools import cycle, compress, chain
 from sklearn.metrics import r2_score
@@ -52,7 +52,6 @@ def main():
 
     rho_o = 2500
     d_mean = 30e-6
-    eta = 18.37*1e-6
 
     separate_by = 'folder'
 
@@ -68,6 +67,7 @@ def main():
     list_of_folder_streak_lists = list()
     list_of_folder_v_lists = list()
     info_list = list()
+    temp_by_folder = list()
 
     for folder in folder_list:
         tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
@@ -82,10 +82,11 @@ def main():
         for i, s in enumerate(this_folders_streak_list):
             this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
             this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
-            info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
+            info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum, 'temperature': tmp['temperature']})
         list_of_folder_dim_lists.append(this_folders_dim_list)
         list_of_folder_streak_lists.append(this_folders_streak_list)
         list_of_folder_v_lists.append(this_folders_v_list)
+        temp_by_folder.append(tmp['temperature'])
 
         print('Kept {} streaks longer than {}.'.format(len(this_folders_streak_list), min_streak_length))
 
@@ -184,13 +185,15 @@ def main():
 
     # ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
 
+    temp_stokes = info_list[0]['temperature']
+
     if calc_means:
-        sep = different_separators[0]
-        plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[sep])),
-                             list(compress(full_v_list, selector_index_dict[sep])))
+        for sep in different_separators:
+            plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[sep])),
+                                 list(compress(full_v_list, selector_index_dict[sep])))
 
     if plot_expected:
-        y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta)*1e3
+        y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
         ax.axhline(-y_vel, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel))
         ax.legend(loc='upper left')
 
@@ -203,7 +206,7 @@ def main():
 
     if plot_stokes:
         ds = np.arange(np.round(1.2*np.max(dim_dict[sep])))
-        stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.2)/(9*eta)*1000 for d in ds]
+        stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1000 for d in ds]
         ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3)
 
     ax.legend()
@@ -231,25 +234,24 @@ def main():
         ax_mean.grid(b=True, which='major', linestyle='-')
         ax_mean.set_ylabel('Mean velocity', fontsize=20)
         ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
-        eta_m25 = 15.88*1e-6                                # viscosity at -205°C
-        # r_m25 = folder_mean_dims[0]*1e-6/2
-        r_m25 = 30e-6/2
-        eta_m10 = 16.65*1e-6
-        r_m10 = r_m25
-        eta_p25 = 18.32*1e-6
-        r_p25 = r_m25
-        y_vel_m25 = -2*r_m25**2*9.81*(rho_o-1.34)/(9*eta_m25)*1e3
-        y_vel_m10 = -2*r_m10**2*9.81*(rho_o-1.34)/(9*eta_m10)*1e3
-        y_vel_p25 = -2*r_p25**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
-        ax_mean.plot(np.arange(4)-0.5, [-y_vel_m10]*4, color='b', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
+        r_mean = 30e-6
+        y_vel = lambda T: -2*(r_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(T))*1e3
+        hline_stokes = lambda T, ax_st, i: ax_st.plot([i-0.5, i+0.5], [-y_vel(T)]*2, color='b', lw=3,
+                                                      label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(y_vel(T)))
+
+        fig_box = plt.figure(figsize=(18, 10), dpi=100)
+        ax_box = fig_box.add_subplot(111)
+        for i, t in enumerate(temp_by_folder):
+            hline_stokes(t, ax_mean, i)
+            hline_stokes(t, ax_box, i+1)
         # ax_mean.plot(np.arange(2, 6)-0.5, [-y_vel_p25]*4, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
         # ax_mean.plot(np.arange(5, 7)-0.5, [-y_vel_m10]*2, color='g', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
         ax_mean.legend(loc='upper left')
 
-        fig_box = plt.figure(figsize=(18, 10), dpi=100)
-        ax_box = fig_box.add_subplot(111)
-        ax_box.boxplot(fvl)
-        ax_box.plot(np.arange(4)-0.5, [-y_vel_m10]*4, color='b', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
+        fs = list(set(v_median_dict))
+        ax_box.boxplot([v_median_dict[p] for p in fs])
+        ax_box.set_xticklabels([f[47:-1] for f in fs], fontsize=20)
+        ax_box.grid(b=True, which='major', linestyle='-')
 
     plt.show()
 
