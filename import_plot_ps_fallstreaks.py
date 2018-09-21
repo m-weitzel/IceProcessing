@@ -6,7 +6,7 @@ from matplotlib import ticker
 import numpy as np
 import pickle
 from scipy import optimize
-from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks
+from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate
 from utilities.plot_size_distribution import plot_size_dist
 from itertools import cycle, compress, chain
 from sklearn.metrics import r2_score
@@ -46,8 +46,7 @@ def main():
     # # Properties for filtering streaks
 
     angle_leniency_deg = 5
-    min_streak_length = 3   # for separation between short and long streaks
-    fr_guess = 54          # guess for frame rate
+    min_streak_length = 3  # for separation between short and long streaks
 
     rho_o = 2500
     d_mean = 30e-6
@@ -68,6 +67,7 @@ def main():
 
     for folder in folder_list:
         tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
+        framerate = get_folder_framerate(tmp['folder'])
         this_folders_streak_list = tmp['streaks']
         print('Added {} streaks from {}.'.format(len(this_folders_streak_list), folder))
         this_folders_streak_list = refine_streaks(this_folders_streak_list, angle_leniency_deg)
@@ -77,7 +77,7 @@ def main():
         this_folders_v_list = list()
         for i, s in enumerate(this_folders_streak_list):
             this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
-            this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, fr_guess, True))
+            this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
             info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
         list_of_folder_dim_lists.append(this_folders_dim_list)
         list_of_folder_streak_lists.append(this_folders_streak_list)

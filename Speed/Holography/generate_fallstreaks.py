@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pickle
 import os
+from datetime import datetime
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
 
     # General parameters
     pxl_size = 1
-    framerate_estimated_avg = 54
+    fr = get_folder_framerate(path)
 
     # Constants
     eta_m25 = 15.88*1e-6
@@ -43,16 +44,15 @@ def main():
 
     if static_velocity:
         vel_guess = lambda x, y: -x/y
-        vel_in_mm = 65
-        base_velocity_guess = [0, vel_guess(vel_in_mm, framerate_estimated_avg), 0]
+        vel_in_mm = 70
+        base_velocity_guess = [0, vel_guess(vel_in_mm, fr), 0]
     else:
         # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
                                                             # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
         # y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
         rho_o = 2500
         eta = eta_m10
-        y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta_m10)/framerate_estimated_avg*1e3   # Stokes
-        # y_vel = lambda x: -2*(15e-6/2)**2*9.81*(rho_o-1.34)/(9*0.000016731)/56*1e3   # Stokes for fixed size
+        y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta)/fr*1e3   # Stokes
 
     # End of properties
 
@@ -176,27 +176,31 @@ class ParticleStreak:
         angles = [np.arctan(-g[0] / g[1]) for g in this_gaps]
         return angles
 
-    def get_projected_velocity(self, mean_angle, fr_guess, manual_framerate):
+    def get_projected_velocity(self, mean_angle, framerate):
         pos = sorted([p.spatial_position for p in self.particle_streak], key=lambda pos_entry: pos_entry[1], reverse=True)
         this_gaps = [q - p for (p, q) in zip(pos[:-1], pos[1:])]
-        while True:
-            if manual_framerate:
-                this_timestep = [1/fr_guess]*(len(this_gaps))                                                     # if time is not saved in holograms, use guess)
-                break
-            else:
-                try:
-                    time = [self.holotimes[pn] for pn in [p.holonum for p in self.particle_streak]]
-                    this_timestep = [t - s for (s, t) in zip(time[:-1], time[1:])]
-                    break
-                except AttributeError:
-                    manual_framerate = True
 
-        abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * 1/t for (g, t) in zip(this_gaps, this_timestep)]  # absolute velocity
+        abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * framerate for g in this_gaps]  # absolute velocity
         # abs_v_list = [np.sqrt(g[1] ** 2 + g[0] ** 2) * 56 for g in this_gaps]
         new_angles = [a - mean_angle for a in self.angles]
+
         v_list = [v * np.cos(beta) for v, beta in zip(abs_v_list, new_angles)]
 
         return v_list
+
+
+def get_folder_framerate(folder):
+    filelist = os.listdir(os.path.join(folder, 'holos'))
+    filelist = [f for f in filelist if f.endswith('.png')]
+    filelist.sort()
+    start = datetime.strptime(filelist[0][-19:-4], '%H-%M-%S-%f')
+    end = datetime.strptime(filelist[-1][-19:-4], '%H-%M-%S-%f')
+    total_time = end-start
+    total_time = total_time.seconds+total_time.microseconds*1e-6
+    fr = len(filelist)/total_time
+    # fr = 54
+    print('Frame rate for {}: {} fps'.format(folder, fr))
+    return fr
 
 
 def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_ind=10, max_size_diff=0.05):
