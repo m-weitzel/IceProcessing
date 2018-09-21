@@ -205,24 +205,26 @@ def main():
             folder_mean_dims.append(np.mean([np.mean(dl) for dl in fdl]))
             folder_std_dims.append(np.std([np.mean(dl) for dl in fdl]))
         ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
-        ax_mean.set_xticks(np.arange(4))
+        ax_mean.set_xticks(np.arange(len(folder_list)))
         ax_mean.set_xticklabels([f[47:-1] for f in folder_list], fontsize=20)
         # ax_mean.set_xlim(0, 5)
         ax_mean.set_ylim(0, 110)
         ax_mean.grid(b=True, which='major', linestyle='-')
-        ax_mean.set_xlabel('Measurement name', fontsize=20)
         ax_mean.set_ylabel('Mean velocity', fontsize=20)
         ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
         eta_m25 = 15.88*1e-6                                # viscosity at -205°C
+        # r_m25 = folder_mean_dims[0]*1e-6/2
+        r_m25 = 30e-6/2
         eta_m10 = 16.65*1e-6
+        r_m10 = r_m25
         eta_p25 = 18.32*1e-6
-        # y_vel_m25 = -2*(folder_mean_dims[0]*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_m25)*1e3
-        # y_vel_p25 = -2*(folder_mean_dims[-1]*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
-        # ax_mean.plot(np.arange(2), [-y_vel_m25]*2, color='b', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-25°C'.format(-y_vel_m25))
-        # ax_mean.plot(np.arange(2, 4), [-y_vel_p25]*2, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
-        y_vel_m10 = -2*(folder_mean_dims[-1]*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
-        # y_vel_m10 = -2*(30*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
-        ax_mean.plot(np.arange(2), [-y_vel_m10]*2, color='b', lw=3, label='Expected value from Stokes for mean diameter {0:.2f} $\mu$m, v={1:.2f} mm/s for T=-10°C'.format(folder_mean_dims[-1], -y_vel_m10))
+        r_p25 = r_m25
+        y_vel_m25 = -2*r_m25**2*9.81*(rho_o-1.34)/(9*eta_m25)*1e3
+        y_vel_m10 = -2*r_m10**2*9.81*(rho_o-1.34)/(9*eta_m10)*1e3
+        y_vel_p25 = -2*r_p25**2*9.81*(rho_o-1.34)/(9*eta_p25)*1e3
+        ax_mean.plot(np.arange(4)-0.5, [-y_vel_m10]*4, color='b', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
+        # ax_mean.plot(np.arange(2, 6)-0.5, [-y_vel_p25]*4, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
+        # ax_mean.plot(np.arange(5, 7)-0.5, [-y_vel_m10]*2, color='g', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
         ax_mean.legend(loc='upper left')
 
     plt.show()
@@ -327,7 +329,6 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     dims_spaced = np.arange(np.ceil(1.1 * max_dim / 10) * 10)
     locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
 
-    # maximum_vel = (2.22*2592-200)/2*fr_guess/1000
     almost_black = '#262626'
     fig = plt.figure(figsize=(18, 10), dpi=100)
     ax = fig.add_subplot(111)
