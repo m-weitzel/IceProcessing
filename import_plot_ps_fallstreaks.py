@@ -162,7 +162,7 @@ def main():
         dim_dict[sep] = list(compress(full_dim_median_list, selector_index_dict[sep]))
         aspr_dict[sep] = list(compress(full_aspr_median_list, selector_index_dict[sep]))
         streaks_by_separator = list(compress(full_streak_list, selector_index_dict[sep]))
-        info_by_seperator = list(compress(info_list, selector_index_dict[sep]))
+        info_by_separator = list(compress(info_list, selector_index_dict[sep]))
 
         if hist_plots:
             plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
