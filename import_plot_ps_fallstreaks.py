@@ -54,13 +54,15 @@ def main():
     d_mean = 30e-6
     eta = 18.37*1e-6
 
+    separate_by = 'folder'
+
     hist_plots = False
     calc_means = False
     plot_expected = False
     plot_powerlaws = False
     plot_stokes = False
     psd_flag = False
-    plot_folder_means = True
+    plot_folder_means = False
 
     list_of_folder_dim_lists = list()
     list_of_folder_streak_lists = list()
@@ -130,7 +132,6 @@ def main():
         streak_id += 1
 
     full_aspr_median_list = [np.median(c) for c in full_aspr_list]
-    different_habits = list(set(full_habit_list))
     selector_index_dict = dict()
     dim_dict = dict()
     v_median_dict = dict()
@@ -140,40 +141,53 @@ def main():
         plaw_by_habits = dict()
         plaw_vals_by_habits = dict()
 
+    if separate_by == 'habit':
+        different_separators = list(set(full_habit_list))
+    elif separate_by == 'folder':
+        different_separators = folder_list
+    else:
+        different_separators = ['']
+
     # Plotting
 
-    for hab in different_habits:
-        selector_index_dict[hab] = [1 if s.streak_habit == hab else 0 for s in full_streak_list]
-        v_median_dict[hab] = list(compress(full_v_median_list, selector_index_dict[hab]))
-        dim_dict[hab] = list(compress(full_dim_median_list, selector_index_dict[hab]))
-        aspr_dict[hab] = list(compress(full_aspr_median_list, selector_index_dict[hab]))
-        streaks_by_habit = list(compress(full_streak_list, selector_index_dict[hab]))
-        info_by_habit = list(compress(info_list, selector_index_dict[hab]))
+    for sep in different_separators:
+        if separate_by == 'habit':
+            selector_index_dict[sep] = [1 if s.streak_habit == sep else 0 for s in full_streak_list]
+        elif separate_by == 'folder':
+            selector_index_dict[sep] = [1 if i['folder'] == sep else 0 for i in info_list]
+        else:
+            print('Separator not found, showing full lists.')
+            selector_index_dict[sep] = [1]*len(full_streak_list)
+        v_median_dict[sep] = list(compress(full_v_median_list, selector_index_dict[sep]))
+        dim_dict[sep] = list(compress(full_dim_median_list, selector_index_dict[sep]))
+        aspr_dict[sep] = list(compress(full_aspr_median_list, selector_index_dict[sep]))
+        streaks_by_separator = list(compress(full_streak_list, selector_index_dict[sep]))
+        info_by_seperator = list(compress(info_list, selector_index_dict[sep]))
 
         if hist_plots:
-            plot_hists_by_habit(hab, streaks_by_habit, dim_dict[hab], aspr_dict[hab], info_by_habit)
+            plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
         if plot_powerlaws:
-            plaw_vals_by_habits[hab] = fit_powerlaw(dim_dict[hab], v_median_dict[hab])
+            plaw_vals_by_habits[sep] = fit_powerlaw(dim_dict[sep], v_median_dict[sep])
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
-            plaw_by_habits[hab] = powerlaw(dim_dict[hab], plaw_vals_by_habits[hab][0], plaw_vals_by_habits[hab][1])
+            plaw_by_habits[sep] = powerlaw(dim_dict[sep], plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1])
 
         if psd_flag:
-            if (len(dim_dict[hab]) > 50) | (hab == 'Particle_round '):
+            if (len(dim_dict[sep]) > 50) | (sep == 'Particle_round '):
                 n_bins = 20
-                if len(dim_dict[hab]) < 100:
+                if len(dim_dict[sep]) < 100:
                     n_bins = 10
-                (fig, ax) = plot_size_dist(dim_dict[hab], n_bins)
-                ax.set_title('Size distribution {}'.format(hab), fontsize=24)
+                (fig, ax) = plot_size_dist(dim_dict[sep], n_bins)
+                ax.set_title('Size distribution {}'.format(sep), fontsize=24)
 
-    ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_habits, full_im_list,
+    ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
 
     # ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
 
     if calc_means:
-        hab = different_habits[0]
-        plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[hab])),
-                             list(compress(full_v_list, selector_index_dict[hab])))
+        sep = different_separators[0]
+        plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[sep])),
+                             list(compress(full_v_list, selector_index_dict[sep])))
 
     if plot_expected:
         y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta)*1e3
@@ -181,14 +195,14 @@ def main():
         ax.legend(loc='upper left')
 
     if plot_powerlaws:
-        for hab in different_habits:
+        for sep in different_separators:
             # ax.plot(dim_dict[hab], plaw_by_habits[hab])
-            ax.plot(dim_dict[hab], plaw_by_habits[hab],
-                    label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(hab, plaw_vals_by_habits[hab][0], plaw_vals_by_habits[hab][1], plaw_vals_by_habits[hab][2]))
+            ax.plot(dim_dict[sep], plaw_by_habits[sep],
+                    label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1], plaw_vals_by_habits[sep][2]))
             ax.legend()
 
     if plot_stokes:
-        ds = np.arange(np.round(1.2*np.max(dim_dict[hab])))
+        ds = np.arange(np.round(1.2*np.max(dim_dict[sep])))
         stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.2)/(9*eta)*1000 for d in ds]
         ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3)
 
@@ -330,14 +344,14 @@ def fit_powerlaw(x, y):
 
 
 def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
-                  full_v_list, different_habits, im_list, streakid_list, info_list, pos_list):
+                  full_v_list, different_separators, im_list, streakid_list, info_list, pos_list):
 
     max_dim = 0
-    for hab in different_habits:
-        max_dim = np.max([max_dim, np.max(list(compress(dim_median_list, selector_list[hab])))])
+    for sep in different_separators:
+        max_dim = np.max([max_dim, np.max(list(compress(dim_median_list, selector_list[sep])))])
 
     dims_spaced = np.arange(np.ceil(1.1 * max_dim / 10) * 10)
-    locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
+    # locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
 
     almost_black = '#262626'
     fig = plt.figure(figsize=(18, 10), dpi=100)
@@ -364,15 +378,26 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     streakids_in_habits = dict()
     lines = list()
 
-    for i, hab in enumerate(different_habits):
-        t_dim = list(compress(dim_median_list, selector_list[hab]))
-        t_v = list(compress(v_median_list, selector_list[hab]))
-        lines.append(ax.scatter(t_dim, t_v, alpha=1,
-                                edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
-                                # label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
-                                label='v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v),
-                                                                           np.mean(t_dim), np.std(t_dim)), marker=marker_dict[hab]))
-        streakids_in_habits[hab] = list(compress(streakid_list, selector_list[hab]))
+    try:
+        for i, sep in enumerate(different_separators):
+            t_dim = list(compress(dim_median_list, selector_list[sep]))
+            t_v = list(compress(v_median_list, selector_list[sep]))
+            lines.append(ax.scatter(t_dim, t_v, alpha=1,
+                                    edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
+                                    # label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
+                                    label='v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'
+                                    .format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)), marker=marker_dict[sep]))
+            streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
+    except KeyError:
+        for i, sep in enumerate(different_separators):
+            t_dim = list(compress(dim_median_list, selector_list[sep]))
+            t_v = list(compress(v_median_list, selector_list[sep]))
+            lines.append(ax.scatter(t_dim, t_v, alpha=1,
+                                    edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
+                                    # label='{} (N={})'.format(sep, sum(selector_list[sep])), marker=marker_dict[sep]))
+                                    label='v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'
+                                    .format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim))))
+            streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
 
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
@@ -394,7 +419,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # check.on_clicked(func(different_habits, lines))
 
     fig.canvas.mpl_connect('pick_event', lambda event: onpick(event, dim_list, dim_median_list,
-                                                              im_list, streakids_in_habits, info_list, pos_list, v_median_list, full_v_list, lines, different_habits))
+                                                              im_list, streakids_in_habits, info_list, pos_list, v_median_list, full_v_list, lines, different_separators))
 
     return ax
 
