@@ -187,11 +187,19 @@ def get_folder_framerate(folder):
     filelist = os.listdir(os.path.join(folder, 'holos'))
     filelist = [f for f in filelist if f.endswith('.png')]
     filelist.sort()
-    start = datetime.strptime(filelist[0][-19:-4], '%H-%M-%S-%f')
-    end = datetime.strptime(filelist[-1][-19:-4], '%H-%M-%S-%f')
-    total_time = end-start
-    total_time = total_time.seconds+total_time.microseconds*1e-6
-    fr = len(filelist)/total_time
+    gettime = lambda t: datetime.strptime(filelist[t][-19:-4], '%H-%M-%S-%f')
+    start = gettime(0)
+    end = gettime(-1)
+    quart = gettime(np.int(len(filelist)/4))
+    half = gettime(np.int(len(filelist)/2))
+    threequart = gettime(np.int(3*len(filelist)/4))
+    first_q = quart-start
+    secnd_q = half-quart
+    third_q = threequart-half
+    fourt_q = end-threequart
+    total_time = lambda t: t.seconds+t.microseconds*1e-6
+
+    fr = np.int(len(filelist)/4)/np.median([total_time(first_q), total_time(secnd_q), total_time(third_q), total_time(fourt_q)])
     # fr = 54
     print('Frame rate for {}: {} fps'.format(folder, fr))
     return fr
