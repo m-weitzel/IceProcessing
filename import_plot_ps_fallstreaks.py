@@ -62,6 +62,7 @@ def main():
     plot_stokes = False
     psd_flag = False
     plot_folder_means = False
+    oversizing_correction = True
 
     list_of_folder_dim_lists = list()
     list_of_folder_streak_lists = list()
@@ -98,6 +99,8 @@ def main():
 
     for d, s, v in zip(list_of_folder_dim_lists, list_of_folder_streak_lists, list_of_folder_v_lists):
         for d1, s1, v1 in zip(d, s, v):
+            if oversizing_correction:
+                d1 = [td-2*2.22 for td in d1]
             full_dim_list.append(d1)
             full_dim_median_list.append(np.median(d1))
             full_v_list.append(v1)
@@ -404,7 +407,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
-    # ax.set_xlim([0, np.max(dims_spaced)])
+    ax.set_xlim([0, np.max(dims_spaced)])
     # ax.set_xlim([20, 45])
     ax.set_xlabel('Maximum diameter in µm', fontsize=20)
     ax.set_ylim([0, 1.1 * np.max(v_median_list)])
