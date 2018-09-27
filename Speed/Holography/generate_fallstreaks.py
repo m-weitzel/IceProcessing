@@ -16,7 +16,7 @@ from datetime import datetime
 
 def main():
     path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent'
-    temperature = 25
+    temperature = -25
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))
@@ -46,8 +46,7 @@ def main():
                                                             # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
         # y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
         rho_o = 2500
-        eta = eta_m10
-        y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta)/fr*1e3   # Stokes
+        y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta(temperature))/fr*1e3   # Stokes
 
     # End of properties
 
@@ -240,6 +239,20 @@ def dist(particle_a, particle_b, ignore_zpos=False):
         distance = np.sqrt((particle_a.xpos - particle_b.xpos)**2+(particle_a.ypos - particle_b.ypos)**2
                            + (particle_a.zpos - particle_b.zpos) ** 2)
     return distance
+
+
+def eta(t):
+        if t == -25:
+            return 15.88*1e-6
+        elif t == -10:
+            return 16.65*1e-6
+        elif t == 0:
+            return 17.15*1e-6
+        elif t == 25:
+            return 18.32*1e-6
+        else:
+            print('No \eta for T={}\degree found, using \eta for T=-10\degree.'.format(str(t)))
+            return 16.65*1e-6
 
 
 def refine_streaks(streak_list, angle_leniency):
