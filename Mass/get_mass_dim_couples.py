@@ -44,7 +44,7 @@ def main():
     remove_list = list()
 
     try:
-        tmp = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
+        tmp = pickle.load(open(os.path.join(folder, 'mass_dim_data.dat'), 'rb'))
         if len(tmp) == 6 or len(tmp) == 5:
             (x_shift_global_list, y_shift_global_list, _, _, _) = tmp
             remove_global_list = [list() for f in ice_file_list]
@@ -241,7 +241,7 @@ def main():
         print('Data saved in '+folder+'mass_dim_data.dat.')
 
         plt.savefig(folder + 'plots/graph.png')
-        print('Graph saved in ' + folder + 'plots/mass_graph.png.')
+        print('Graph saved in ' + os.path.join(folder, 'plots/mass_graph.png.'))
 
     plt.show()
 

@@ -69,8 +69,8 @@ full_mass_list = list()
 
 index_list = []
 
-for folder, i in zip(folder_list, np.arange(1,len(folder_list)+1)):
-    tmp = pickle.load(open(folder+'mass_dim_data.dat', 'rb'))
+for folder, i in zip(folder_list, np.arange(1, len(folder_list)+1)):
+    tmp = pickle.load(open(os.path.join(folder, 'mass_dim_data.dat'), 'rb'))
     crystal_list = tmp['crystal']
 
     this_dim_list = [
@@ -105,8 +105,8 @@ for folder, i in zip(folder_list, np.arange(1,len(folder_list)+1)):
     index_list += [i]*len(this_dim_list)
 
 if compare:
-    tmp = pickle.load(open(compare_list_folder+'mass_dim_data.dat', 'rb'))
-    compare_list= tmp['crystal']
+    tmp = pickle.load(open(os.path.join(compare_list_folder, 'mass_dim_data.dat'), 'rb'))
+    compare_list = tmp['crystal']
 
     comp_dim_list = [float(a['Long Axis']) for a in compare_list]
     comp_mass_list = [np.pi/6*a['Drop Diameter']**3 for a in compare_list]
