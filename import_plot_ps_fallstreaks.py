@@ -83,7 +83,12 @@ def main():
         for i, s in enumerate(this_folders_streak_list):
             this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
             this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
-            info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum, 'temperature': tmp['temperature']})
+            info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
+            try:
+                info_list[i]['temperature'] = tmp['temperature']
+            finally:
+                pass
+
         list_of_folder_dim_lists.append(this_folders_dim_list)
         list_of_folder_streak_lists.append(this_folders_streak_list)
         list_of_folder_v_lists.append(this_folders_v_list)
