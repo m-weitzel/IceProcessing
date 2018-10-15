@@ -32,15 +32,15 @@ def main():
     fr = get_folder_framerate(path)
 
     # Properties for finding streaks
-    min_length = 3             # minimum number of consecutive particles to be considered a streak
-    max_size_diff = 0.1
-    max_dist_from_predict = 0.5
-    static_velocity = True
+    min_length = 3                  # minimum number of consecutive particles to be considered a streak
+    max_size_diff = 0.2             # relative size difference - 0.1 corresponds to 10%
+    max_dist_from_predict = 1       # total, mostly in mm
+    static_velocity = True          # True: Velocity fixed at vel_in_mm between two frames, False: automatically calculated (from Stokes)
 
     if static_velocity:
         vel_guess = lambda x, y: -x/y
-        vel_in_mm = 70
-        base_velocity_guess = [0, vel_guess(vel_in_mm, fr), 0]
+        vel_in_mm_p_s = 70              # guess for velocity (in mm/s)
+        base_velocity_guess = [0, vel_guess(vel_in_mm_p_s, fr), 0]
     else:
         # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
                                                             # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
