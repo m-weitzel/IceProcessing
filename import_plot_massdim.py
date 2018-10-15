@@ -76,24 +76,9 @@ def main():
         tmp = pickle.load(open(os.path.join(folder, 'mass_dim_data.dat'), 'rb'))
         crystal_list = tmp['crystal']
 
-        this_dim_list = [
-                         # float(a['Long Axis'])                                                                                 # Maximum dimension
-                         # (float(a['Long Axis'])+float(a['Short Axis']))/2                                                      # Mean of Maximum and Minimum dimension
-                         # (float(a['Long Axis'])/float(a['Short Axis']))                                                        # Aspect Ratio
-                         # a['Area']                                                                                             # Area
-                         2*np.sqrt(float(a['Area'])/np.pi)
-                         # 0.134 * (0.58 * a['Short Axis'] / 2 * (1 + 0.95 * (a['Long Axis'] / a['Short Axis']) ** 0.75))          # Capacitance
-                         for a in crystal_list
-                        ]
-
-        this_mass_list = [
-                          np.pi/6*a['Drop Diameter']**3                                                   # Mass
-                          # float(a['Short Axis'])                                                                              # Short Axis
-                          # float(a['Drop Diameter'])                                                                           # Drop Diameter
-                          for a in crystal_list
-                         ]
-
-        this_aspr_list = [float(a['Long Axis']) / float(a['Short Axis']) for a in crystal_list]
+        this_dim_list = dim_list(crystal_list, 'majsiz')
+        this_mass_list = dim_list(crystal_list, 'mass')
+        this_aspr_list = dim_list(crystal_list, 'aspr')
 
         filtered_lists = [(a, b, c) for (a, b, c) in zip(this_dim_list, this_mass_list, this_aspr_list) if ((float(a) > minsize) & (float(a) < maxsize))]
         this_dim_list = [a[0] for a in filtered_lists]
@@ -288,6 +273,27 @@ def main():
     rect.set_linewidth(0.0)
 
     plt.show()
+
+
+def dim_list(c_list, type):
+    if type == 'areaeq':
+        return [2*np.sqrt(float(a['Area'])/np.pi) for a in c_list]
+    elif type == 'area':
+        return [a['Area'] for a in c_list]
+    elif type == 'majminmean':
+        return [(float(a['Long Axis'])+float(a['Short Axis']))/2 for a in c_list]                         # Mean of Maximum and Minimum dimension
+    elif type == 'aspr':
+        return [(float(a['Long Axis'])/float(a['Short Axis'])) for a in c_list]                            # Aspect Ratio
+    elif type == 'cap':
+        return [0.134 * (0.58 * a['Short Axis'] / 2 * (1 + 0.95 * (a['Long Axis'] / a['Short Axis']) ** 0.75)) for a in c_list]      # Capacitance
+    elif type == 'mass':
+        return [np.pi/6*a['Drop Diameter']**3 for a in c_list]
+    elif type == 'minsiz':
+        return [float(a['Short Axis']) for a in c_list]
+    elif type == 'dropdiam':
+        return [float(a['Drop Diameter']) for a in c_list]
+    else:
+        return [a['Long Axis'] for a in c_list]
 
 
 def fit_powerlaw(x, y):
