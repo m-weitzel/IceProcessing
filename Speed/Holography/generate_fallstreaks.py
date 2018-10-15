@@ -15,8 +15,8 @@ from datetime import datetime
 
 
 def main():
-    path = '/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent'
-    temperature = -25
+    path = '/ipa/holo/mweitzel/HIVIS_Holograms/26Sep'
+    temperature = -12
     filename_ps = 'ps_bypredict.mat'
 
     a = sio.loadmat(os.path.join(path, filename_ps))

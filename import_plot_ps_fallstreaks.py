@@ -23,27 +23,29 @@ def main():
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
         # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/'
+        # '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/',
+        # '/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/',
     )
 
     folder_list = list()
 
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
 
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN2/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration06SepWarm/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepStopfen/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepVentilated/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration11SepVentilated/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13SepSmall/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13Sep54fps/')
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration19SepStopfen/')
-    folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Sep/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration19SepStopfen/')
+    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Sep/')
 
     # # Properties for filtering streaks
 
@@ -55,7 +57,7 @@ def main():
 
     separate_by = 'folder'
 
-    hist_plots = False
+    hist_plots = True
     calc_means = False
     plot_expected = False
     plot_powerlaws = False

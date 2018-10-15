@@ -13,7 +13,7 @@ import cv2
 import numpy as np
 import find_couples
 from matplotlib import pyplot as plt
-from utilities.find_ccr_folder import find_ccr
+# from utilities.find_ccr_folder import find_ccr
 
 sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
 
@@ -22,7 +22,7 @@ from IceSizing import MicroImg
 
 
 def main():
-    folder = '/ipa2/holo/mweitzel/Windkanal/Ice/CCR/2804/M1/'
+    folder = '/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/Mass'
     file_list = os.listdir(folder)
 
     ice_file_list = list()

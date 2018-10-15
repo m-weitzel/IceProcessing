@@ -22,10 +22,10 @@ def main():
 
         # Clean Measurements
 
-        os.path.join(basedir, '2203/M1/'),  # Columnar Irregular
-        os.path.join(basedir, '2203/M2/'),  # Columnar, Bullet Rosettes
-        os.path.join(basedir, '3103/M1/'),  # Columnar
-        os.path.join(basedir, '2017/1107/M1/'),  # Dense Irregular
+        # os.path.join(basedir, '2203/M1/'),  # Columnar Irregular
+        # os.path.join(basedir, '2203/M2/'),  # Columnar, Bullet Rosettes
+        # os.path.join(basedir, '3103/M1/'),  # Columnar
+        # os.path.join(basedir, '2017/1107/M1/'),  # Dense Irregular
         os.path.join(basedir, '2017/0808/M1/'),  # Columnar
 
         # Medium measurements
