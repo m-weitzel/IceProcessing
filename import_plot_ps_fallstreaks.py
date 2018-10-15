@@ -522,7 +522,11 @@ def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_lis
     # Size distribution
     fig_h = plt.figure()
     ax = fig_h.add_subplot(111)
-    histo = plt.hist(dim_median_list, edgecolor='black', linewidth=1.2)
+    min_bin = max(0, (min(dim_median_list)//5-1)*5)
+    max_bin = (max(dim_median_list)//5+2)*5
+    bins = np.arange(min_bin, max_bin, 5)
+
+    histo = plt.hist(dim_median_list, bins, edgecolor='black', linewidth=1.2)
     ax.set_title('Size distribution for {}'.format(habit))
     ax.set_xlabel('Maximum dimension in $\mu$m', fontsize=20)
     ax.set_ylabel('Count', fontsize=20)
