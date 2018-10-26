@@ -236,6 +236,7 @@ def main():
 
     if plot_folder_means:
         fig_mean = plt.figure(figsize=(18, 10), dpi=100)
+        fig_mean.canvas.set_window_title('Mean values for different folders')
         ax_mean = fig_mean.add_subplot(111)
         folder_mean_vs = list()
         folder_std_vs = list()
@@ -259,6 +260,7 @@ def main():
 
         fig_box = plt.figure(figsize=(18, 10), dpi=100)
         ax_box = fig_box.add_subplot(111)
+        fig_box.canvas.set_window_title('Box-whisker for different folders')
         if plot_stokes:
             hline_stokes = lambda T, ax_st, i: ax_st.plot([i-0.5, i+0.5], [-y_vel(T)]*2, color='b', lw=3,
                                                           label='Expected value from Stokes, v={0:.2f} mm/s for T={1:d}°C'.format(y_vel(T), T))
@@ -279,6 +281,7 @@ def main():
 
 def plot_best_vs_reynolds(v_list, dim_list, aspr_list, cap_flag=False):
     fig = plt.figure(figsize=(18, 10), dpi=100)
+    fig.canvas.set_window_title('Best vs. Reynolds')
     almost_black = '#262626'
 
     if cap_flag:
@@ -352,6 +355,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
 
     almost_black = '#262626'
     fig = plt.figure(figsize=(18, 10), dpi=100)
+    fig.canvas.set_window_title('v-D scatter')
     ax = fig.add_subplot(111)
 
     marker_dict = dict()
@@ -410,6 +414,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
     # ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
+    ax.set_title('Fall speed vs. dimension for Calibration Beads of $30\mu$m diameter', fontsize=24)
     ax.legend(fontsize=16)
 
     # check = CheckButtons(ax, different_habits, [True]*len(different_habits))
@@ -441,6 +446,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
     for subplotnum, dataind in enumerate(event.ind):
         print(dataind)
         fig_i = plt.figure()
+        fig_i.canvas.set_window_title('Fall track detail')
 
         # try:
         global_streakid = streakid_list[hab][dataind]
@@ -508,6 +514,7 @@ def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_lis
 
     # Size distribution
     fig_h = plt.figure()
+    fig_h.canvas.set_window_title('Size Distribution')
     ax = fig_h.add_subplot(111)
     min_bin = max(0, (min(dim_median_list)//5-1)*5)
     max_bin = (max(dim_median_list)//5+2)*5
@@ -520,6 +527,7 @@ def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_lis
 
     # Angle histogram plot
     fig_h = plt.figure()
+    fig_h.canvas.set_window_title('Angle Histogram')
     mean_angle_list = [s.mean_angle for s in streak_list]
     n_bins = 50
     ax = fig_h.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
@@ -534,6 +542,7 @@ def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_lis
 
     # Aspect ratio histogram plot
     fig_a = plt.figure()
+    fig_a.canvas.set_window_title('Aspect Ratio Histogram')
     mean_aspr_list = [np.median(c) for c in aspr_list]
     n_bins = 20
     ax = fig_a.add_subplot(111)
