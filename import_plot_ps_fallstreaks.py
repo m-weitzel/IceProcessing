@@ -5,12 +5,11 @@ from matplotlib import pyplot as plt
 from matplotlib import ticker
 import numpy as np
 import pickle
-from scipy import optimize
 from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate, eta
 from utilities.plot_size_distribution import plot_size_dist
+from utilities.fit_powerlaw import fit_powerlaw
 from itertools import cycle, compress, chain
-from sklearn.metrics import r2_score
-from matplotlib.widgets import CheckButtons
+# from matplotlib.widgets import CheckButtons
 # from matplotlib import style
 # style.use('dark_background')
 
@@ -327,32 +326,6 @@ def plot_mean_in_scatter(ax, dim_list, v_list):
     ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, label='Means', color='k', capsize=5)
     ax.text(5, 175, 'v={0:.2f}+-{1:.2f}m/s, D={2:.2f}+-{3:.2f}\mu m'.format(mean_v, std_v, mean_dim, std_dim),
             bbox=dict(facecolor='green', alpha=0.2), fontsize=12)
-
-
-def fit_powerlaw(x, y):
-
-    # x = [this_x for this_x, this_y in zip(x, y) if not(np.isnan(this_y))]
-    # y = [this_y for this_y in y if not(np.isnan(this_y))]
-
-    logx = np.log10(x)
-    logy = np.log10(y)
-
-    fitfunc = lambda p, x: p[0]+p[1]*x
-    errfunc = lambda p, x, y: (y-fitfunc(p,x))
-
-    pinit = [1.0, -1.0]
-    out = optimize.leastsq(errfunc, pinit, args=(logx, logy), full_output=1)
-
-    pfinal = out[0]
-    covar = out[1]
-
-    index = pfinal[1]
-    amp = 10.0**pfinal[0]
-    pl = amp * (x**index)
-
-    r2 = r2_score(y, amp*x**index)
-
-    return amp, index, r2
 
 
 def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,

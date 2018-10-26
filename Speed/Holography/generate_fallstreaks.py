@@ -12,6 +12,7 @@ import numpy as np
 import pickle
 import os
 from datetime import datetime
+from utilities.fit_powerlaw import fit_powerlaw
 
 
 def main():
@@ -250,17 +251,15 @@ def dist(particle_a, particle_b, ignore_zpos=False):
 
 
 def eta(t):
-        if t == -25:
-            return 15.88*1e-6
-        elif t == -10:
-            return 16.65*1e-6
-        elif t == 0:
-            return 17.15*1e-6
-        elif t == 25:
-            return 18.32*1e-6
-        else:
-            print('No \eta for T={}\degree found, using \eta for T=-10\degree.'.format(str(t)))
-            return 16.65*1e-6
+
+    ts = [c+273.15 for c in (-25, -10, 0, 25)]
+    e = [c*1e-6 for c in (15.88, 16.65, 17.15, 18.32)]
+
+    pl = fit_powerlaw(ts, e)
+
+    eta = pl[0]*(t+273.15)**pl[1]
+
+    return eta
 
 
 def refine_streaks(streak_list, angle_leniency):
