@@ -52,17 +52,15 @@ def main():
     min_streak_length = 3  # for separation between short and long streaks
 
     rho_o = 2500
-    d_mean = 30e-6
 
     separate_by = 'folder'
 
     hist_plots = True
-    calc_means = False
-    plot_expected = False
-    plot_powerlaws = False
-    plot_stokes = False
-    psd_flag = False
+    calc_means = True
+    plot_powerlaws = True
+    plot_stokes = True
     plot_folder_means = False
+
     oversizing_correction = True
 
     list_of_folder_dim_lists = list()
@@ -184,14 +182,6 @@ def main():
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
             plaw_by_habits[sep] = powerlaw(dim_dict[sep], plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1])
 
-        if psd_flag:
-            if (len(dim_dict[sep]) > 50) | (sep == 'Particle_round '):
-                n_bins = 20
-                if len(dim_dict[sep]) < 100:
-                    n_bins = 10
-                (fig, ax) = plot_size_dist(dim_dict[sep], n_bins)
-                ax.set_title('Size distribution {}'.format(sep), fontsize=24)
-
     ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
 
@@ -215,6 +205,7 @@ def main():
             ax.legend()
 
     if plot_stokes:
+        d_mean = 30e-6
         # y_vel_min = -2*((d_mean+1.2e-6)/2)**2*9.81*(rho_o-100-1.34)/(9*eta(temp_stokes-2.5))*1e3
         # y_vel_mean = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
         # y_vel_max = -2*((d_mean-1.2e-6)/2)**2*9.81*(rho_o+100-1.34)/(9*eta(temp_stokes+2.5))*1e3
