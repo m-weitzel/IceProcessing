@@ -87,13 +87,16 @@ def main():
             info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
             try:
                 info_list[i]['temperature'] = tmp['temperature']
-            finally:
+            except KeyError:
                 pass
 
         list_of_folder_dim_lists.append(this_folders_dim_list)
         list_of_folder_streak_lists.append(this_folders_streak_list)
         list_of_folder_v_lists.append(this_folders_v_list)
-        temp_by_folder.append(tmp['temperature'])
+        try:
+            temp_by_folder.append(tmp['temperature'])
+        except KeyError:
+            pass
 
         print('Kept {} streaks longer than {}.'.format(len(this_folders_streak_list), min_streak_length))
 
@@ -194,7 +197,10 @@ def main():
 
     # ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
 
-    temp_stokes = info_list[0]['temperature']
+    try:
+        temp_stokes = info_list[0]['temperature']
+    except KeyError:
+        temp_stokes = -10
 
     if calc_means:
         for sep in different_separators:
