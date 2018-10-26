@@ -22,32 +22,32 @@ def main():
 
         # Clean Measurements
 
-        # os.path.join(basedir, '2203/M1/'),  # Columnar Irregular
-        # os.path.join(basedir, '2203/M2/'),  # Columnar, Bullet Rosettes
-        # os.path.join(basedir, '3103/M1/'),  # Columnar
-        # os.path.join(basedir, '2017/1107/M1/'),  # Dense Irregular
-        os.path.join(basedir, '2017/0808/M1/'),  # Columnar
+        os.path.join(basedir, 'Y2017/2203/M1/'),  # Columnar Irregular
+        os.path.join(basedir, 'Y2017/2203/M2/'),  # Columnar, Bullet Rosettes
+        os.path.join(basedir, 'Y2017/3103/M1/'),  # Columnar
+        os.path.join(basedir, 'Y2017/1107/M1/'),  # Dense Irregular
+        os.path.join(basedir, 'Y2017/0808/M1/'),  # Columnar
 
         # Medium measurements
 
-        # os.path.join(basedir, '0604/M1/'),    # Aggregates
-        # os.path.join(basedir, '2017/0208/M1/'),    # Dendritic, Aggregates
-        # os.path.join(basedir, '2017/0208/M2/'),    # Irregular, Aggregates
-        # os.path.join(basedir, '2017/0908/M1/'),    # Dendritic, Irregular, Dense
-        # os.path.join(basedir, '01Mar/'),      # Dendritic (aggregates)
-        # os.path.join(basedir, '26Sep')
+        os.path.join(basedir, 'Y2017/0604/M1/'),    # Aggregates
+        os.path.join(basedir, 'Y2017/0208/M1/'),    # Dendritic, Aggregates
+        os.path.join(basedir, 'Y2017/0208/M2/'),    # Irregular, Aggregates
+        os.path.join(basedir, 'Y2017/0908/M1/'),    # Dendritic, Irregular, Dense
+        os.path.join(basedir, '0103/'),      # Dendritic (aggregates)
+        os.path.join(basedir, '26Sep'),
 
 
         # Unclean measurements
 
-        # os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
-        # '/uni-mainz.de/homes/maweitze/CCR/1503/M1/',    # Irregular Dendritic, Aggregates
-        # '/uni-mainz.de/homes/maweitze/CCR/1907/M1/',    # Dendritic
-        # '/uni-mainz.de/homes/maweitze/CCR/1907/M2/',    # Dendritic
-        # '/uni-mainz.de/homes/maweitze/CCR/1907/M3/',    # Dendritic
+        os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
+        # os.path.join(basedir, 'Y2017/1503/M1/'),    # Irregular Dendritic, Aggregates
+        # os.path.join(basedir, 'Y2017/1907/M1/'),    # Dendritic
+        # os.path.join(basedir, 'Y2017/1907/M2/'),    # Dendritic
+        # os.path.join(basedir, 'Y2017/1907/M3/'),    # Dendritic
     )
 
-    compare = True
+    compare = False
     if compare:
         compare_list_folder = os.path.join(basedir, '26Sep')
 

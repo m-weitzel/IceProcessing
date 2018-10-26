@@ -6,7 +6,7 @@ from matplotlib import ticker
 import numpy as np
 import pickle
 from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate, eta
-from utilities.plot_size_distribution import plot_size_dist
+# from utilities.plot_size_distribution import plot_size_dist
 from utilities.fit_powerlaw import fit_powerlaw
 from itertools import cycle, compress, chain
 # from matplotlib.widgets import CheckButtons
@@ -16,23 +16,19 @@ from itertools import cycle, compress, chain
 
 def main():
     # Loading data ############################
-    folder_list = (
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Prev23Feb/',  # Columnar, Irregular
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/',  # Dendritic
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas01Mar/',  # Dendritic
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas22May/',   # Columnar
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/',   # Columnar
-        # '/ipa2/holo/mweitzel/HIVIS_Holograms/2905/ps/seq1/',
-        # '/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/',
-    )
 
     folder_list = list()
 
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
+
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
-
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN2/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration06SepWarm/')
@@ -53,7 +49,7 @@ def main():
 
     rho_o = 2500
 
-    separate_by = 'folder'
+    separate_by = 'habit'
 
     hist_plots = True
     calc_means = True
