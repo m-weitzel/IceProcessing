@@ -109,7 +109,7 @@ def main():
     for d, s, v in zip(list_of_folder_dim_lists, list_of_folder_streak_lists, list_of_folder_v_lists):
         for d1, s1, v1 in zip(d, s, v):
             if oversizing_correction:
-                d1 = [td-2*2.22 for td in d1]
+                d1 = [td-1.5*2.22 for td in d1]
             full_dim_list.append(d1)
             full_dim_median_list.append(np.median(d1))
             full_v_list.append(v1)
