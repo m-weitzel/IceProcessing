@@ -207,11 +207,6 @@ def main():
             plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[sep])),
                                  list(compress(full_v_list, selector_index_dict[sep])))
 
-    if plot_expected:
-        y_vel = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
-        ax.axhline(-y_vel, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel))
-        ax.legend(loc='upper left')
-
     if plot_powerlaws:
         for sep in different_separators:
             # ax.plot(dim_dict[hab], plaw_by_habits[hab])
@@ -220,9 +215,19 @@ def main():
             ax.legend()
 
     if plot_stokes:
+        # y_vel_min = -2*((d_mean+1.2e-6)/2)**2*9.81*(rho_o-100-1.34)/(9*eta(temp_stokes-2.5))*1e3
+        # y_vel_mean = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
+        # y_vel_max = -2*((d_mean-1.2e-6)/2)**2*9.81*(rho_o+100-1.34)/(9*eta(temp_stokes+2.5))*1e3
+        # ax.axhline(-y_vel_mean, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel_mean))
+        # ax.fill_between(np.arange(0, 1.2*np.max(full_dim_median_list)), -y_vel_min, -y_vel_max, facecolor='grey', alpha=0.4)
+        # ax.legend(loc='upper left')
+
         ds = np.arange(np.round(1.2*np.max(dim_dict[sep])))
+        stokes_vod_min = [2*((d+1.2)*1e-6/2)**2*9.81*((rho_o-100)-1.34)/(9*eta(temp_stokes-2.5))*1000 for d in ds]
         stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1000 for d in ds]
-        ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3)
+        stokes_vod_max = [2*((d-1.2)*1e-6/2)**2*9.81*((rho_o+100)-1.34)/(9*eta(temp_stokes+2.5))*1000 for d in ds]
+        ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3, color='black')
+        ax.fill_between(ds, stokes_vod_min, stokes_vod_max, facecolor='grey', alpha=0.6)
 
     ax.legend()
     savepath = os.path.join(info_list[0]['folder'], 'plots/v_dim_scatter.png')
@@ -251,14 +256,15 @@ def main():
         ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
         r_mean = 30e-6
         y_vel = lambda T: -2*(r_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(T))*1e3
-        hline_stokes = lambda T, ax_st, i: ax_st.plot([i-0.5, i+0.5], [-y_vel(T)]*2, color='b', lw=3,
-                                                      label='Expected value from Stokes, v={0:.2f} mm/s for T={1:d}°C'.format(y_vel(T), T))
 
         fig_box = plt.figure(figsize=(18, 10), dpi=100)
         ax_box = fig_box.add_subplot(111)
-        for i, t in enumerate(temp_by_folder):
-            hline_stokes(t, ax_mean, i)
-            hline_stokes(t, ax_box, i+1)
+        if plot_stokes:
+            hline_stokes = lambda T, ax_st, i: ax_st.plot([i-0.5, i+0.5], [-y_vel(T)]*2, color='b', lw=3,
+                                                          label='Expected value from Stokes, v={0:.2f} mm/s for T={1:d}°C'.format(y_vel(T), T))
+            for i, t in enumerate(temp_by_folder):
+                hline_stokes(t, ax_mean, i)
+                hline_stokes(t, ax_box, i+1)
         # ax_mean.plot(np.arange(2, 6)-0.5, [-y_vel_p25]*4, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
         # ax_mean.plot(np.arange(5, 7)-0.5, [-y_vel_m10]*2, color='g', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
         ax_mean.legend(loc='upper left')
