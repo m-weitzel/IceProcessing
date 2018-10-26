@@ -338,7 +338,7 @@ def plot_mean_in_scatter(ax, dim_list, v_list):
     std_dim = np.std(list(chain.from_iterable(dim_list)))
     std_v = np.std(list(chain.from_iterable(v_list)))
 
-    ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, label='Means', color='k', capsize=5)
+    ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, capsize=5, picker=2, mew=1, mec='k', elinewidth=2, ecolor='k')
     ax.text(5, 175, 'v={0:.2f}+-{1:.2f}m/s, D={2:.2f}+-{3:.2f}\mu m'.format(mean_v, std_v, mean_dim, std_dim),
             bbox=dict(facecolor='green', alpha=0.2), fontsize=12)
 
@@ -415,7 +415,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
     ax.set_title('Fall speed vs. dimension for Calibration Beads of $30\mu$m diameter', fontsize=24)
-    ax.legend(fontsize=16)
+    ax.legend(fontsize=20, loc='upper left')
 
     # check = CheckButtons(ax, different_habits, [True]*len(different_habits))
     # check.on_clicked(func(different_habits, lines))
@@ -516,14 +516,19 @@ def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_lis
     fig_h = plt.figure()
     fig_h.canvas.set_window_title('Size Distribution')
     ax = fig_h.add_subplot(111)
-    min_bin = max(0, (min(dim_median_list)//5-1)*5)
-    max_bin = (max(dim_median_list)//5+2)*5
+    min_bin = max(0.5, (min(dim_median_list)//5-1)*5+0.5)
+    max_bin = (max(dim_median_list)//5+2)*5+0.5
     bins = np.arange(min_bin, max_bin, 5)
+    bins = np.arange(min_bin, max_bin, 1)
 
     histo = plt.hist(dim_median_list, bins, edgecolor='black', linewidth=1.2)
-    ax.set_title('Size distribution for {}'.format(habit))
+    ax.grid(b=True, which='major', linestyle='-')
+    ax.set_axisbelow('True')
+    ax.set_title('Size distribution for {}'.format(habit), fontsize=28)
+    ax.set_title('Size distribution for 30 $\mu$m calibration beads, measured by HIVIS', fontsize=24)
     ax.set_xlabel('Maximum dimension in $\mu$m', fontsize=20)
     ax.set_ylabel('Count', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
 
     # Angle histogram plot
     fig_h = plt.figure()
@@ -545,8 +550,11 @@ def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_lis
     fig_a.canvas.set_window_title('Aspect Ratio Histogram')
     mean_aspr_list = [np.median(c) for c in aspr_list]
     n_bins = 20
+    bins = 1.0 + .25 * np.arange(n_bins)
+    logbins = np.logspace(np.log10(bins[0]),np.log10(bins[-1]),len(bins))
     ax = fig_a.add_subplot(111)
-    histo = plt.hist(mean_aspr_list, 1.0 + .25 * np.arange(20), edgecolor='black', linewidth=1.2)
+    ax.grid(b=True, which='major', linestyle='-')
+    histo = plt.hist(mean_aspr_list, logbins, edgecolor='black', linewidth=1.2)
     ax.set_title('Aspect ratio histogram for {}'.format(habit))
 #
 #     # z position histogram plot
