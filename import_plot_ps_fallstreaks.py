@@ -451,6 +451,10 @@ def p3d(f_3d, fpl):
     ax3.set_ylim(mid_y - max_range, mid_y + max_range)
     ax3.set_zlim(mid_z - max_range, mid_z + max_range)
 
+    ax3.plot(zs, xs, np.zeros_like(ys)+mid_z-max_range, linewidth=2, alpha=0.5, color='k')
+    ax3.plot(np.zeros_like(zs)+mid_x-max_range, xs, ys, linewidth=2, alpha=0.5, color='k')
+    ax3.plot(zs, np.zeros_like(xs)+mid_y-max_range, ys, linewidth=2, alpha=0.5, color='k')
+
     # ax3.set_zlim(ylims)
     # ax3.set_xlim(zlims)
     # ax3.set_ylim(xlims)
