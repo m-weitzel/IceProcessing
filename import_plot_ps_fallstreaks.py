@@ -9,6 +9,7 @@ from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, 
 # from utilities.plot_size_distribution import plot_size_dist
 from utilities.fit_powerlaw import fit_powerlaw
 from itertools import cycle, compress, chain
+from mpl_toolkits.mplot3d import Axes3D
 # from matplotlib.widgets import CheckButtons
 # from matplotlib import style
 # style.use('dark_background')
@@ -51,11 +52,12 @@ def main():
 
     separate_by = 'habit'
 
-    hist_plots = True
-    calc_means = True
-    plot_powerlaws = True
-    plot_stokes = True
+    hist_plots = False
+    calc_means = False
+    plot_powerlaws = False
+    plot_stokes = False
     plot_folder_means = False
+    plot_all_3d = True
 
     oversizing_correction = True
 
@@ -187,6 +189,11 @@ def main():
         temp_stokes = info_list[0]['temperature']
     except KeyError:
         temp_stokes = -10
+
+    # if plot_all_3d:
+    #     f_3d = plt.figure(figsize=(18, 10), dpi=100)
+    #     for p in full_pos_list:
+    #         p3d(f_3d, p)
 
     if calc_means:
         for sep in different_separators:
@@ -418,6 +425,44 @@ def func(label, different_habits, lines):
     lines[i].set_visible(not lines[i].get_visible())
 
 
+def p3d(f_3d, fpl):
+
+    ax3 = f_3d.add_subplot(111, projection='3d')
+    xs = [p[0] for p in fpl]
+    ys = [p[1] for p in fpl]
+    zs = [p[2] for p in fpl]
+    ax3.scatter(zs, xs, ys)
+    ax3.plot(zs, xs, ys)
+    # ax3.grid()
+    ax3.set_aspect('equal')
+    # xlims = (np.floor_divide(np.min(zs), 10)*10, (np.floor_divide(np.max(zs), 10)+1)*10)
+    # ylims = (np.floor_divide(np.min(xs), 10)*10, (np.floor_divide(np.max(xs), 10)+1)*10)
+    # zlims = (np.floor_divide(np.min(ys), 10)*10, (np.floor_divide(np.max(ys), 10)+1)*10)
+    xlims = (np.min(zs), np.max(zs))
+    ylims = (np.min(xs), np.max(xs))
+    zlims = (np.min(ys), np.max(ys))
+
+    max_range = np.array([xlims[1]-xlims[0], ylims[1]-ylims[0], zlims[1]-zlims[0]]).max() / 2.0
+
+    mid_x = np.mean(xlims)
+    mid_y = np.mean(ylims)
+    mid_z = np.mean(zlims)
+    ax3.set_xlim(mid_x - max_range, mid_x + max_range)
+    ax3.set_ylim(mid_y - max_range, mid_y + max_range)
+    ax3.set_zlim(mid_z - max_range, mid_z + max_range)
+
+    # ax3.set_zlim(ylims)
+    # ax3.set_xlim(zlims)
+    # ax3.set_ylim(xlims)
+    # ax3.yaxis.tick_right()
+    # ax3.yaxis.set_label_position('right')
+    ax3.set_ylabel('Particle x position in mm', fontsize=20)
+    ax3.set_zlabel('Particle y (vertical) position in mm', fontsize=20)
+    ax3.set_xlabel('Particle z position in mm', fontsize=20)
+
+    f_3d.show()
+
+
 def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
 
     xlims = [-2.3, 2.3]
@@ -480,18 +525,10 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         ax2.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         ax2.set_ylabel('Fall Speed (mm/s)', fontsize=20)
 
-        fpl = pos_list[global_streakid]
-        ax3 = plt.subplot2grid(fig_fullshape, (0, n), rowspan=2, colspan=2)
-        ax3.scatter([p[0] for p in fpl], [p[1] for p in fpl])
-        ax3.grid()
-        ax3.set_xlim(xlims)
-        ax3.set_ylim(ylims)
-        ax3.yaxis.tick_right()
-        ax3.yaxis.set_label_position('right')
-        ax3.set_xlabel('Particle x position in mm', fontsize=20)
-        ax3.set_ylabel('Particle y (vertical) position in mm', fontsize=20)
-
         fig_i.show()
+
+        f_3d = plt.figure(figsize=(18, 10), dpi=100)
+        p3d(f_3d, pos_list[global_streakid])
     return True
 
 
