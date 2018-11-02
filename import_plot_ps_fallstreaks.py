@@ -458,7 +458,7 @@ def p3d(ax3, fpl):
 
     ax3.plot(zs, xs, np.zeros_like(ys)+mid_z-max_range, linewidth=2, alpha=0.5, color='k')
     ax3.plot(np.zeros_like(zs)+mid_x-max_range, xs, ys, linewidth=2, alpha=0.5, color='k')
-    ax3.plot(zs, np.zeros_like(xs)+mid_y-max_range, ys, linewidth=2, alpha=0.5, color='k')
+    ax3.plot(zs, np.zeros_like(xs)+mid_y+max_range, ys, linewidth=2, alpha=0.5, color='k')
 
     # ax3.set_zlim(ylims)
     # ax3.set_xlim(zlims)
@@ -470,6 +470,7 @@ def p3d(ax3, fpl):
     ax3.set_xlabel('Particle z position in mm', fontsize=20)
 
     return ax3
+
 
 def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
 
