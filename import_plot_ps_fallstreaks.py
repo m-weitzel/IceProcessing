@@ -353,14 +353,13 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     ax = fig.add_subplot(111)
 
     marker_dict = dict()
-    marker_dict['Column         '] = 's'
-    marker_dict['Aggregate      '] = (10, 1, 0)
+    marker_dict['Column'] = 's'
+    marker_dict['Aggregate'] = (10, 1, 0)
     marker_dict['Particle_nubbly'] = 'v'
-    marker_dict['Particle_round '] = 'o'
     marker_dict['Particle_round'] = 'o'
-    marker_dict['Plate          '] = (6, 0, 0)
-    marker_dict['Needle         '] = 'D'
-    marker_dict['Dendrite       '] = '*'
+    marker_dict['Plate'] = (6, 0, 0)
+    marker_dict['Needle'] = 'D'
+    marker_dict['Dendrite'] = '*'
 
     # for this_dim_list, this_v_list in zip(full_dim_list, full_v_list):
     #     line = ax.scatter(this_dim_list, this_v_list, alpha=1,
@@ -377,22 +376,24 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
         for i, sep in enumerate(different_separators):
             t_dim = list(compress(dim_median_list, selector_list[sep]))
             t_v = list(compress(v_median_list, selector_list[sep]))
-            lines.append(ax.scatter(t_dim, t_v, alpha=1,
-                                    edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
-                                    # label='{} (N={})'.format(hab, sum(selector_list[hab])), marker=marker_dict[hab]))
-                                    label='v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'
-                                    .format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)), marker=marker_dict[sep]))
+            t_ln = ax.scatter(t_dim, t_v, alpha=1,
+                              edgecolors=almost_black, linewidth=1, zorder=0, picker=i, marker=marker_dict[sep])
+            t_ln.set_label('{} (N={})'.format(sep, sum(selector_list[sep])))
+            # t_ln.set_label('v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)))
+
+            lines.append(t_ln)
             streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
     except KeyError:
         for i, sep in enumerate(different_separators):
             t_dim = list(compress(dim_median_list, selector_list[sep]))
             t_v = list(compress(v_median_list, selector_list[sep]))
-            lines.append(ax.scatter(t_dim, t_v, alpha=1,
-                                    edgecolors=almost_black, linewidth=1, zorder=0, picker=i,
-                                    # label='{} (N={})'.format(sep, sum(selector_list[sep])), marker=marker_dict[sep]))
-                                    label='v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'
-                                    .format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim))))
+            t_ln = ax.scatter(t_dim, t_v, alpha=1,
+                                    edgecolors=almost_black, linewidth=1, zorder=0, picker=i, marker=marker_dict[sep])
+            t_ln.set_label('{} (N={})'.format(sep, sum(selector_list[sep])))
+            t_ln.set_label('v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)))
+            lines.append(t_ln)
             streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
+
 
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
@@ -425,9 +426,13 @@ def func(label, different_habits, lines):
     lines[i].set_visible(not lines[i].get_visible())
 
 
-def p3d(f_3d, fpl):
+def p3d(ax3, fpl):
 
-    ax3 = f_3d.add_subplot(111, projection='3d')
+    # if len(f_3d.axes) > 0:
+    #     ax3 = plt.subplot2grid((2, len(f_3d.axes)), (1, 0), colspan=2, rowspan=2, projection='3d')
+    # else:
+    #     ax3 = f_3d.add_subplot(111, projection='3d')
+
     xs = [p[0] for p in fpl]
     ys = [p[1] for p in fpl]
     zs = [p[2] for p in fpl]
@@ -464,8 +469,7 @@ def p3d(f_3d, fpl):
     ax3.set_zlabel('Particle y (vertical) position in mm', fontsize=20)
     ax3.set_xlabel('Particle z position in mm', fontsize=20)
 
-    f_3d.show()
-
+    return ax3
 
 def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
 
@@ -481,7 +485,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
     cmap = plt.get_cmap('bone')
     for subplotnum, dataind in enumerate(event.ind):
         print(dataind)
-        fig_i = plt.figure()
+        fig_i = plt.figure(figsize=(18, 10), dpi=100)
         fig_i.canvas.set_window_title('Fall track detail')
 
         # try:
@@ -529,10 +533,14 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         ax2.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         ax2.set_ylabel('Fall Speed (mm/s)', fontsize=20)
 
+        # f_3d = plt.figure(figsize=(18, 10), dpi=100)
+        # ax3 = f_3d.add_subplot(111, projection='3d')
+        # ax3 = plt.subplot2grid((2, n+2), (0, n+2), colspan=2, projection='3d')
+        ax3 = plt.subplot2grid(fig_fullshape, (0, n), rowspan=2, colspan=2, projection='3d')
+        p3d(ax3, pos_list[global_streakid])
         fig_i.show()
+        # f_3d.show()
 
-        f_3d = plt.figure(figsize=(18, 10), dpi=100)
-        p3d(f_3d, pos_list[global_streakid])
     return True
 
 
