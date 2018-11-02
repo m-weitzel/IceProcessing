@@ -25,8 +25,8 @@ def main():
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
 
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
@@ -394,7 +394,6 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
             lines.append(t_ln)
             streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
 
-
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
@@ -436,8 +435,8 @@ def p3d(ax3, fpl):
     xs = [p[0] for p in fpl]
     ys = [p[1] for p in fpl]
     zs = [p[2] for p in fpl]
-    ax3.scatter(zs, xs, ys)
-    ax3.plot(zs, xs, ys)
+    ax3.scatter(zs, xs, ys, c='darkred')
+    ax3.plot(zs, xs, ys, c='darkred', linewidth=2)
     # ax3.grid()
     ax3.set_aspect('equal')
     # xlims = (np.floor_divide(np.min(zs), 10)*10, (np.floor_divide(np.max(zs), 10)+1)*10)
@@ -465,9 +464,9 @@ def p3d(ax3, fpl):
     # ax3.set_ylim(xlims)
     # ax3.yaxis.tick_right()
     # ax3.yaxis.set_label_position('right')
-    ax3.set_ylabel('Particle x position in mm', fontsize=20)
-    ax3.set_zlabel('Particle y (vertical) position in mm', fontsize=20)
-    ax3.set_xlabel('Particle z position in mm', fontsize=20)
+    ax3.set_ylabel('Particle x position in mm', fontsize=16)
+    ax3.set_zlabel('Particle y (vertical) position in mm', fontsize=16)
+    ax3.set_xlabel('Particle z position in mm', fontsize=16)
 
     return ax3
 
@@ -495,7 +494,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         #     print('{}, {}, {}'.format(hab, len(list(streakid_list[hab])), dataind))
 
         n = len(im_list[global_streakid])
-        fig_fullshape = (2, n+2)
+        fig_fullshape = (2, n+4)
 
         fig_i.suptitle('{} No. {} in folder {}, local index {}'.format(hab, dataind,
                        info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=14)
@@ -537,7 +536,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         # f_3d = plt.figure(figsize=(18, 10), dpi=100)
         # ax3 = f_3d.add_subplot(111, projection='3d')
         # ax3 = plt.subplot2grid((2, n+2), (0, n+2), colspan=2, projection='3d')
-        ax3 = plt.subplot2grid(fig_fullshape, (0, n), rowspan=2, colspan=2, projection='3d')
+        ax3 = plt.subplot2grid(fig_fullshape, (0, n), rowspan=2, colspan=4, projection='3d')
         p3d(ax3, pos_list[global_streakid])
         fig_i.show()
         # f_3d.show()
