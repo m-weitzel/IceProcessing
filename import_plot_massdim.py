@@ -97,10 +97,8 @@ def main():
         tmp = pickle.load(open(os.path.join(compare_list_folder, 'mass_dim_data.dat'), 'rb'))
         compare_list = tmp['crystal']
 
-        # comp_dim_list = [float(a['Long Axis']) for a in compare_list]
-        comp_dim_list = [2*np.sqrt(float(a['Area'])/np.pi) for a in compare_list]
-        # comp_dim_list = [0.134 * (0.58 * a['Short Axis'] / 2 * (1 + 0.95 * (a['Long Axis'] / a['Short Axis']) ** 0.75)) for a in compare_list]
-        comp_mass_list = [np.pi/6*a['Drop Diameter']**3 for a in compare_list]
+        comp_dim_list = dim_list(compare_list, 'areaeq')
+        comp_mass_list = dim_list(compare_list, 'mass')
 
     full_dim_list, full_mass_list, index_list = zip(*sorted(zip(full_dim_list, full_mass_list, index_list)))
 
