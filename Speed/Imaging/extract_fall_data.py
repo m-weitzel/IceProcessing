@@ -15,7 +15,7 @@ def initialize_data(fldr, fldr_list):
 
     print('No old data file found, starting from scratch.')
     try:
-        os.mkdir(fldr+'Fall/processed')
+        os.mkdir(os.path.join(fldr, 'Fall/processed'))
     except FileExistsError:
         pass
 

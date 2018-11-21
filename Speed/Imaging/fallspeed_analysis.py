@@ -19,7 +19,7 @@ import extract_fall_data
 from IceSizing import MicroImg
 
 folder = find_ccr()
-folder = folder+'/0908/M1/'
+folder = os.path.join(folder, 'Y2017/0908/M1')
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
@@ -34,7 +34,7 @@ centerpt_density_flag = 1
 
 def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn_flag=1):
 
-    fall_folder = fldr+'Fall'
+    fall_folder = os.path.join(fldr, 'Fall')
     folder_list = sorted(os.listdir(fall_folder))
     folder_list = [f for f in folder_list if '.png' in f]
     im_for_shape_acq = MicroImg('Streak', fall_folder, folder_list[0], ('Bin', 0))
@@ -85,19 +85,19 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
         print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
 
     try:
-        os.mkdir(fldr+'plots/')
+        os.mkdir(os.path.join(fldr, 'plots/'))
     except FileExistsError:
         pass
 
     for i in plt.get_fignums():
         plt.figure(i)
-        plt.savefig(fldr+'plots/'+plot_descriptor_list[i-1])
+        plt.savefig(os.path.join(fldr, 'plots/'+plot_descriptor_list[i-1]))
 
     plt.show()
 
 
 def load_v_data(fldr):
-    list_of_lists = pickle.load(open(fldr+'fall_speed_data.dat', 'rb'))
+    list_of_lists = pickle.load(open(os.path.join(fldr, 'fall_speed_data.dat'), 'rb'))
     # cont_real = list_of_lists[0]
     fall_dist = list_of_lists[1]
     orientation = list_of_lists[2]
@@ -108,7 +108,7 @@ def load_v_data(fldr):
 
 
 def load_mass_data(fldr):
-    tmp = pickle.load(open(fldr + 'mass_dim_data.dat', 'rb'))
+    tmp = pickle.load(open(os.path.join(fldr, 'mass_dim_data.dat'), 'rb'))
 
     area_eq_diam_list = list()
     max_diam_list = list()
