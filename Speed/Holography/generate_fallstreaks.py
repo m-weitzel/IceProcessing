@@ -55,7 +55,7 @@ def main():
     for k in range(0, len(a['times'])):
         p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size,
                                    a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size,
-                                   a['prediction'][k], a['majsiz'][k][0],
+                                   a['prediction'][k].rstrip(), a['majsiz'][k][0],
                                    a['minsiz'][k][0], a['ims'][k][0]))
 
     print('{} particles loaded.'.format(len(p_list)))
