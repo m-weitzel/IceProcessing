@@ -11,6 +11,7 @@ from scipy import stats
 from itertools import cycle
 import os
 from utilities.find_ccr_folder import find_ccr
+from utilities.make_pretty_figure import imshow_in_figure
 # from matplotlib import style
 # style.use('dark_background')
 
@@ -53,9 +54,10 @@ def main():
 
     minsize = 0
     maxsize = 150
+    plot_scatter = True
+    plot_massdim = False
     logscale = False
     plot_binned = False
-    plot_massdim = True
     fontsize_base = 20
 
     # folder_list = (os.path.join(basedir, '26Sep')),
@@ -122,7 +124,8 @@ def main():
 
     max_aspr = max([max(a) for a in folders_aspr_list])
 
-    fig, ax = plt.subplots(1)
+    # fig, ax = plt.subplots(1)
+    fig, ax = imshow_in_figure()
 
     if logscale:
         xlim = 10
@@ -133,8 +136,8 @@ def main():
         ax.set_xscale('log')
         ax.set_yscale('log')
 
-        ax.grid(which='minor', alpha=0.3)
-        ax.grid(which='major', alpha=0.5)
+        # ax.grid(which='minor', alpha=0.3)
+        # ax.grid(which='major', alpha=0.5)
         xloc = 1.2*xlim
         yloc = [ydist0, ydist0/ydist_factor, ydist0/(2*ydist_factor)]
         legloc = 4
@@ -142,7 +145,7 @@ def main():
     else:
         xmin = 0
         # xmax = 1.1*np.max(full_dim_list)
-        xmax = 200
+        xmax = 150
         ymin = 0
         # ymax = 1.1*np.max(full_mass_list)
         ymax = 300e-9
@@ -154,7 +157,7 @@ def main():
         yloc_factor = 1.1
         yloc = [yloc_base, yloc_base-0.05*yloc_factor, yloc_base-0.1*yloc_factor, yloc_base-0.15*yloc_factor]
         legloc = 2
-        ax.grid()
+        # ax.grid()
 
     dim_bins = [(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])]
 
@@ -195,14 +198,14 @@ def main():
     # plt.text(xloc, ymax*yloc[loc_count], 'Power Law Fit full data: $m = {0:.4f}\cdot D^{{{1:.3f}}}$\nn = {2}, RMSE = {3:4.2f} ng'.format(amp_full/1000, index_full, n, rmse_of_fit*1e-12*1e9),
     #          bbox=dict(facecolor='blue', alpha=0.2), fontsize=fontsize_base*0.7)
     # loc_count += 1
-
-    if not(plot_binned):
-        plt.text(xloc, ymax*yloc[loc_count],
-                 'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$\n Blue: AR < 1.5, Red: 1.5 < AR < 2.5, Green: 2.5 < AR'.format(max_aspr),
-                 # 'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$'.format(max_aspr),
-                 bbox=dict(facecolor='green', alpha=0.2), fontsize=fontsize_base*0.7)
-        loc_count += 1
-    loc_count += 1
+    #
+    # if not plot_binned:
+    #     plt.text(xloc, ymax*yloc[loc_count],
+    #              'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$\n Blue: AR < 1.5, Red: 1.5 < AR < 2.5, Green: 2.5 < AR'.format(max_aspr),
+    #              # 'Maximum aspect ratio: $AR_{{max}} = {0:.2f}$'.format(max_aspr),
+    #              bbox=dict(facecolor='green', alpha=0.2), fontsize=fontsize_base*0.7)
+    #     loc_count += 1
+    # loc_count += 2
 
     n = len(full_mass_list)
 
@@ -211,15 +214,17 @@ def main():
              '\nPower Law Fit binned data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$'.format(amp_bins/1000, index_bins), bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base*0.9, ha='right')
     else:
         # plt.text(xloc + 45.5, ymax * 0.95 * yloc[loc_count],
-        plt.text(xloc, ymax * 0.98 * yloc[loc_count],
-                 'Brown&Francis: m$=0.0185\cdot $D$^{1.9}$\n' + ' Mitchell: m$=0.022\cdot $D$^{2.0}$\n' + 'Power Law Fit full data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$\nn = ${2}$, RMSE = ${3:4.2f}$ ng'.format(
-                     amp_full / 1000, index_full, n, rmse_of_fit * 1e-12 * 1e9),
-                     bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base * 0.9, ha='left')
+        plt.text(
+                 xloc, ymax * 0.98 * yloc[loc_count],
+                # 'Brown&Francis: m$=0.0185\cdot $D$^{1.9}$\n' + ' Mitchell: m$=0.022\cdot $D$^{2.0}$\n' +
+                 'Power Law Fit full data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$\nn = ${2}$, RMSE = ${3:4.2f}$ ng'.format(amp_full / 1000, index_full, n, rmse_of_fit * 1e-12 * 1e9),
+                bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base * 0.5, ha='left'
+                 )
 
     if plot_binned:
         ax.plot(dims_spaced, powerlaw(dims_spaced, amp_bins, index_bins)*1e-12, label='Power Law Binned Data', linewidth=3, zorder=1)
     else:
-        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full)*1e-12, label='Power Law Full', linewidth=3, zorder=1)
+        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full)*1e-12, label='Power Law Fit', linewidth=3, zorder=1)
 
     if plot_massdim:
         ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
@@ -228,29 +233,29 @@ def main():
         ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1)
         ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
-    else:
-        ax.plot(dims_spaced, bakerlawson, label='Baker&Lawson 06', linestyle='--', zorder=1)
+    # else:
+    #     ax.plot(dims_spaced, bakerlawson, label='Baker&Lawson 06', linestyle='--', zorder=1)
     # ax.plot(dims_spaced, heymsfield, label='Heymsfield 2011', linestyle='--')
     # plt.plot(dims_spaced, dims_spaced)
 
+    if plot_scatter:
+        for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_dim_list, folders_mass_list, folders_aspr_list, folder_list):
+            # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=next(colorcycler), marker=next(symbolcycler), alpha=1, edgecolor=almost_black, linewidth=0.15)
+            # col_list = [[1 / (max_aspr - 1) * (c - 1), 1 / (max_aspr - 1) * (max_aspr - c), 0] for c in this_aspr_list]
+            col_list = [[1, 0, 0] if 1.5 < c < 2.5 else [0, 0, 1] if c < 1.5 else [0, 1, 0] for c in this_aspr_list]
+            # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=col_list, marker=next(symbolcycler), alpha=1,
+            #            edgecolors=almost_black, linewidth=1)
+            # ax.scatter(this_dim_list, this_mass_list, c=col_list, marker=next(symbolcycler), alpha=1,
+            #            edgecolors=almost_black, linewidth=1)
+            if plot_binned:
+                ax.scatter(dim_bins, [f*1e-12 for f in avg_masses], alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
+            else:
+                ax.scatter(full_dim_list, [f*1e-12 for f in full_mass_list], alpha=1,
+                           edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
+            # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
-    for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_dim_list, folders_mass_list, folders_aspr_list, folder_list):
-        # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=next(colorcycler), marker=next(symbolcycler), alpha=1, edgecolor=almost_black, linewidth=0.15)
-        # col_list = [[1 / (max_aspr - 1) * (c - 1), 1 / (max_aspr - 1) * (max_aspr - c), 0] for c in this_aspr_list]
-        col_list = [[1, 0, 0] if 1.5 < c < 2.5 else [0, 0, 1] if c < 1.5 else [0, 1, 0] for c in this_aspr_list]
-        # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=col_list, marker=next(symbolcycler), alpha=1,
-        #            edgecolors=almost_black, linewidth=1)
-        # ax.scatter(this_dim_list, this_mass_list, c=col_list, marker=next(symbolcycler), alpha=1,
-        #            edgecolors=almost_black, linewidth=1)
-        if plot_binned:
-            ax.scatter(dim_bins, [f*1e-12 for f in avg_masses], alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
-        else:
-            ax.scatter(full_dim_list, [f*1e-12 for f in full_mass_list], alpha=1,
-                       edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
-        # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
-
-    if compare:
-        ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
+        if compare:
+            ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
 
     plt.xlabel('Area equivalent diameter in $\mathrm{\mu m}$', fontsize=fontsize_base)
     plt.ylabel('Mass in ng', fontsize=fontsize_base)

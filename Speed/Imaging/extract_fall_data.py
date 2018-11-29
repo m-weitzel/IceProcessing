@@ -30,8 +30,8 @@ def initialize_data(fldr, fldr_list):
             centerpt = list()
             time_list = list()
 
-            img = MicroImg('Streak', fldr+'Fall', filename,
-                           thresh_type=('Bin', -180), minsize=75, fill_flag=False, maxsize=10000, dilation=1,
+            img = MicroImg('Streak', os.path.join(fldr, 'Fall'), filename,
+                           thresh_type=('Bin', -150), minsize=75, fill_flag=False, maxsize=50000, dilation=1,
                            optional_object_filter_condition=streak_filter_cond)
 
             dims = img.data

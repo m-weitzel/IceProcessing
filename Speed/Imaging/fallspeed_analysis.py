@@ -42,10 +42,10 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
 
     plot_descriptor_list = list()
 
-    try:
-        fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
-    except FileNotFoundError:
-        _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
+    # try:
+    #     fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
+    # except FileNotFoundError:
+    _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
         # list_of_file_data = extract_fall_data.initialize_data(fldr, folder_list)
 
     vs = np.asarray(fall_dist) * pxl_size / exp_time * 100  # in cm/s

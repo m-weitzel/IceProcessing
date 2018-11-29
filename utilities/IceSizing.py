@@ -19,6 +19,7 @@ from scipy.spatial import distance as dist
 from imutils import perspective
 from imutils import contours
 from sklearn.cluster import KMeans
+import os
 
 
 class MicroImg:
@@ -78,7 +79,7 @@ class MicroImg:
         return np.asarray(data), img
 
     def full_path(self):
-        return self.folder+'/'+self.filename
+        return os.path.join(self.folder, self.filename)
 
     def binarize_image(self):
 

@@ -23,9 +23,9 @@ def main():
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
 
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
@@ -149,9 +149,8 @@ def main():
     if plot_powerlaws:
         plaw_by_habits = dict()
         plaw_vals_by_habits = dict()
-
     if separate_by == 'habit':
-        different_separators = list(set(full_habit_list))
+        different_separators = list(set([f.strip() for f in full_habit_list]))
     elif separate_by == 'folder':
         different_separators = folder_list
     else:
@@ -342,7 +341,10 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
 
     max_dim = 0
     for sep in different_separators:
-        max_dim = np.max([max_dim, np.max(list(compress(dim_median_list, selector_list[sep])))])
+        try:
+            max_dim = np.max([max_dim, np.max(list(compress(dim_median_list, selector_list[sep])))])
+        except ValueError:
+            print('No crystals of habit {} found, skipping...'.format(sep))
 
     dims_spaced = np.arange(np.ceil(1.1 * max_dim / 10) * 10)
     # locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
