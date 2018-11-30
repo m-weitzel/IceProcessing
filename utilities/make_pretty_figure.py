@@ -34,11 +34,10 @@ def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hi
     return fig, ax
 
 
-def create_hist(vals, minval, maxval, step=1):
+def create_hist(vals, minval, maxval, step=1, **kwargs):
 
     bins = np.arange(minval, maxval, step)
 
-    fig = imshow_in_figure(grid=True)
-    ax = fig.add_subplot(111)
+    fig, ax = imshow_in_figure(grid=True, **kwargs)
     ax.hist(vals, bins, edgecolor='black', linewidth=1.2)
 
