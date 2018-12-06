@@ -102,7 +102,7 @@ class MicroImg:
                     canny_low = 6
                 else:
                     canny_low = self.thresh_type[1]
-                thresh = cv2.Canny(gray, canny_low, canny_low*3)
+                thresh = cv2.Canny(gray, canny_low, canny_low*3, L2gradient=True)
             elif self.thresh_type[0] == "Bin":
                 if self.thresh_type[1] != 0:
                     threshold = self.thresh_type[1]
@@ -110,14 +110,23 @@ class MicroImg:
                     threshold = gray.mean()-0.5*gray.std()
                     print('Using threshold value of {} (mean grey value minus 0.5*sigma)'.format(threshold))
                 if np.sign(self.thresh_type[1]) == -1:
+                    print('Received negative threshold value, using inverted thresholding.')
                     rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY)
                 else:
                     rt, thresh = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
             elif self.thresh_type[0] == "Otsu":
+                if np.sign(self.thresh_type[1]) == -1:
+                    print('Received negative threshold value, using inverted thresholding.')
+                    rt, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                    print('Otsu value: {}'.format(rt))
+                else:
                     rt, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                    print('Otsu value: {}'.format(rt))
             elif self.thresh_type[0] == "Adaptive":
                 block_size = self.thresh_type[1]
-                # block_size = 751
+                if block_size == 0:
+                    block_size = 751
+
                 adpt_constant = 7
                 thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, block_size, adpt_constant)
             elif self.thresh_type[0] == "Gradient":
@@ -129,31 +138,35 @@ class MicroImg:
                 rt, thresh = cv2.threshold(grad_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
             elif self.thresh_type[0] == "kmeans":
-                if self.thresh_type[3]=="Multi":
-                    print('\nUsing multidimensional cluster for kmeans.')
-                    # grad_img = np.uint8(
-                    #     np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
-                    grad_img = cv2.Laplacian(gray, cv2.CV_8U)
-                    p_r = cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(gray))))))))
-                    p_r = np.abs(p_r-gray)
-
-                    im_list = gray.reshape(gray.shape[0] * gray.shape[1])
-                    grad_list = grad_img.reshape(grad_img.shape[0] * grad_img.shape[1])
-                    p_r_list = p_r.reshape(p_r.shape[0] * p_r.shape[1])
-                    comp_list = list()
-                    for i, g, p in zip(im_list, grad_list, p_r_list):
-                        comp_list.append((i, g, p))
-                    clustered_data = np.asarray(comp_list)
-
-                else:
-                    print('\nUsing only greyscale data for kmeans.')
-                    clustered_data = img.reshape(gray.shape[0] * gray.shape[1], 3)
+                # if self.thresh_type[3] == "Multi":
+                #     print('\nUsing multidimensional cluster for kmeans.')
+                #     # grad_img = np.uint8(
+                #     #     np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
+                #     grad_img = cv2.Laplacian(gray, cv2.CV_8U)
+                #     p_r = cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(gray))))))))
+                #     p_r = np.abs(p_r-gray)
+                #
+                #     im_list = gray.reshape(gray.shape[0] * gray.shape[1])
+                #     grad_list = grad_img.reshape(grad_img.shape[0] * grad_img.shape[1])
+                #     p_r_list = p_r.reshape(p_r.shape[0] * p_r.shape[1])
+                #     comp_list = list()
+                #     for i, g, p in zip(im_list, grad_list, p_r_list):
+                #         comp_list.append((i, g, p))
+                #     clustered_data = np.asarray(comp_list)
+                #
+                # else:
+                print('\nUsing only greyscale intensity for kmeans.')
+                clustered_data = img.reshape(gray.shape[0] * gray.shape[1], 3)
 
                 if self.thresh_type[1] == 0:
                     n = 2
                 else:
                     n = self.thresh_type[1]
-                pos_label = self.thresh_type[2]
+                try:
+                    pos_label = self.thresh_type[2]
+                except IndexError:
+                    pos_label = 0
+
                 kmeans = KMeans(n_clusters=n)
                 kmeans.fit(clustered_data)
 
