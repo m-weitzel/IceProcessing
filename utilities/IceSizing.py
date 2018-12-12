@@ -36,13 +36,15 @@ class MicroImg:
         self.initial_image = cv2.imread(self.full_path())
         # self.initial_image = cv2.Laplacian(cv2.imread(self.full_path()), cv2.CV_64F)
         self.thresh_type = thresh_type
-        self.bin_img = self.binarize_image()
+        self.thresh_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
-        self.data, self.processed_image = self.get_data_and_process(optional_object_filter_condition)
+        self.bin_img = self.fill_contours()
+        self.streak_flag = (type_phase == 'Streak')
+        self.data, self.processed_image = self.get_data_and_process(optional_object_filter_condition, self.streak_flag)
 
     def get_contours_from_img(self):
 
-        cnts = cv2.findContours(self.bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cv2.findContours(self.thresh_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnts = cnts[1]
 
         # sort the contours from left-to-right and initialize the
@@ -58,15 +60,15 @@ class MicroImg:
                 box = cv2.boxPoints(box)
                 box = np.array(box, dtype="int")
 
-                if ~((box > (self.bin_img.shape[0]-self.mindisttoedge)).any() or (box < self.mindisttoedge).any()):
-                    filtered_contours.append(c)
+                # if ~((box > (self.thresh_img.shape[0]-self.mindisttoedge)).any() or (box < self.mindisttoedge).any()):
+                filtered_contours.append(c)
         return filtered_contours
 
-    def get_data_and_process(self, optional_object_filter_condition):
+    def get_data_and_process(self, optional_object_filter_condition, streak_flag):
         data = list()
         img = self.initial_image.copy()
         for c in self.contours:
-            this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric, optional_object_filter_condition)
+            this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric, optional_object_filter_condition, streak_flag)
             if this_data:
                 csp = this_data['Area'] * this_data['Short Axis'] \
                       * (2 * this_data['Long Axis']+2 * this_data['Short Axis'])\
@@ -179,7 +181,6 @@ class MicroImg:
 
                 thresh = np.reshape(la, [img.shape[0], img.shape[1]]).astype('uint8')
 
-
             # elif self.thresh_type[0] == "Color":
             #     lower_range = np.array([110, 50, 50])
             #     upper_range = np.array([130, 255, 255])
@@ -217,12 +218,21 @@ class MicroImg:
 
         return thresh
 
+    def fill_contours(self):
+
+        ii = cv2.cvtColor(np.zeros_like(self.initial_image), cv2.COLOR_BGR2GRAY)
+        cv2.drawContours(ii, self.contours, -1, (255, 0, 0), 2)
+        for c in self.contours:
+            cv2.fillPoly(ii, pts=[c], color=(255, 0, 0))
+
+        return ii
+
 
 def midpoint(pt_a, pt_b):
     return (pt_a[0] + pt_b[0]) * 0.5, (pt_a[1] + pt_b[1]) * 0.5
 
 
-def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_condition=False):
+def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_condition=False, streak_flag=False):
     img_processed = img.copy()
     # if cv2.contourArea(contour) < 750:
     #     return [], img
@@ -287,14 +297,25 @@ def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_
 
         data = {'Long Axis': dim_l, 'Short Axis': dim_w, 'Area': area, 'Center Points': (center_point[0], center_point[1]), 'Orientation': orientation}
 
-        # if d_a > d_b:
-        cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
-                    (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
-                    0.65, (255, 255, 255), 2)
-        # else:
-        cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
-                (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
-                0.65, (255, 255, 255), 2)
+        if streak_flag:
+            if d_a > d_b:
+                cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
+                            (int(tltrX - 150), int(tltrY+80)), cv2.FONT_HERSHEY_SIMPLEX,
+                            2, (90, 90, 255), 4)
+            else:
+
+                cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
+                            (int(trbrX + 10), int(trbrY-100)), cv2.FONT_HERSHEY_SIMPLEX,
+                            2, (90, 90, 255), 4)
+        else:
+            # if d_a > d_b:
+            cv2.putText(img_processed, "{:.1f}um".format(d_a / pixels_per_metric),
+                        (int(tltrX - 15), int(tltrY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.65, (255, 255, 255), 2)
+            # else:
+            cv2.putText(img_processed, "{:.1f}um".format(d_b / pixels_per_metric),
+                        (int(trbrX + 10), int(trbrY)), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.65, (255, 255, 255), 2)
 
         cv2.drawContours(img_processed, [box.astype("int")], -1, (0, 255, 0), 2)
         cv2.drawContours(img_processed, contour, -1, (255, 0, 0), 2)
