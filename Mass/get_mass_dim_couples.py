@@ -17,12 +17,12 @@ from matplotlib import pyplot as plt
 
 sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
 
-from IceSizing import MicroImg
+from utilities.IceSizing import MicroImg
 # from find_ccr_folder import find_ccr
 
 
 def main():
-    folder = '/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/Mass'
+    folder = '/ipa/holo/mweitzel/Windkanal/Ice/CCR/26Sep/'
     file_list = os.listdir(folder)
 
     ice_file_list = list()
