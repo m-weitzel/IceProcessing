@@ -11,7 +11,8 @@ from scipy import stats
 from itertools import cycle
 import os
 from utilities.find_ccr_folder import find_ccr
-from utilities.make_pretty_figure import imshow_in_figure
+from utilities.make_pretty_figure import imshow_in_figure, create_hist
+from utilities.savefig_central import savefig_ipa
 # from matplotlib import style
 # style.use('dark_background')
 
@@ -37,11 +38,11 @@ def main():
         os.path.join(basedir, 'Y2017/0908/M1/'),    # Dendritic, Irregular, Dense
         os.path.join(basedir, '0103/'),      # Dendritic (aggregates)
         os.path.join(basedir, '26Sep'),
-
-
-        # Unclean measurements
-
-        os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
+        #
+        #
+        # # Unclean measurements
+        #
+        # os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
         # os.path.join(basedir, 'Y2017/1503/M1/'),    # Irregular Dendritic, Aggregates
         # os.path.join(basedir, 'Y2017/1907/M1/'),    # Dendritic
         # os.path.join(basedir, 'Y2017/1907/M2/'),    # Dendritic
@@ -274,6 +275,11 @@ def main():
     rect = legend.get_frame()
     rect.set_facecolor(light_grey)
     rect.set_linewidth(0.0)
+
+    savefig_ipa(fig, 'MassDimScatter')
+
+    fig_hist, _ = create_hist(full_dim_list)
+    savefig_ipa(fig_hist, 'MassDimHist')
 
     plt.show()
 
