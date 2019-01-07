@@ -125,7 +125,15 @@ class MicroImg:
                     canny_low = 6
                 else:
                     canny_low = self.thresh_type[1]
-                thresh = cv2.Canny(gray, canny_low, canny_low*3, L2gradient=True)
+                if len(self.thresh_type) > 2:
+                    if self.thresh_type[2] == 0:
+                        canny_high = 3*canny_low
+                    else:
+                        canny_high = self.thresh_type[2]
+                else:
+                    canny_high = 3*canny_low
+
+                thresh = cv2.Canny(gray, canny_low, canny_high, L2gradient=True)
             elif self.thresh_type[0] == "Bin":
                 if self.thresh_type[1] != 0:
                     threshold = self.thresh_type[1]
