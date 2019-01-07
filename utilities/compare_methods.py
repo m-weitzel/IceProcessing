@@ -21,6 +21,8 @@ def main():
     # folder = '/ipa2/holo/mweitzel/Windkanal/Ice/CCR/2804/M1'
     folder = '/ipa/holo/mweitzel/Ergebnisse/EisMainz/CNN/Training/3103M1'
 
+    pixel_size = 0.33
+
     # label_path_list = ('Ice-1-104_features.png', 'Ice-2_features.png')
     # img_path_list = ('Ice-1-104.png','Ice-2-172.png')
 
@@ -32,7 +34,7 @@ def main():
         label_filter = 'Bin'
 
     # for label_path, img_path in zip(label_path_list, img_path_list):
-        label_img = MicroImg('label', folder, label_path, (label_filter, 0), maxsize=np.inf, dilation=0, fill_flag=False, min_dist_to_edge=5)
+        label_img = MicroImg('label', folder, label_path, pixel_size, (label_filter, 0), maxsize=np.inf, dilation=0, fill_flag=False, min_dist_to_edge=5)
         label_centerpts = [l['Center Points'] for l in label_img.data]
 
     # img_mean = cv2.meanStdDev(cv2.cvtColor(label_img.initial_image, cv2.COLOR_BGR2GRAY))

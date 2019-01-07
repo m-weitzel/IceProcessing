@@ -43,7 +43,7 @@ def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, 
     fall_folder = os.path.join(fldr, 'Fall')
     folder_list = sorted(os.listdir(fall_folder))
     folder_list = [f for f in folder_list if '.png' in f]
-    im_for_shape_acq = MicroImg('Streak', fall_folder, folder_list[0], ('Bin', 0))
+    im_for_shape_acq = MicroImg('Streak', fall_folder, folder_list[0], pxl_size, ('Bin', 0))
     imsize = im_for_shape_acq.processed_image.shape
 
     plot_descriptor_list = list()
@@ -51,10 +51,10 @@ def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, 
     try:
         fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
     except FileNotFoundError:
-        _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
+        _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list, pxl_size)
         # list_of_file_data = extract_fall_data.initialize_data(fldr, folder_list)
 
-    vs = np.asarray(fall_dist) * pxl_size / exp_time * 100  # in cm/s
+    vs = np.asarray(fall_dist) / exp_time * 100  # in cm/s
     projected_vs = [v * np.cos(o) for (v, o) in zip(vs, orientation)]
     print('Number of fall streaks: '+str(len(projected_vs)))
     mass_data = load_mass_data(folder)

@@ -23,11 +23,11 @@ import os
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, fill_flag=False, min_dist_to_edge=4, optional_object_filter_condition='False'):
+    def __init__(self, type_phase, folder, filename, pixel_size, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, fill_flag=False, min_dist_to_edge=4, optional_object_filter_condition='False'):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
-        self.pixels_per_metric = 3
+        self.pixels_per_metric = 1/pixel_size
         self.mindisttoedge = min_dist_to_edge
         self.minsize = minsize
         self.maxsize = maxsize

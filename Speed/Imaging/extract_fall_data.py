@@ -9,7 +9,7 @@ import find_couples
 import numpy as np
 
 
-def initialize_data(fldr, fldr_list):
+def initialize_data(fldr, fldr_list, pixel_size):
 
     list_of_file_data = list()
 
@@ -30,7 +30,7 @@ def initialize_data(fldr, fldr_list):
             centerpt = list()
             time_list = list()
 
-            img = MicroImg('Streak', os.path.join(fldr, 'Fall'), filename,
+            img = MicroImg('Streak', os.path.join(fldr, 'Fall'), filename, pixel_size,
                            thresh_type=('Bin', -150), minsize=75, fill_flag=False, maxsize=50000, dilation=1,
                            optional_object_filter_condition=streak_filter_cond)
 
