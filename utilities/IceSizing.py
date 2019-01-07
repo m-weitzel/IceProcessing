@@ -68,14 +68,35 @@ class MicroImg:
         data = list()
         img = self.initial_image.copy()
         for c in self.contours:
-            this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric, optional_object_filter_condition, streak_flag)
-            if this_data:
-                csp = this_data['Area'] * this_data['Short Axis'] \
-                      * (2 * this_data['Long Axis']+2 * this_data['Short Axis'])\
-                      / (cv2.arcLength(c, True)/self.pixels_per_metric)
-                new_data = {'CSP': csp, 'File Name': self.filename}
-                this_data.update(new_data)
-                data.append(this_data)
+
+            this_data = dict()
+            this_center, la = cv2.minEnclosingCircle(c)
+            this_data['Area'] = cv2.contourArea(c) / (self.pixels_per_metric**2)
+            this_data['File Name'] = self.filename
+
+            this_data['Orientation'] = 0
+            this_data['CSP'] = 0
+            this_data['Short Axis'] = 1
+
+            cv2.drawContours(img, c, -1, (0, 255, 0), 2)
+
+            # this_center = (int(la), int(this_data['Center Points'][1]))
+
+            cv2.circle(img, (int(this_center[0]), int(this_center[1])), 5, (0, 0, 255), 3)
+            cv2.circle(img, (int(this_center[0]), int(this_center[1])), int(la), (255, 0, 0), 3)
+
+            this_data['Long Axis'] = 2*la/self.pixels_per_metric
+            this_data['Center Points'] = this_center
+            data.append(this_data)
+
+            # this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric, optional_object_filter_condition, streak_flag)
+            # if this_data:
+            #     csp = this_data['Area'] * this_data['Short Axis'] \
+            #           * (2 * this_data['Long Axis']+2 * this_data['Short Axis'])\
+            #           / (cv2.arcLength(c, True)/self.pixels_per_metric)
+            #     new_data = {'CSP': csp, 'File Name': self.filename}
+            #     this_data.update(new_data)
+            #     data.append(this_data)
 
         data = list(filter(None, data))
         return np.asarray(data), img
