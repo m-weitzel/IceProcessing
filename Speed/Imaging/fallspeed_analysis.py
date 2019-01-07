@@ -17,6 +17,7 @@ sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Mass'
 from find_ccr_folder import find_ccr
 from Speed.Imaging import extract_fall_data
 from IceSizing import MicroImg
+from utilities.savefig_central import savefig_ipa
 
 folder = find_ccr()
 folder = os.path.join(folder, 'Y2017/0908/M1')
@@ -89,9 +90,11 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
     except FileExistsError:
         pass
 
-    for i in plt.get_fignums():
-        plt.figure(i)
-        plt.savefig(os.path.join(fldr, 'plots/'+plot_descriptor_list[i-1]))
+    for i, p in zip(plt.get_fignums(), plot_descriptor_list):
+        f = plt.figure(i)
+        # plt.savefig(os.path.join(fldr, 'plots/'+plot_descriptor_list[i-1]))
+        savefig_filepath = fldr[-7:]+'_'+p[:-4]
+        savefig_ipa(f, savefig_filepath.replace('/', ''))
 
     plt.show()
 
