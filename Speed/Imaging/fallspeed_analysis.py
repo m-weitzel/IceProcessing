@@ -5,7 +5,6 @@ These plots show the characteristic spatial distribution of average fall speed, 
 import sys
 import os
 import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import numpy as np
 import pickle
@@ -14,17 +13,23 @@ import cv2
 import time
 sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
 sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Mass')
+sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Speed')
 from find_ccr_folder import find_ccr
-from Speed.Imaging import extract_fall_data
+from Imaging import extract_fall_data
 from IceSizing import MicroImg
-from utilities.savefig_central import savefig_ipa
+
+try:
+    import matplotlib.pyplot as plt
+    from savefig_central import savefig_ipa
+except ImportError:
+    pass
 
 folder = find_ccr()
 folder = os.path.join(folder, 'Y2017/0908/M1')
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
-save_flag = 1
+save_only_flag = 0
 
 histogram_plt_flag = 0
 orientation_polar_flag = 0
@@ -33,7 +38,7 @@ ori_scatter_flag = 0
 centerpt_density_flag = 1
 
 
-def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn_flag=1):
+def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn_flag=1):
 
     fall_folder = os.path.join(fldr, 'Fall')
     folder_list = sorted(os.listdir(fall_folder))
@@ -55,48 +60,49 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
     mass_data = load_mass_data(folder)
 
     t0 = time.time()
-    if h_flag:
-        mass_velocity_dim_histograms(projected_vs, mass_data, folder)
-        t1 = time.time()
-        print('Time spent on Mass Velocity Histograms:'+str(t1-t0))
-        plot_descriptor_list += ['histogram.png']
-        t0 = time.time()
-    if op_flag:
-        orientation_polar_plot(orientation)
-        t1 = time.time()
-        print('Time spent on Orientation Polar Plot:' + str(t1 - t0))
-        plot_descriptor_list += ['orientation_polar.png']
-        t0 = time.time()
-    if vt_flag:
-        velocity_time_series(folder_list, time_list, projected_vs)
-        t1 = time.time()
-        print('Time spent on Velocity Time Series:' + str(t1 - t0))
-        plot_descriptor_list += ['v_timeseries.png']
-        t0 = time.time()
-    if or_flag:
-        orientation_scatter(centerpt, orientation)
-        t1 = time.time()
-        print('Time spent on Orientation Scatter Plot:' + str(t1 - t0))
-        plot_descriptor_list += ['orientation_scatter.png']
-        t0 = time.time()
-    if dn_flag:
-        centerpt_density(centerpt, orientation, vs, imsize, pixel_size)
-        t1 = time.time()
-        plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png', 'quiver.png']
-        print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
+    if not save_only:
+        if h_flag:
+            mass_velocity_dim_histograms(projected_vs, mass_data, folder)
+            t1 = time.time()
+            print('Time spent on Mass Velocity Histograms:'+str(t1-t0))
+            plot_descriptor_list += ['histogram.png']
+            t0 = time.time()
+        if op_flag:
+            orientation_polar_plot(orientation)
+            t1 = time.time()
+            print('Time spent on Orientation Polar Plot:' + str(t1 - t0))
+            plot_descriptor_list += ['orientation_polar.png']
+            t0 = time.time()
+        if vt_flag:
+            velocity_time_series(folder_list, time_list, projected_vs)
+            t1 = time.time()
+            print('Time spent on Velocity Time Series:' + str(t1 - t0))
+            plot_descriptor_list += ['v_timeseries.png']
+            t0 = time.time()
+        if or_flag:
+            orientation_scatter(centerpt, orientation)
+            t1 = time.time()
+            print('Time spent on Orientation Scatter Plot:' + str(t1 - t0))
+            plot_descriptor_list += ['orientation_scatter.png']
+            t0 = time.time()
+        if dn_flag:
+            centerpt_density(centerpt, orientation, vs, imsize, pixel_size)
+            t1 = time.time()
+            plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png', 'quiver.png']
+            print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
 
-    try:
-        os.mkdir(os.path.join(fldr, 'plots/'))
-    except FileExistsError:
-        pass
+        try:
+            os.mkdir(os.path.join(fldr, 'plots/'))
+        except FileExistsError:
+            pass
 
-    for i, p in zip(plt.get_fignums(), plot_descriptor_list):
-        f = plt.figure(i)
-        # plt.savefig(os.path.join(fldr, 'plots/'+plot_descriptor_list[i-1]))
-        savefig_filepath = fldr[-7:]+'_'+p[:-4]
-        savefig_ipa(f, savefig_filepath.replace('/', ''))
+        for i, p in zip(plt.get_fignums(), plot_descriptor_list):
+            f = plt.figure(i)
+            # plt.savefig(os.path.join(fldr, 'plots/'+plot_descriptor_list[i-1]))
+            savefig_filepath = fldr[-7:]+'_'+p[:-4]
+            savefig_ipa(f, savefig_filepath.replace('/', ''))
 
-    plt.show()
+        plt.show()
 
 
 def load_v_data(fldr):
@@ -131,7 +137,7 @@ def load_mass_data(fldr):
 def mass_velocity_dim_histograms(vs, mass_data, fldr):
 
     n_bins = 15
-    v_max = 3
+    v_max = 8
     ae_max = 100
     mxdim_max = 120
     # mass_max = 87500
@@ -220,14 +226,14 @@ def velocity_time_series(folder_list, time_list, projected_vs):
                 # if t_time == curr_val:
                 #     temp_vals.append(v)
                 # else:
-                    if len(temp_vals) > 0:
+                    if len(temp_vals) > 3:
                         mean_vals[curr_val] = np.mean(temp_vals)
                         std_vals[curr_val] = np.std(temp_vals)
                         curr_val += 1
                         temp_vals = list()
                     else:
-                        mean_vals[curr_val] = 0
-                        std_vals[curr_val] = 0
+                        mean_vals[curr_val] = np.nan
+                        std_vals[curr_val] = np.nan
                         curr_val += 1
                         temp_vals = list()
 
@@ -336,7 +342,8 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     # cbar.set_ticks([0, 0.25, 0.5, 0.75, 1])
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('Relative occurence of fall streak center points', fontsize=20)
+    ax.set_title('Probability of occurence of fall streak center points', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
 
     # ax.axis([0, 1000, 0, 1000])
     f, ax = plt.subplots(figsize=(8, 14))
@@ -350,6 +357,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
     ax.set_title('Median fall streak orientation relative to verticality')
+    ax.tick_params(axis='both', which='major', labelsize=20)
     cbar = f.colorbar(im, ticks=np.linspace(-45, 45, 7))
     cbar.set_label('$\phi$ in $\degree$', fontsize=20)
     # ticklabels = list(np.linspace(-1, 1, 9))
@@ -363,10 +371,13 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     ax.set_ylim(ys[0] * pxl_size / 1000, ys[-1] * pxl_size / 1000)
     f.canvas.draw()
     X, Y = np.meshgrid(xs*pxl_size/1000, ys*pxl_size/1000)
-    im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=0.001, vmax=2)
+    im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=0.001, vmax=6)
     im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)), -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0))
-    cbar = f.colorbar(im_pc, ticks=np.linspace(0, 2, 5))
+    cbar = f.colorbar(im_pc, ticks=np.linspace(0, 8, 9))
     cbar.set_label('v in $cm/s$', fontsize=20)
+    cbar.ax.tick_params(labelsize=20)
+
+    ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
     ax.set_title('Quiver plot of mean orientation and fall speed')
@@ -385,4 +396,4 @@ def get_angles(img):
 
 
 if __name__ == '__main__':
-    main(folder, pixel_size, exposure_time, histogram_plt_flag, orientation_polar_flag, v_t_series_flag, ori_scatter_flag, centerpt_density_flag)
+    main(folder, pixel_size, exposure_time, save_only_flag, histogram_plt_flag, orientation_polar_flag, v_t_series_flag, ori_scatter_flag, centerpt_density_flag)
