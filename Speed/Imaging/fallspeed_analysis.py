@@ -15,7 +15,7 @@ import time
 sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
 sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Mass')
 from find_ccr_folder import find_ccr
-import extract_fall_data
+from Speed.Imaging import extract_fall_data
 from IceSizing import MicroImg
 
 folder = find_ccr()
@@ -27,7 +27,7 @@ save_flag = 1
 
 histogram_plt_flag = 0
 orientation_polar_flag = 0
-v_t_series_flag = 0
+v_t_series_flag = 1
 ori_scatter_flag = 0
 centerpt_density_flag = 1
 
@@ -42,10 +42,10 @@ def main(fldr, pxl_size, exp_time, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn
 
     plot_descriptor_list = list()
 
-    # try:
-    #     fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
-    # except FileNotFoundError:
-    _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
+    try:
+        fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
+    except FileNotFoundError:
+        _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list)
         # list_of_file_data = extract_fall_data.initialize_data(fldr, folder_list)
 
     vs = np.asarray(fall_dist) * pxl_size / exp_time * 100  # in cm/s
@@ -210,23 +210,23 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     curr_val = 0
 
     for t_time, v in zip(time_list, projected_vs):
-        if t_time == [curr_val]:
+        if t_time == curr_val:
             temp_vals.append(v)
-        if t_time != [curr_val]:
-            if len(temp_vals) > 5:
-                mean_vals[curr_val] = np.mean(temp_vals)
-                std_vals[curr_val] = np.std(temp_vals)
-                curr_val += 1
-            else:
-                mean_vals[curr_val] = np.nan
-                std_vals[curr_val] = np.nan
-                curr_val += 1
-            while time != [curr_val]:
-                mean_vals[curr_val] = np.nan
-                std_vals[curr_val] = np.nan
-                curr_val += 1
-            temp_vals = list()
-            temp_vals.append(v)
+        elif t_time > curr_val:
+            while t_time > curr_val:
+                # if t_time == curr_val:
+                #     temp_vals.append(v)
+                # else:
+                    if len(temp_vals) > 0:
+                        mean_vals[curr_val] = np.mean(temp_vals)
+                        std_vals[curr_val] = np.std(temp_vals)
+                        curr_val += 1
+                        temp_vals = list()
+                    else:
+                        mean_vals[curr_val] = 0
+                        std_vals[curr_val] = 0
+                        curr_val += 1
+                        temp_vals = list()
 
     n_bins = 101
 
