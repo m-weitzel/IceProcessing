@@ -12,6 +12,7 @@ from itertools import cycle
 import os
 from utilities.find_ccr_folder import find_ccr
 from utilities.make_pretty_figure import imshow_in_figure, create_hist
+from utilities.plot_size_distribution import plot_size_dist
 from utilities.savefig_central import savefig_ipa
 # from matplotlib import style
 # style.use('dark_background')
@@ -278,7 +279,8 @@ def main():
 
     savefig_ipa(fig, 'MassDimScatter')
 
-    fig_hist, _ = create_hist(full_dim_list)
+    # fig_hist, _ = create_hist(full_dim_list)
+    fig_hist, _ = plot_size_dist(full_dim_list, 25, xlabel='Size in micrometers')
     savefig_ipa(fig_hist, 'MassDimHist')
 
     plt.show()
