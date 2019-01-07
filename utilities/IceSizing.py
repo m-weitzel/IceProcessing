@@ -23,7 +23,7 @@ import os
 
 
 class MicroImg:
-    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, fill_flag=True, min_dist_to_edge=4, optional_object_filter_condition='False'):
+    def __init__(self, type_phase, folder, filename, thresh_type=(None, 0), minsize=750, maxsize=100000, dilation=30, fill_flag=False, min_dist_to_edge=4, optional_object_filter_condition='False'):
         self.type_phase = type_phase
         self.folder = folder
         self.filename = filename
@@ -229,12 +229,14 @@ class MicroImg:
                 thresh = cv2.dilate(thresh, kernel, iterations=1)
                 thresh = cv2.erode(thresh, kernel, iterations=1)
 
-            h, w = thresh.shape[:2]
-            mask = np.zeros((h + 2, w + 2), np.uint8)
-
             if self.fill_flag:
+                h, w = thresh.shape[:2]
+                mask = np.zeros((h + 2, w + 2), np.uint8)
+
                 thresh_floodfill = thresh.copy()
-                cv2.floodFill(thresh_floodfill, mask, (0, 0), 255);
+                pts = ((0, 0), (0, np.shape(thresh)[1]-1), (np.shape(thresh)[0]-1, 0), (np.shape(thresh)[0]-1, np.shape(thresh)[1]-1))
+                for pt in pts:
+                    cv2.floodFill(thresh_floodfill, mask, pt, 255)
                 thresh_floodfill_inv = cv2.bitwise_not(thresh_floodfill)
                 if np.any(thresh_floodfill > 0):
                     print('Floodfill had any effect whatsoever.')
