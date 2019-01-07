@@ -52,7 +52,7 @@ def main():
 
     separate_by = 'habit'
 
-    hist_plots = False
+    hist_plots = True
     calc_means = False
     plot_powerlaws = False
     plot_stokes = False
@@ -173,7 +173,8 @@ def main():
         info_by_separator = list(compress(info_list, selector_index_dict[sep]))
 
         if hist_plots:
-            plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
+            if len(streaks_by_separator) > 0:
+                plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
         if plot_powerlaws:
             plaw_vals_by_habits[sep] = fit_powerlaw(dim_dict[sep], v_median_dict[sep])
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
