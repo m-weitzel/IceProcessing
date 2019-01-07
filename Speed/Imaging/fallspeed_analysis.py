@@ -137,7 +137,7 @@ def load_mass_data(fldr):
 def mass_velocity_dim_histograms(vs, mass_data, fldr):
 
     n_bins = 15
-    v_max = 3
+    v_max = 8
     ae_max = 100
     mxdim_max = 120
     # mass_max = 87500
@@ -226,14 +226,14 @@ def velocity_time_series(folder_list, time_list, projected_vs):
                 # if t_time == curr_val:
                 #     temp_vals.append(v)
                 # else:
-                    if len(temp_vals) > 0:
+                    if len(temp_vals) > 3:
                         mean_vals[curr_val] = np.mean(temp_vals)
                         std_vals[curr_val] = np.std(temp_vals)
                         curr_val += 1
                         temp_vals = list()
                     else:
-                        mean_vals[curr_val] = 0
-                        std_vals[curr_val] = 0
+                        mean_vals[curr_val] = np.nan
+                        std_vals[curr_val] = np.nan
                         curr_val += 1
                         temp_vals = list()
 
@@ -342,7 +342,8 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     # cbar.set_ticks([0, 0.25, 0.5, 0.75, 1])
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('Relative occurence of fall streak center points', fontsize=20)
+    ax.set_title('Probability of occurence of fall streak center points', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
 
     # ax.axis([0, 1000, 0, 1000])
     f, ax = plt.subplots(figsize=(8, 14))
@@ -356,6 +357,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
     ax.set_title('Median fall streak orientation relative to verticality')
+    ax.tick_params(axis='both', which='major', labelsize=20)
     cbar = f.colorbar(im, ticks=np.linspace(-45, 45, 7))
     cbar.set_label('$\phi$ in $\degree$', fontsize=20)
     # ticklabels = list(np.linspace(-1, 1, 9))
@@ -369,10 +371,13 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     ax.set_ylim(ys[0] * pxl_size / 1000, ys[-1] * pxl_size / 1000)
     f.canvas.draw()
     X, Y = np.meshgrid(xs*pxl_size/1000, ys*pxl_size/1000)
-    im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=0.001, vmax=2)
+    im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=0.001, vmax=6)
     im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)), -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0))
-    cbar = f.colorbar(im_pc, ticks=np.linspace(0, 2, 5))
+    cbar = f.colorbar(im_pc, ticks=np.linspace(0, 8, 9))
     cbar.set_label('v in $cm/s$', fontsize=20)
+    cbar.ax.tick_params(labelsize=20)
+
+    ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
     ax.set_title('Quiver plot of mean orientation and fall speed')
