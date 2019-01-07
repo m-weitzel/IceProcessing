@@ -78,10 +78,10 @@ def main():
         while 1:
             adaptive_window = cv2.getTrackbarPos('AdaptiveWindow', window_title)
             dilation = cv2.getTrackbarPos('Dilation', window_title)
-            img_ice = MicroImg('Ice', folder, ice_file, ('Adaptive', 2*adaptive_window+1), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=1)
-            # img_ice = MicroImg('Ice', folder, ice_file, ('Bin', 0), 750, 100000, dilation)
-            # img_ice = MicroImg('Ice', folder, ice_file, ('Otsu', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
-            # img_ice = MicroImg('Ice', folder, ice_file, ('Gradient', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
+            img_ice = MicroImg('Ice', folder, ice_file, 1, ('Adaptive', 2*adaptive_window+1), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=1)  # Pixel size 1 because dimension is calculated in pixels and converted later
+            # img_ice = MicroImg('Ice', folder, ice_file, 1, ('Bin', 0), 750, 100000, dilation)
+            # img_ice = MicroImg('Ice', folder, ice_file, 1, ('Otsu', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
+            # img_ice = MicroImg('Ice', folder, ice_file, 1, ('Gradient', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
             cv2.imshow(window_title, img_ice.processed_image)
             k = cv2.waitKey(1500) & 0xFF  # Set refresh time for plot to 5 ms
             if (k == 13) | (k == 10):  # Arbitrary end loop time
@@ -89,7 +89,7 @@ def main():
             # else:
                 # print(k)
 
-        img_drop = MicroImg('Drop', folder, drop_file, ('Color', 0), 750, 100000)
+        img_drop = MicroImg('Drop', folder, drop_file, 1, ('Color', 0), 750, 100000)
 
         dims_ice_list = [x['Center Points'] for x in img_ice.data]
         dims_drops_list = [x['Center Points'] for x in img_drop.data]
