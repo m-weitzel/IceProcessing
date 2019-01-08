@@ -77,8 +77,8 @@ def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, 
         if vt_flag:
             velocity_time_series(folder_list, time_list, projected_vs)
             t1 = time.time()
-            print('Time spent on Velocity Time Series: {0:.1f} s'.format(t1 - t0))
-            plot_descriptor_list += ['v_timeseries.png']
+            print('Time spent on Velocity Time Series: {0:.1f} s'.format(t1-t0))
+            plot_descriptor_list += ['v_timeseries.png', 'v_count_of_streaks']
             t0 = time.time()
         if or_flag:
             orientation_scatter(centerpt, orientation)
@@ -218,6 +218,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     temp_vals = list()
     mean_vals = np.zeros(len(folder_list))
     std_vals = np.zeros(len(folder_list))
+    streaks_in_pic = np.zeros(len(folder_list))
     curr_val = 0
 
     for t_time, v in zip(time_list, projected_vs):
@@ -232,11 +233,13 @@ def velocity_time_series(folder_list, time_list, projected_vs):
                         mean_vals[curr_val] = np.mean(temp_vals)
                         std_vals[curr_val] = np.std(temp_vals)
                         curr_val += 1
+                        streaks_in_pic[curr_val] = len(temp_vals)
                         temp_vals = list()
                     else:
                         mean_vals[curr_val] = np.nan
                         std_vals[curr_val] = np.nan
                         curr_val += 1
+                        streaks_in_pic[curr_val] = len(temp_vals)
                         temp_vals = list()
 
     n_bins = 25
