@@ -21,6 +21,7 @@ from IceSizing import MicroImg
 try:
     import matplotlib.pyplot as plt
     from savefig_central import savefig_ipa
+    from make_pretty_figure import imshow_in_figure
 except ImportError:
     pass
 
@@ -195,7 +196,8 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr):
 
 def orientation_polar_plot(orientation):
 
-    fig = plt.figure(figsize=(8, 8))
+    #fig = plt.figure(figsize=(8, 8))
+    fig = imshow_in_figure()
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
     ax.set_theta_zero_location("S")
     n_bins = 100
@@ -237,7 +239,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
                         curr_val += 1
                         temp_vals = list()
 
-    n_bins = 101
+    n_bins = 25
 
     sum_run = np.nancumsum(np.insert(mean_vals, 0, 0))
     sum_std = np.nancumsum(np.insert(std_vals, 0, 0))
@@ -248,21 +250,34 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     for n in np.arange(np.min([n_bins-1, len(mean_vals)])):
         rm_vs[n] = np.nanmean(mean_vals[:n])
         # rm_std[n] = np.nanstd(mean_vals[:n])
-    rm_vs[n_bins-1:] = (sum_run[n_bins:]-sum_run[:-n_bins])/n_bins
-    rm_std = (sum_std[n_bins:]-sum_std[:-n_bins])/n_bins
+    # rm_vs[n_bins-1:] = (sum_run[n_bins:]-sum_run[:-n_bins])/n_bins
+    # rm_std = (sum_std[n_bins:]-sum_std[:-n_bins])/n_bins
+
+    nan_mask = np.isnan(mean_vals)
+    K = np.ones(n_bins, dtype=int)
+    rm_vs = np.convolve(np.where(nan_mask, 0, mean_vals), K, 'same')/np.convolve(~nan_mask, K, 'same')
+    nan_mask = np.isnan(std_vals)
+    rm_std = np.convolve(np.where(nan_mask, 0, std_vals), K, 'same')/np.convolve(~nan_mask, K, 'same')
 
     f_start = folder_list[0]
     start_time = np.float16(f_start[21:23])*60+np.float16(f_start[24:26])+np.float16(f_start[27:30])/1000
     time_fl = [np.float16(f[21:23])*60+np.float16(f[24:26])+np.float16(f[27:30])/1000-start_time for f in folder_list if '.png' in f]
 
-    plt.figure()
-    plt.plot(time_fl, rm_vs, color='b')
-    plt.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std, color='b', linestyle='--')
-    plt.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]-rm_std, color='b', linestyle='--')
-    plt.ylim([0, np.max(rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std)])
-    plt.title('Running Mean of Fall Speed over Time')
-    plt.xlabel('Time in seconds')
-    plt.ylabel('Running mean of fall velocity in cm/s')
+    f, ax = imshow_in_figure(figspan=(18, 10))
+    ax.plot(time_fl, rm_vs, color='b')
+    # ax.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std, color='b', linestyle='--')
+    # ax.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]-rm_std, color='b', linestyle='--')
+    # ax.set_ylim([0, np.max(rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std)])
+    ax.plot(time_fl, rm_vs+rm_std, color='b', linestyle='--')
+    ax.plot(time_fl, rm_vs-rm_std, color='b', linestyle='--')
+    ax.set_xlim([0, max(time_fl)])
+    ax.set_ylim([0, 1.1*np.max(rm_vs+rm_std)])
+    ax.set_title('Running mean of fall velocity over time', fontsize=20)
+    ax.set_xlabel('Time in seconds')
+    ax.set_ylabel('Running mean of fall velocity in cm/s', fontsize=20)
+
+    f2, ax2 = imshow_in_figure(figspan=(18, 10))
+    ax2.bar([t+0.5 for t in time_fl], streaks_in_pic)
 
 
 def orientation_scatter(centerpt, orientation):
@@ -339,6 +354,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     cmap.set_under(color='white')
     im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0), cmap=cmap, vmin=1)
     cbar = f.colorbar(im)
+    cbar.ax.tick_params(labelsize=20)
     # cbar.set_ticks([0, 0.25, 0.5, 0.75, 1])
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
@@ -356,7 +372,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(np.rad2deg(binned_o)), 0), cmap=cmap, vmin=-30, vmax=30)
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('Median fall streak orientation relative to verticality')
+    ax.set_title('Median fall streak orientation relative to verticality', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
     cbar = f.colorbar(im, ticks=np.linspace(-45, 45, 7))
     cbar.set_label('$\phi$ in $\degree$', fontsize=20)
@@ -380,7 +396,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('Quiver plot of mean orientation and fall speed')
+    ax.set_title('Quiver plot of mean orientation and fall speed', fontsize=20)
 
 
 def get_angles(img):
