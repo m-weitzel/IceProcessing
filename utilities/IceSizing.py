@@ -55,10 +55,11 @@ class MicroImg:
         filtered_contours = list()
         for c in cnts:
             c_area = cv2.contourArea(c)
-            if (c_area > self.minsize) & (c_area < self.maxsize):
-                box = cv2.minAreaRect(c)
-                box = cv2.boxPoints(box)
-                box = np.array(box, dtype="int")
+            this_center, la = cv2.minEnclosingCircle(c)
+            if (c_area > self.minsize) & (c_area < self.maxsize) & (not((np.asarray([c-la for c in this_center]) < 0).any())):
+                # box = cv2.minAreaRect(c)
+                # box = cv2.boxPoints(box)
+                # box = np.array(box, dtype="int")
 
                 # if ~((box > (self.thresh_img.shape[0]-self.mindisttoedge)).any() or (box < self.mindisttoedge).any()):
                 filtered_contours.append(c)
@@ -73,10 +74,7 @@ class MicroImg:
             this_center, la = cv2.minEnclosingCircle(c)
             this_data['Area'] = cv2.contourArea(c) / (self.pixels_per_metric**2)
             this_data['File Name'] = self.filename
-
-            this_data['Orientation'] = 0
             this_data['CSP'] = 0
-            this_data['Short Axis'] = 1
 
             cv2.drawContours(img, c, -1, (0, 255, 0), 2)
 
@@ -86,6 +84,8 @@ class MicroImg:
             cv2.circle(img, (int(this_center[0]), int(this_center[1])), int(la), (255, 0, 0), 3)
 
             this_data['Long Axis'] = 2*la/self.pixels_per_metric
+            this_data['Short Axis'] = this_data['Long Axis']
+            this_data['Orientation'] = 0
             this_data['Center Points'] = this_center
             data.append(this_data)
 
