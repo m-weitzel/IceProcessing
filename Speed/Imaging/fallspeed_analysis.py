@@ -65,32 +65,32 @@ def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, 
         if h_flag:
             mass_velocity_dim_histograms(projected_vs, mass_data, folder)
             t1 = time.time()
-            print('Time spent on Mass Velocity Histograms:'+str(t1-t0))
+            print('Time spent on Mass Velocity Histograms: {0:.1f} s'.format(t1-t0))
             plot_descriptor_list += ['histogram.png']
             t0 = time.time()
         if op_flag:
             orientation_polar_plot(orientation)
             t1 = time.time()
-            print('Time spent on Orientation Polar Plot:' + str(t1 - t0))
+            print('Time spent on Orientation Polar Plot: {0:.1f} s'.format(t1-t0))
             plot_descriptor_list += ['orientation_polar.png']
             t0 = time.time()
         if vt_flag:
             velocity_time_series(folder_list, time_list, projected_vs)
             t1 = time.time()
-            print('Time spent on Velocity Time Series:' + str(t1 - t0))
+            print('Time spent on Velocity Time Series: {0:.1f} s'.format(t1 - t0))
             plot_descriptor_list += ['v_timeseries.png']
             t0 = time.time()
         if or_flag:
             orientation_scatter(centerpt, orientation)
             t1 = time.time()
-            print('Time spent on Orientation Scatter Plot:' + str(t1 - t0))
+            print('Time spent on Orientation Scatter Plot: {0:.1f} s'.format(t1-t0))
             plot_descriptor_list += ['orientation_scatter.png']
             t0 = time.time()
         if dn_flag:
             centerpt_density(centerpt, orientation, vs, imsize, pixel_size)
             t1 = time.time()
             plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png', 'quiver.png']
-            print('Time spent on Centerpoint Density Plot:' + str(t1 - t0))
+            print('Time spent on Centerpoint Density Plot: {0:.1f} s'.format(t1-t0))
 
         try:
             os.mkdir(os.path.join(fldr, 'plots/'))
