@@ -35,16 +35,23 @@ def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hi
     return fig, ax
 
 
-def create_hist(vals, minval=0, maxval=None, bins=None, step=1, **kwargs):
+def create_hist(vals, ax=None, minval=0, maxval=None, bins=None, step=1, **kwargs):
 
     if maxval is None:
         maxval = np.max(vals)
 
     if bins is None:
         bins = np.arange(minval, maxval, step)
+    if ax is None:
+        fig, ax = imshow_in_figure(grid=True, figspan=(10, 5), ax=ax, **kwargs)
+    else:
+        fig = None
 
-    fig, ax = imshow_in_figure(grid=True, figspan=(10, 5), **kwargs)
-    ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=True)
+    ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=False, weights=np.ones(len(vals))/len(vals))
+    ax.set_ylabel('PDF', fontsize=20)
+    ax.grid(which='major', linestyle='-')
+
+    ax.tick_params(axis='both', which='major', labelsize=20)
 
     return fig, ax
 

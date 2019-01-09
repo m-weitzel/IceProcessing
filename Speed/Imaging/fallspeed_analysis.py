@@ -21,20 +21,20 @@ from IceSizing import MicroImg
 try:
     import matplotlib.pyplot as plt
     from savefig_central import savefig_ipa
-    from make_pretty_figure import imshow_in_figure
+    from make_pretty_figure import imshow_in_figure, create_hist
 except ImportError:
     pass
 
 folder = find_ccr()
-folder = os.path.join(folder, 'Y2017/0908/M1')
+folder = os.path.join(folder, 'Y2017/0808/M1')
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
 save_only_flag = 0
 
-histogram_plt_flag = 0
+histogram_plt_flag = 1
 orientation_polar_flag = 0
-v_t_series_flag = 1
+v_t_series_flag = 0
 ori_scatter_flag = 0
 centerpt_density_flag = 1
 
@@ -55,7 +55,7 @@ def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, 
         _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list, pxl_size)
         # list_of_file_data = extract_fall_data.initialize_data(fldr, folder_list)
 
-    vs = np.asarray(fall_dist) / exp_time * 100  # in cm/s
+    vs = np.asarray(fall_dist) / exp_time * 1000  # in mm/s
     projected_vs = [v * np.cos(o) for (v, o) in zip(vs, orientation)]
     print('Number of fall streaks: '+str(len(projected_vs)))
     mass_data = load_mass_data(folder)
@@ -89,7 +89,8 @@ def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, 
         if dn_flag:
             centerpt_density(centerpt, orientation, vs, imsize, pixel_size)
             t1 = time.time()
-            plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png', 'quiver.png']
+            # plot_descriptor_list += ['number_density.png', 'orientation_heatmap.png', 'quiver.png']
+            plot_descriptor_list += ['number_density.png', 'quiver.png']
             print('Time spent on Centerpoint Density Plot: {0:.1f} s'.format(t1-t0))
 
         try:
@@ -148,6 +149,8 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr):
     max_diam_list = mass_data[1]
     dropdiam_list = mass_data[3]
 
+    mass_list = [np.pi/6*a**3/1000 for a in dropdiam_list]   # mass in milligrams
+
     def plot_param_hist(t_ax, list_of_vals, max_val, t_n_bins, unit):
         bins = max_val/n_bins*np.arange(t_n_bins)
         (mu, sigma) = norm.fit(list_of_vals)
@@ -164,39 +167,44 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr):
         t_ax.text(0.95*float(t_ax.get_xlim()[1]), 0.95*float(t_ax.get_ylim()[1]), 'Mean:${0:.3f} \pm {1:.3f}$ {2:s}'.format(mu, sigma, unit),
                   bbox=dict(facecolor='red', alpha=0.2), horizontalalignment='right', verticalalignment='top')
 
-    _, axs = plt.subplots(2, 2, figsize=(20, 12.5))
+    fig = plt.figure(figsize=(20, 12.5))
+    axs = fig.subplots(2, 2)
+
+    bins = np.arange(0, 200, 10)
+
     ax = axs[0][0]
-    plot_param_hist(ax, vs, v_max, n_bins, 'cm/s')
-    ax.set_title('Terminal Velocity in cm/s')
-    ax.set_xlabel('Terminal Velocity in cm/s')
-    ax.set_ylabel('Count')
+    _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max)
+    # plot_param_hist(ax, vs, v_max, n_bins, 'mm/s')
+    ax.set_title('Terminal Velocity in mm/s', fontsize=20)
+    # ax.set_xlabel('Terminal Velocity in mm/s')
 
     ax = axs[0][1]
-    plot_param_hist(ax, area_eq_diam_list, ae_max, n_bins, '$\mu m$')
-    ax.set_title('Area equivalent diameter in um')
-    ax.set_xlabel('Area equivalent diameter in um')
-    ax.set_ylabel('Count')
+    _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max)
+    # plot_param_hist(ax, area_eq_diam_list, ae_max, n_bins, '$\mu m$')
+    ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
+    # ax.set_xlabel('Area equivalent diameter in um')
 
     ax = axs[1][1]
-    plot_param_hist(ax, max_diam_list, mxdim_max, n_bins, '$\mu m$')
-    ax.set_title('Maximum diameter in um')
-    ax.set_xlabel('Maximum diameter in um')
-    ax.set_ylabel('Count')
+    _, ax = create_hist(max_diam_list, ax=ax, bins=bins, maxval=mxdim_max)
+    # plot_param_hist(ax, max_diam_list, mxdim_max, n_bins, '$\mu m$')
+    ax.set_title(r'Maximum diameter in $\mu m$', fontsize=20)
+    # ax.set_xlabel('Maximum diameter in um')
 
     ax = axs[1][0]
-    plot_param_hist(ax, dropdiam_list, dropdiam_max, n_bins, '$\mu m$')
-    ax.set_title('Drop diameter in um')
-    ax.set_xlabel('Drop diameter in um')
-    ax.set_ylabel('Count')
+    # bins = 10*np.arange(19)
+    _, ax = create_hist(mass_list, ax=ax, bins=bins)
+    # plot_param_hist(ax, dropdiam_list, dropdiam_max, n_bins, '$\mu m$')
+    ax.set_title('Crystal mass in mg', fontsize=20)
+    # ax.set_xlabel('Drop diameter in um')
 
-    plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=12)
+    plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=24)
 
     # plt.savefig(fldr + 'histogram.png')
 
 
 def orientation_polar_plot(orientation):
 
-    #fig = plt.figure(figsize=(8, 8))
+    # fig = plt.figure(figsize=(8, 8))
     fig = imshow_in_figure()
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
     ax.set_theta_zero_location("S")
@@ -229,7 +237,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
                 # if t_time == curr_val:
                 #     temp_vals.append(v)
                 # else:
-                    if len(temp_vals) > 3:
+                    if len(temp_vals) > 5:
                         mean_vals[curr_val] = np.mean(temp_vals)
                         std_vals[curr_val] = np.std(temp_vals)
                         curr_val += 1
@@ -276,8 +284,8 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     ax.set_xlim([0, max(time_fl)])
     ax.set_ylim([0, 1.1*np.max(rm_vs+rm_std)])
     ax.set_title('Running mean of fall velocity over time', fontsize=20)
-    ax.set_xlabel('Time in seconds')
-    ax.set_ylabel('Running mean of fall velocity in cm/s', fontsize=20)
+    ax.set_xlabel('Time since start of experiment in seconds')
+    ax.set_ylabel('Running mean of fall velocity in mm/s', fontsize=20)
 
     f2, ax2 = imshow_in_figure(figspan=(18, 10))
     ax2.bar([t+0.5 for t in time_fl], streaks_in_pic)
@@ -294,7 +302,7 @@ def orientation_scatter(centerpt, orientation):
     ax.set_ylabel('Angle of fall streak')
 
 
-def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
+def centerpt_density(centerpt, orientation, vs, imsize, pxl_size, relative=True):
 
     oris = sorted(zip(orientation, centerpt, vs), key=lambda tup: tup[1][0])
     orientation_s = [o[0] for o in oris]
@@ -348,52 +356,60 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size):
 
             binned_n[int(i)][int(j)] = len(bins_orientation[int(i)][int(j)])
 
-    f, ax = plt.subplots(figsize=(8, 14))
+    if relative:
+        sum_all_n = np.sum(binned_n)
+        binned_n = [b/sum_all_n for b in [c for c in binned_n]]
+
+    # f, ax = plt.subplots(figsize=(8, 14))
+    f, ax = imshow_in_figure(figspan=(8, 14))
     ax.set_aspect('equal')
     ax.set_xlim([xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000])
     ax.set_ylim([ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000])
     f.canvas.draw()
     cmap = plt.cm.YlOrRd
+    # cmap = plt.cm.Spectral_r
     cmap.set_under(color='white')
-    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0), cmap=cmap, vmin=1)
+    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0), cmap=cmap, vmin=0.0001)
     cbar = f.colorbar(im)
     cbar.ax.tick_params(labelsize=20)
     # cbar.set_ticks([0, 0.25, 0.5, 0.75, 1])
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('Probability of occurence of fall streak center points', fontsize=20)
+    ax.set_title('PDF of fall streak distribution in sample volume', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
 
     # ax.axis([0, 1000, 0, 1000])
-    f, ax = plt.subplots(figsize=(8, 14))
-    ax.set_aspect('equal')
-    ax.set_xlim(xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000)
-    ax.set_ylim(ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000)
-    f.canvas.draw()
+    # f, ax = plt.subplots(figsize=(8, 14))
+    # ax.set_aspect('equal')
+    # ax.set_xlim(xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000)
+    # ax.set_ylim(ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000)
+    # f.canvas.draw()
     cmap = plt.cm.Spectral_r
     cmap.set_under(color='white')
-    im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(np.rad2deg(binned_o)), 0), cmap=cmap, vmin=-30, vmax=30)
-    ax.set_xlabel('x in $mm$', fontsize=20)
-    ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('Median fall streak orientation relative to verticality', fontsize=20)
-    ax.tick_params(axis='both', which='major', labelsize=20)
-    cbar = f.colorbar(im, ticks=np.linspace(-45, 45, 7))
-    cbar.set_label('$\phi$ in $\degree$', fontsize=20)
+    # im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(np.rad2deg(binned_o)), 0), cmap=cmap, vmin=-30, vmax=30)
+    # ax.set_xlabel('x in $mm$', fontsize=20)
+    # ax.set_ylabel('y in $mm$', fontsize=20)
+    # ax.set_title('Median fall streak orientation relative to verticality', fontsize=20)
+    # ax.tick_params(axis='both', which='major', labelsize=20)
+    # cbar = f.colorbar(im, ticks=np.linspace(-45, 45, 7))
+    # cbar.set_label('$\phi$ in $\degree$', fontsize=20)
     # ticklabels = list(np.linspace(-1, 1, 9))
     # ticklabels = [str(t)+'$/4\cdot\pi$' for t in ticklabels]
     # cbar.ax.set_yticklabels([str(t)+'$/4\cdot\pi$' for t in list(np.linspace(-1, 1, 9))])
 
-    f, ax = plt.subplots(figsize=(8, 14))
+    # f, ax = plt.subplots(figsize=(8, 14))
+    f, ax = imshow_in_figure(figspan=(8, 14))
     ax.set_aspect('equal')
     ax.set_aspect('equal')
     ax.set_xlim(xs[0] * pxl_size / 1000, xs[-1] * pxl_size / 1000)
     ax.set_ylim(ys[0] * pxl_size / 1000, ys[-1] * pxl_size / 1000)
     f.canvas.draw()
     X, Y = np.meshgrid(xs*pxl_size/1000, ys*pxl_size/1000)
-    im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=0.001, vmax=6)
-    im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)), -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0))
-    cbar = f.colorbar(im_pc, ticks=np.linspace(0, 8, 9))
-    cbar.set_label('v in $cm/s$', fontsize=20)
+    im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=1.5, vmax=50)
+    im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)),
+                      -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0))
+    cbar = f.colorbar(im_pc, ticks=np.linspace(0, 50, 6))
+    cbar.set_label('v in $mm/s$', fontsize=20)
     cbar.ax.tick_params(labelsize=20)
 
     ax.tick_params(axis='both', which='major', labelsize=20)
