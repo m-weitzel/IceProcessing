@@ -12,6 +12,7 @@ from utilities.fit_powerlaw import fit_powerlaw
 from itertools import cycle, compress, chain
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
+from utilities.savefig_central import savefig_ipa
 # from matplotlib.widgets import CheckButtons
 # from matplotlib import style
 # style.use('dark_background')
@@ -23,7 +24,8 @@ def main():
     folder_list = list()
 
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
+
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
@@ -185,7 +187,7 @@ def main():
     avg_masses, bin_edges, binnumber = stats.binned_statistic(full_dim_median_list, full_v_median_list,
                                                               statistic='mean')
 
-    ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
+    fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
 
     # ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
@@ -229,9 +231,7 @@ def main():
         ax.fill_between(ds, stokes_vod_min, stokes_vod_max, facecolor='grey', alpha=0.6)
 
     ax.legend()
-    savepath = os.path.join(info_list[0]['folder'], 'plots/v_dim_scatter.png')
-    print('Saving plot to {}.'.format(savepath))
-    plt.savefig(savepath)
+    savefig_ipa(fig, 'v_dim_scatter')
 
     if plot_folder_means:
         fig_mean = plt.figure(figsize=(18, 10), dpi=100)
@@ -380,6 +380,8 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     streakids_in_habits = dict()
     lines = list()
 
+    # different_separators = ['Needle']
+
     try:
         for i, sep in enumerate(different_separators):
             t_dim = list(compress(dim_median_list, selector_list[sep]))
@@ -426,7 +428,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     fig.canvas.mpl_connect('pick_event', lambda event: onpick(event, dim_list, dim_median_list,
                                                               im_list, streakids_in_habits, info_list, pos_list, v_median_list, full_v_list, lines, different_separators))
 
-    return ax
+    return fig, ax
 
 
 def func(label, different_habits, lines):
