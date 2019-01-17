@@ -63,7 +63,7 @@ def main():
     image_data_list = list()
 
     for i, t_filter in enumerate(filter_list):
-        img_data = MicroImg('ice', folder, img_path, t_filter, maxsize=np.inf, dilation=20, fill_flag=False, min_dist_to_edge=5)
+        img_data = MicroImg('ice', folder, img_path, pixel_size, t_filter, maxsize=np.inf, dilation=20, fill_flag=False, min_dist_to_edge=5)
         # img_data.image = cv2.cvtColor(img_data.image, cv2.COLOR_BGR2GRAY)
 
         # object_detected_img = img_data.image.copy()
@@ -164,6 +164,7 @@ def main():
     savefig_ipa(fig_siz, 'thresh_size_comparison')
 
     plt.show()
+
 
 def eval_contour_quality(detected_conts, initial_img, object_detected_img, label_img, filter):
 

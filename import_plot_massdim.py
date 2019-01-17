@@ -57,9 +57,9 @@ def main():
     minsize = 0
     maxsize = 150
     plot_scatter = True
-    plot_massdim = False
+    plot_massdim = True
     logscale = False
-    plot_binned = False
+    plot_binned = True
     fontsize_base = 20
 
     # folder_list = (os.path.join(basedir, '26Sep')),
@@ -106,12 +106,12 @@ def main():
 
     full_dim_list, full_mass_list, index_list = zip(*sorted(zip(full_dim_list, full_mass_list, index_list)))
 
-    bins = np.linspace(7.5,107.5,21)
+    bins = np.linspace(7.5, 157.5, 31)
 
-    avg_masses, bin_edges, binnumber = stats.binned_statistic(full_dim_list, full_mass_list
-                                                             , statistic='mean', bins=bins)
-    num_in_bin, _, _= stats.binned_statistic(full_dim_list, full_mass_list
-                                                             , statistic='count', bins=bins)
+    avg_masses, bin_edges, binnumber = stats.binned_statistic(full_dim_list, full_mass_list,
+                                                              statistic='mean', bins=bins)
+    num_in_bin, _, _ = stats.binned_statistic(full_dim_list, full_mass_list,
+                                              statistic='count', bins=bins)
     # mass_std, _, _= stats.binned_statistic(full_dim_list, full_mass_list
     #                                                          , statistic='std', bins=bins)
 
@@ -143,17 +143,17 @@ def main():
         xloc = 1.2*xlim
         yloc = [ydist0, ydist0/ydist_factor, ydist0/(2*ydist_factor)]
         legloc = 4
+        ymax = 300e-9
 
     else:
         xmin = 0
         # xmax = 1.1*np.max(full_dim_list)
         xmax = 150
         ymin = 0
-        # ymax = 1.1*np.max(full_mass_list)
-        ymax = 300e-9
+        ymax = 1.1*np.max(full_mass_list)
 
         plt.xlim(xmin, xmax)
-        plt.ylim(ymin, ymax)
+        # plt.ylim(ymin, ymax)
         xloc = 1
         yloc_base = 0.8
         yloc_factor = 1.1
@@ -220,13 +220,13 @@ def main():
                  xloc, ymax * 0.98 * yloc[loc_count],
                 # 'Brown&Francis: m$=0.0185\cdot $D$^{1.9}$\n' + ' Mitchell: m$=0.022\cdot $D$^{2.0}$\n' +
                  'Power Law Fit full data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$\nn = ${2}$, RMSE = ${3:4.2f}$ ng'.format(amp_full / 1000, index_full, n, rmse_of_fit * 1e-12 * 1e9),
-                bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base * 0.5, ha='left'
+                bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base * 1, ha='left'
                  )
 
     if plot_binned:
         ax.plot(dims_spaced, powerlaw(dims_spaced, amp_bins, index_bins)*1e-12, label='Power Law Binned Data', linewidth=3, zorder=1)
     else:
-        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full)*1e-12, label='Power Law Fit', linewidth=3, zorder=1)
+        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full)*1e-12, label='Power Law Fit', linewidth=3, zorder=1, c='orange')
 
     if plot_massdim:
         ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
@@ -269,7 +269,7 @@ def main():
     # ttl = plt.title('Mass Dimension Relation', fontsize=fontsize_base*1.5)
     # ttl.set_position([0.5, 1.025])
 
-    legend = ax.legend(frameon=True, scatterpoints=1, loc=legloc, fontsize=fontsize_base*0.8)
+    legend = ax.legend(frameon=True, scatterpoints=1, loc=legloc, fontsize=fontsize_base)
     # for k in np.arange(4, len(legend.legendHandles)):
     #     legend.legendHandles[k].set_color('blue')
     light_grey = np.array([float(248)/float(255)]*3)

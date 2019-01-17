@@ -4,12 +4,14 @@ import os
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 import numpy as np
+from scipy import stats
 import pickle
 from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate, eta
 # from utilities.plot_size_distribution import plot_size_dist
 from utilities.fit_powerlaw import fit_powerlaw
 from itertools import cycle, compress, chain
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.gridspec as gridspec
 # from matplotlib.widgets import CheckButtons
 # from matplotlib import style
 # style.use('dark_background')
@@ -21,8 +23,8 @@ def main():
     folder_list = list()
 
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
@@ -46,18 +48,18 @@ def main():
     # # Properties for filtering streaks
 
     angle_leniency_deg = 5
-    min_streak_length = 3  # for separation between short and long streaks
+    min_streak_length = 4  # for separation between short and long streaks
 
     rho_o = 2500
 
     separate_by = 'habit'
 
-    hist_plots = True
+    hist_plots = False
     calc_means = False
     plot_powerlaws = False
     plot_stokes = False
     plot_folder_means = False
-    plot_all_3d = True
+    plot_all_3d = False
 
     oversizing_correction = True
 
@@ -179,6 +181,9 @@ def main():
             plaw_vals_by_habits[sep] = fit_powerlaw(dim_dict[sep], v_median_dict[sep])
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
             plaw_by_habits[sep] = powerlaw(dim_dict[sep], plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1])
+
+    avg_masses, bin_edges, binnumber = stats.binned_statistic(full_dim_median_list, full_v_median_list,
+                                                              statistic='mean')
 
     ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
@@ -407,7 +412,8 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.set_ylim([0, 1.1*maximum_vel])
     # ax.set_ylim([0, 115])
     ax.set_ylabel('Fall speed in mm/s', fontsize=20)
-    ax.tick_params(axis='both', which='major', labelsize=20)
+    plt.rc('font',size=20)
+    # ax.tick_params(axis='both', which='major', labelsize=20)rc('font',size=28)
     # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
     # ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
@@ -435,10 +441,13 @@ def p3d(ax3, fpl):
     # else:
     #     ax3 = f_3d.add_subplot(111, projection='3d')
 
+    f3 = plt.figure(figsize=(10, 10))
+    ax3 = f3.add_subplot(111, projection='3d')
+
     xs = [p[0] for p in fpl]
     ys = [p[1] for p in fpl]
     zs = [p[2] for p in fpl]
-    ax3.scatter(zs, xs, ys, c='darkred')
+    ax3.scatter(zs, xs, ys, c='darkred', s=48)
     ax3.plot(zs, xs, ys, c='darkred', linewidth=2)
     # ax3.grid()
     ax3.set_aspect('equal')
@@ -467,11 +476,13 @@ def p3d(ax3, fpl):
     # ax3.set_ylim(xlims)
     # ax3.yaxis.tick_right()
     # ax3.yaxis.set_label_position('right')
-    ax3.set_ylabel('Particle x position in mm', fontsize=16)
-    ax3.set_zlabel('Particle y (vertical) position in mm', fontsize=16)
-    ax3.set_xlabel('Particle z position in mm', fontsize=16)
+    ax3.set_ylabel('x in mm', fontsize=18, labelpad=15)
+    ax3.set_zlabel('y in mm', fontsize=18, labelpad=15)
+    ax3.set_xlabel('z in mm', fontsize=18, labelpad=15)
 
-    return ax3
+    ax3.tick_params(axis='both', which='major', labelsize=20)
+
+    return f3, ax3
 
 
 def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, pos_list, v_median_list, full_v_list, line_list, diff_habits):
@@ -499,14 +510,21 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         n = len(im_list[global_streakid])
         fig_fullshape = (2, n+4)
 
-        fig_i.suptitle('{} No. {} in folder {}, local index {}'.format(hab, dataind,
-                       info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=14)
+        # fig_i.suptitle('{} No. {} in folder {}, local index {}'.format(hab, dataind,
+        #                info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=20)
+        fig_i.suptitle('Particle No. {} in folder {}, local index {}'.format(dataind,
+                       info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=20)
 
         iml = im_list[global_streakid]
         im_maxsize = max([im.shape for im in iml])
 
+        gs1 = gridspec.GridSpec(2, n)
+
+        # ax_list = [fig_i.add_subplot(ss) for ss in list(gs1)[:-2]]
+        # ax_list.append(fig_i.add_subplot(list(gs1)[-1], projection='3d'))
+        # ax_index = 0
         for m, im in enumerate(iml):
-            ax = plt.subplot2grid(fig_fullshape, (0, m))
+            ax = plt.subplot(gs1[0, m])
             ax.imshow(np.abs(im), cmap=cmap)
             frame1 = plt.gca()
             frame1.axes.xaxis.set_ticklabels([])
@@ -518,30 +536,38 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
             # ax.set_xlabel('Index of particle in streak', fontsize=20)
             # ax.set_ylabel('Maximum diameter in µm', fontsize=20)
             # ax.set_title('Index evolution of particle size', fontsize=20)
-        ax1 = plt.subplot2grid(fig_fullshape, (1, 0), colspan=n)
+        # ax1 = plt.subplot2grid(fig_fullshape, (1, 0), colspan=n)
         fdl = dim_list[global_streakid]
-        ax1.plot(fdl, c='b', lw=3)
-        ax1.axhline(y=dim_median_list[global_streakid], ls='--', c='b')
-        ax1.set_ylim(0, 1.1*np.max(fdl))
-        ax1.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-        ax1.set_xlabel('Index', fontsize=20)
-        ax1.set_ylabel('Particle Max Diameter ($\mu$m)', fontsize=20)
+        ax = plt.subplot(gs1[1, :n])
+        ax.plot(fdl, c='b', lw=3)
+        ax.axhline(y=dim_median_list[global_streakid], ls='--', c='b')
+        ax.set_xlim(0, len(fdl)-1)
+        ax.set_ylim(0, 1.1*np.max(fdl))
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+        ax.set_xlabel('Index', fontsize=20)
+        ax.set_ylabel('Particle Max Diameter ($\mu$m)', fontsize=20)
 
-        ax2 = ax1.twinx()
+        ax = ax.twinx()
         fvl = full_v_list[global_streakid]
         xrange = list(np.arange(1, len(fvl)+1)-0.5)
-        ax2.plot(xrange, fvl, c='g', lw=3)
-        ax2.axhline(y=v_median_list[global_streakid], ls='--', c='g')
-        ax2.set_ylim(0, 1.1*np.max(fvl))
-        ax2.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-        ax2.set_ylabel('Fall Speed (mm/s)', fontsize=20)
+        ax.plot(xrange, fvl, c='g', lw=3)
+        ax.axhline(y=v_median_list[global_streakid], ls='--', c='g')
+        ax.set_ylim(0, 2*np.max(fvl))
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+        ax.set_ylabel('Fall Speed (mm/s)', fontsize=20)
+        ax.tick_params(axis='both', which='major', labelsize=20)
 
         # f_3d = plt.figure(figsize=(18, 10), dpi=100)
         # ax3 = f_3d.add_subplot(111, projection='3d')
         # ax3 = plt.subplot2grid((2, n+2), (0, n+2), colspan=2, projection='3d')
-        ax3 = plt.subplot2grid(fig_fullshape, (0, n), rowspan=2, colspan=4, projection='3d')
-        p3d(ax3, pos_list[global_streakid])
+        # ax3 = plt.subplot2grid(fig_fullshape, (0, n), rowspan=2, colspan=4, projection='3d')
+
+        # ax = plt.subplot(gs1[0:2, n:-1], projection='3d')
+
+        f3, a3 = p3d(ax, pos_list[global_streakid])
+        gs1.tight_layout(fig_i)#, rect=[0, 0.03, 1, 0.95])
         fig_i.show()
+        f3.show()
         # f_3d.show()
 
     return True

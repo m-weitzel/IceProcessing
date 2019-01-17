@@ -26,7 +26,7 @@ except ImportError:
     pass
 
 folder = find_ccr()
-folder = os.path.join(folder, 'Y2017/0808/M1')
+folder = os.path.join(folder, 'Y2017/0908/M1')
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
@@ -36,7 +36,7 @@ histogram_plt_flag = 1
 orientation_polar_flag = 0
 v_t_series_flag = 0
 ori_scatter_flag = 0
-centerpt_density_flag = 1
+centerpt_density_flag = 0
 
 
 def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn_flag=1):
@@ -58,12 +58,13 @@ def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, 
     vs = np.asarray(fall_dist) / exp_time * 1000  # in mm/s
     projected_vs = [v * np.cos(o) for (v, o) in zip(vs, orientation)]
     print('Number of fall streaks: '+str(len(projected_vs)))
-    mass_data = load_mass_data(folder)
 
     t0 = time.time()
     if not save_only:
         if h_flag:
-            mass_velocity_dim_histograms(projected_vs, mass_data, folder)
+            mass_data = load_mass_data(folder)
+            print('Number of mass data points: '+str(len(mass_data[0])))
+            mass_velocity_dim_histograms(projected_vs, mass_data, folder, all_four=False)
             t1 = time.time()
             print('Time spent on Mass Velocity Histograms: {0:.1f} s'.format(t1-t0))
             plot_descriptor_list += ['histogram.png']
@@ -136,7 +137,7 @@ def load_mass_data(fldr):
     return area_eq_diam_list, max_diam_list, mass_list, dropdiam_list
 
 
-def mass_velocity_dim_histograms(vs, mass_data, fldr):
+def mass_velocity_dim_histograms(vs, mass_data, fldr, all_four=True):
 
     n_bins = 15
     v_max = 8
@@ -167,35 +168,50 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr):
         t_ax.text(0.95*float(t_ax.get_xlim()[1]), 0.95*float(t_ax.get_ylim()[1]), 'Mean:${0:.3f} \pm {1:.3f}$ {2:s}'.format(mu, sigma, unit),
                   bbox=dict(facecolor='red', alpha=0.2), horizontalalignment='right', verticalalignment='top')
 
-    fig = plt.figure(figsize=(20, 12.5))
-    axs = fig.subplots(2, 2)
+    fig = plt.figure(figsize=(16, 12.5))
 
-    bins = np.arange(0, 200, 10)
+    bins = np.arange(0, 150, 10)
 
-    ax = axs[0][0]
-    _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max)
-    # plot_param_hist(ax, vs, v_max, n_bins, 'mm/s')
-    ax.set_title('Terminal Velocity in mm/s', fontsize=20)
-    # ax.set_xlabel('Terminal Velocity in mm/s')
+    if all_four:
+        axs = fig.subplots(2, 2)
 
-    ax = axs[0][1]
-    _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max)
-    # plot_param_hist(ax, area_eq_diam_list, ae_max, n_bins, '$\mu m$')
-    ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
-    # ax.set_xlabel('Area equivalent diameter in um')
+        ax = axs[0][0]
+        _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max)
+        # plot_param_hist(ax, vs, v_max, n_bins, 'mm/s')
+        ax.set_title('Terminal Velocity in mm/s', fontsize=20)
+        # ax.set_xlabel('Terminal Velocity in mm/s')
 
-    ax = axs[1][1]
-    _, ax = create_hist(max_diam_list, ax=ax, bins=bins, maxval=mxdim_max)
-    # plot_param_hist(ax, max_diam_list, mxdim_max, n_bins, '$\mu m$')
-    ax.set_title(r'Maximum diameter in $\mu m$', fontsize=20)
-    # ax.set_xlabel('Maximum diameter in um')
+        ax = axs[0][1]
+        _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max)
+        # plot_param_hist(ax, area_eq_diam_list, ae_max, n_bins, '$\mu m$')
+        ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
+        # ax.set_xlabel('Area equivalent diameter in um')
 
-    ax = axs[1][0]
-    # bins = 10*np.arange(19)
-    _, ax = create_hist(mass_list, ax=ax, bins=bins)
-    # plot_param_hist(ax, dropdiam_list, dropdiam_max, n_bins, '$\mu m$')
-    ax.set_title('Crystal mass in mg', fontsize=20)
-    # ax.set_xlabel('Drop diameter in um')
+        ax = axs[1][1]
+        _, ax = create_hist(max_diam_list, ax=ax, bins=bins, maxval=mxdim_max)
+        # plot_param_hist(ax, max_diam_list, mxdim_max, n_bins, '$\mu m$')
+        ax.set_title(r'Maximum diameter in $\mu m$', fontsize=20)
+        # ax.set_xlabel('Maximum diameter in um')
+
+        ax = axs[1][0]
+        # bins = 10*np.arange(19)
+        _, ax = create_hist(mass_list, ax=ax, bins=bins)
+        # plot_param_hist(ax, dropdiam_list, dropdiam_max, n_bins, '$\mu m$')
+        ax.set_title('Crystal mass in mg', fontsize=20)
+        # ax.set_xlabel('Drop diameter in um')
+
+    else:
+        axs = fig.subplots(2)
+
+        ax = axs[0]
+        # bins = np.arange(0, np.max(vs), 10)
+        _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max)
+        ax.set_title('Terminal Velocity in mm/s', fontsize=20)
+
+        ax = axs[1]
+        bins = np.arange(0, np.max(area_eq_diam_list), 5)
+        _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max)
+        ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
 
     plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=24)
 
@@ -237,7 +253,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
                 # if t_time == curr_val:
                 #     temp_vals.append(v)
                 # else:
-                    if len(temp_vals) > 5:
+                    if len(temp_vals) > 1:
                         mean_vals[curr_val] = np.mean(temp_vals)
                         std_vals[curr_val] = np.std(temp_vals)
                         curr_val += 1

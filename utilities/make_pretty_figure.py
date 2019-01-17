@@ -47,9 +47,11 @@ def create_hist(vals, ax=None, minval=0, maxval=None, bins=None, step=1, **kwarg
     else:
         fig = None
 
-    ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=False, weights=np.ones(len(vals))/len(vals))
+    _, b, _ = ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=False, weights=np.ones(len(vals))/len(vals), label='N = {}'.format(len(vals)))
+    ax.set_xlim(0, b[-1])
     ax.set_ylabel('PDF', fontsize=20)
     ax.grid(which='major', linestyle='-')
+    # ax.legend(fontsize=20, loc='upper right')
 
     ax.tick_params(axis='both', which='major', labelsize=20)
 
