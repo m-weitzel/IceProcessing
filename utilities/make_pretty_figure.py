@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+from time import strftime
 
 
 def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hide_axes=False, figspan=(10, 10), dpi=100, grid=True):
@@ -19,7 +21,7 @@ def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hi
     else:
         ax.imshow(img)
 
-    ax.set_xlabel(xlabel, fontsize=20)
+    ax.set_xlabel(xlabel, fontsize=16)
     ax.set_ylabel(ylabel, fontsize=20)
 
     ax.set_title(title, fontsize=28)
@@ -57,4 +59,18 @@ def create_hist(vals, ax=None, minval=0, maxval=None, bins=None, step=1, **kwarg
 
     return fig, ax
 
+
+def savefig_ipa(fig, fn):
+    date = strftime("%d%b%y")
+    time = strftime("%-H.%M.%S")
+
+    path = '/ipa/holo/mweitzel/Ergebnisse/figdump'
+
+    datepath = os.path.join(path, date)
+
+    try:
+        os.mkdir(datepath)
+    except FileExistsError:
+        pass
+    fig.savefig(os.path.join(datepath, fn+time+'.png'), bbox_inches='tight',)
 

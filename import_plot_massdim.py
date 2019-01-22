@@ -11,9 +11,8 @@ from scipy import stats
 from itertools import cycle
 import os
 from utilities.find_ccr_folder import find_ccr
-from utilities.make_pretty_figure import imshow_in_figure, create_hist
+from utilities.make_pretty_figure import *
 from utilities.plot_size_distribution import plot_size_dist
-from utilities.savefig_central import savefig_ipa
 # from matplotlib import style
 # style.use('dark_background')
 

@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.widgets import RectangleSelector
 from utilities.IceSizing import MicroImg
-from utilities.savefig_central import savefig_ipa
+from utilities.make_pretty_figure import savefig_ipa
 import time
 
 

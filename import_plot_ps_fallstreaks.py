@@ -12,7 +12,7 @@ from utilities.fit_powerlaw import fit_powerlaw
 from itertools import cycle, compress, chain
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
-from utilities.savefig_central import savefig_ipa
+from utilities.make_pretty_figure import *
 # from matplotlib.widgets import CheckButtons
 # from matplotlib import style
 # style.use('dark_background')

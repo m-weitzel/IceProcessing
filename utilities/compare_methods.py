@@ -8,8 +8,7 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 from utilities.IceSizing import MicroImg
-from utilities.make_pretty_figure import imshow_in_figure
-from utilities.savefig_central import savefig_ipa
+from utilities.make_pretty_figure import imshow_in_figure, savefig_ipa
 from scipy.spatial import distance as dist
 
 
