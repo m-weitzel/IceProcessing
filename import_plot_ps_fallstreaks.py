@@ -23,9 +23,8 @@ def main():
 
     folder_list = list()
 
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
-
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
@@ -49,8 +48,8 @@ def main():
 
     # # Properties for filtering streaks
 
-    angle_leniency_deg = 5
-    min_streak_length = 4  # for separation between short and long streaks
+    angle_leniency_deg = 50
+    min_streak_length = 3  # for separation between short and long streaks
 
     rho_o = 2500
 
@@ -58,7 +57,7 @@ def main():
 
     hist_plots = False
     calc_means = False
-    plot_powerlaws = False
+    plot_powerlaws = True
     plot_stokes = False
     plot_folder_means = False
     plot_all_3d = False
@@ -162,6 +161,9 @@ def main():
 
     # Plotting
 
+    # different_separators.remove('Particle_nubbly')
+    different_separators = ['Particle_nubbly']
+
     for sep in different_separators:
         if separate_by == 'habit':
             selector_index_dict[sep] = [1 if s.streak_habit == sep else 0 for s in full_streak_list]
@@ -211,8 +213,9 @@ def main():
         for sep in different_separators:
             # ax.plot(dim_dict[hab], plaw_by_habits[hab])
             ax.plot(dim_dict[sep], plaw_by_habits[sep],
-                    label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1], plaw_vals_by_habits[sep][2]))
-            ax.legend()
+                    # label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1], plaw_vals_by_habits[sep][2]))
+                    label=r'{0}, v={1:.2f}d^{2:.2f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1]))
+            ax.legend(fontsize=8)
 
     if plot_stokes:
         d_mean = 30e-6
@@ -230,7 +233,7 @@ def main():
         ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3, color='black')
         ax.fill_between(ds, stokes_vod_min, stokes_vod_max, facecolor='grey', alpha=0.6)
 
-    ax.legend()
+    ax.legend(fontsize=8)
     savefig_ipa(fig, 'v_dim_scatter')
 
     if plot_folder_means:
@@ -253,7 +256,7 @@ def main():
         ax_mean.set_ylim(0, 110)
         ax_mean.grid(b=True, which='major', linestyle='-')
         ax_mean.set_ylabel('Mean velocity', fontsize=20)
-        ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
+        # ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
         r_mean = 30e-6
         y_vel = lambda T: -2*(r_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(T))*1e3
 
@@ -368,6 +371,8 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     marker_dict['Plate'] = (6, 0, 0)
     marker_dict['Needle'] = 'D'
     marker_dict['Dendrite'] = '*'
+    marker_dict['CappedColumn'] = '>'
+    marker_dict['BulletRosette'] = '<'
 
     # for this_dim_list, this_v_list in zip(full_dim_list, full_v_list):
     #     line = ax.scatter(this_dim_list, this_v_list, alpha=1,
@@ -419,7 +424,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
     # ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
-    ax.set_title('Fall speed vs. dimension for Calibration Beads of $30\mu$m diameter', fontsize=24)
+    # ax.set_title('Fall speed vs. dimension for Calibration Beads of $30\mu$m diameter', fontsize=24)
     ax.legend(fontsize=20, loc='upper left')
 
     # check = CheckButtons(ax, different_habits, [True]*len(different_habits))
@@ -512,10 +517,10 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         n = len(im_list[global_streakid])
         fig_fullshape = (2, n+4)
 
-        # fig_i.suptitle('{} No. {} in folder {}, local index {}'.format(hab, dataind,
-        #                info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=20)
-        fig_i.suptitle('Particle No. {} in folder {}, local index {}'.format(dataind,
+        fig_i.suptitle('{} No. {} in folder {}, local index {}'.format(hab, dataind,
                        info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=20)
+        # fig_i.suptitle('Particle No. {} in folder {}, local index {}'.format(dataind,
+        #                info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=20)
 
         iml = im_list[global_streakid]
         im_maxsize = max([im.shape for im in iml])
