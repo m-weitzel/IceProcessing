@@ -61,6 +61,7 @@ def main():
     plot_stokes = False
     plot_folder_means = False
     plot_all_3d = False
+    binned_full_scatter = True
 
     oversizing_correction = True
 
@@ -186,9 +187,8 @@ def main():
             powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
             plaw_by_habits[sep] = powerlaw(dim_dict[sep], plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1])
 
-    avg_masses, bin_edges, binnumber = stats.binned_statistic(full_dim_median_list, full_v_median_list,
-                                                              statistic='mean')
-
+    print('Passing {} fall tracks to scatter routine.'.format(len(full_dim_median_list)))
+    
     fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
                        full_streakid_list, info_list, full_pos_list)
 
@@ -277,6 +277,40 @@ def main():
         ax_box.boxplot([v_median_dict[p] for p in fs])
         ax_box.set_xticklabels([f[47:-1] for f in fs], fontsize=20)
         ax_box.grid(b=True, which='major', linestyle='-')
+
+    if binned_full_scatter:
+        binsize = 10
+        lowest = (int(np.min(full_dim_median_list)/binsize)-0.5)*binsize
+        highest = int(np.max(full_dim_median_list)/binsize+0.5)*binsize
+        size_bins = np.arange(lowest, highest, binsize)
+        plot_bins = np.arange(5, 1.1*highest, 5)
+        avg_vs, bin_edges, binnumber = stats.binned_statistic(full_dim_median_list, full_v_median_list,
+                                                                  statistic='mean', bins=size_bins)
+        num_in_bin, _, _ = stats.binned_statistic(full_dim_median_list, full_v_median_list,
+                                                  statistic='count', bins=size_bins)
+        dim_bins = [(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])]
+
+        edge_indices = np.insert(np.cumsum(num_in_bin), 0, 0)
+
+        # binned_dims = [full_dim_median_list[int(c):int(d)] for c, d in zip(np.insert(num_in_bin[:-1], 0, 0), num_in_bin)]       # list of all dim values in bins, length = number of bins
+        binned_vs = [full_v_median_list[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
+
+        nans = np.isnan(avg_vs)
+        avg_vs = np.asarray(avg_vs)[np.invert(nans)]
+        binned_vs = np.asarray(binned_vs)[np.invert(nans)]
+        dim_bins = np.asarray(dim_bins)[np.invert(nans)]
+
+        v_stds = [np.std(vm) for vm in binned_vs]
+
+        plaw_vals_bin = fit_powerlaw(dim_bins, avg_vs)
+        powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
+        plaw_bin = powerlaw(plot_bins, plaw_vals_bin[0], plaw_vals_bin[1])
+
+        fig, ax = imshow_in_figure()
+        ax.scatter(dim_bins, avg_vs, alpha=1, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
+        ax.errorbar(dim_bins, avg_vs, yerr=v_stds, linestyle='none', fmt='none', label='Means', color='k', capsize=5)
+
+        ax.plot(plot_bins, plaw_bin)
 
     plt.show()
 
