@@ -279,21 +279,27 @@ def main():
         ax_box.grid(b=True, which='major', linestyle='-')
 
     if binned_full_scatter:
+        v_in_seps = list()
+        dims_in_seps = list()
+        for sep in different_separators:
+            v_in_seps.extend(v_median_dict[sep])
+            dims_in_seps.extend(dim_dict[sep])
+
         binsize = 10
-        lowest = (int(np.min(full_dim_median_list)/binsize)-0.5)*binsize
-        highest = int(np.max(full_dim_median_list)/binsize+0.5)*binsize
+        lowest = (int(np.min(dims_in_seps)/binsize)-0.5)*binsize
+        highest = int(np.max(dims_in_seps)/binsize+0.5)*binsize
         size_bins = np.arange(lowest, highest, binsize)
         plot_bins = np.arange(5, 1.1*highest, 5)
-        avg_vs, bin_edges, binnumber = stats.binned_statistic(full_dim_median_list, full_v_median_list,
-                                                                  statistic='mean', bins=size_bins)
-        num_in_bin, _, _ = stats.binned_statistic(full_dim_median_list, full_v_median_list,
+        avg_vs, bin_edges, binnumber = stats.binned_statistic(dims_in_seps, v_in_seps,
+                                                              statistic='mean', bins=size_bins)
+        num_in_bin, _, _ = stats.binned_statistic(dims_in_seps, v_in_seps,
                                                   statistic='count', bins=size_bins)
         dim_bins = [(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])]
 
         edge_indices = np.insert(np.cumsum(num_in_bin), 0, 0)
 
         # binned_dims = [full_dim_median_list[int(c):int(d)] for c, d in zip(np.insert(num_in_bin[:-1], 0, 0), num_in_bin)]       # list of all dim values in bins, length = number of bins
-        binned_vs = [full_v_median_list[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
+        binned_vs = [v_in_seps[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
 
         nans = np.isnan(avg_vs)
         avg_vs = np.asarray(avg_vs)[np.invert(nans)]
