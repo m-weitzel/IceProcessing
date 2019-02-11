@@ -100,12 +100,13 @@ def main():
         tmp = pickle.load(open(os.path.join(compare_list_folder, 'mass_dim_data.dat'), 'rb'))
         compare_list = tmp['crystal']
 
-        comp_dim_list = dim_list(compare_list, 'areaeq')
+        comp_dim_list = dim_list(compare_list, 'majsiz')
         comp_mass_list = dim_list(compare_list, 'mass')
 
     full_dim_list, full_mass_list, index_list = zip(*sorted(zip(full_dim_list, full_mass_list, index_list)))
 
-    bins = np.linspace(7.5, 157.5, 31)
+    # bins = np.linspace(7.5, 157.5, 31)
+    bins = np.linspace(5, 155, 16)
 
     avg_masses, bin_edges, binnumber = stats.binned_statistic(full_dim_list, full_mass_list,
                                                               statistic='mean', bins=bins)
@@ -145,14 +146,14 @@ def main():
         ymax = 300e-9
 
     else:
-        xmin = 0
+        xmin = 15
         # xmax = 1.1*np.max(full_dim_list)
-        xmax = 150
+        xmax = 145
         ymin = 0
-        ymax = 1.1*np.max(full_mass_list)
+        ymax = 1.1*np.max(full_mass_list)*1e-12
 
         plt.xlim(xmin, xmax)
-        # plt.ylim(ymin, ymax)
+        plt.ylim(ymin, ymax)
         xloc = 1
         yloc_base = 0.8
         yloc_factor = 1.1
@@ -208,29 +209,50 @@ def main():
     #     loc_count += 1
     # loc_count += 2
 
-    n = len(full_mass_list)
+    # n = len(full_mass_list)
 
-    if plot_massdim & plot_binned:
-        plt.text(35, 100e-9, 'Power Law Fit full data: m$ = {2:.4f}\cdot $D$^{{{3:.3f}}}$'.format(1.9, 2.0, amp_full/1000, index_full)+
-             '\nPower Law Fit binned data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$'.format(amp_bins/1000, index_bins), bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base*0.9, ha='right')
-    else:
-        # plt.text(xloc + 45.5, ymax * 0.95 * yloc[loc_count],
-        plt.text(
-                 xloc, ymax * 0.98 * yloc[loc_count],
-                # 'Brown&Francis: m$=0.0185\cdot $D$^{1.9}$\n' + ' Mitchell: m$=0.022\cdot $D$^{2.0}$\n' +
-                 'Power Law Fit full data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$\nn = ${2}$, RMSE = ${3:4.2f}$ ng'.format(amp_full / 1000, index_full, n, rmse_of_fit * 1e-12 * 1e9),
-                bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base * 1, ha='left'
-                 )
+    # if plot_massdim & plot_binned:
+    #     plt.text(35, 100e-9, 'Power Law Fit full data: m$ = {2:.4f}\cdot $D$^{{{3:.3f}}}$'.format(1.9, 2.0, amp_full/1000, index_full)+
+    #          '\nPower Law Fit binned data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$'.format(amp_bins/1000, index_bins), bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base*0.9, ha='right')
+    # else:
+    #     # plt.text(xloc + 45.5, ymax * 0.95 * yloc[loc_count],
+    #     plt.text(
+    #              xloc, ymax * 0.98 * yloc[loc_count],
+    #             # 'Brown&Francis: m$=0.0185\cdot $D$^{1.9}$\n' + ' Mitchell: m$=0.022\cdot $D$^{2.0}$\n' +
+    #              'Power Law Fit full data: m$ = {0:.4f}\cdot $D$^{{{1:.3f}}}$\nn = ${2}$, RMSE = ${3:4.2f}$ ng'.format(amp_full / 1000, index_full, n, rmse_of_fit * 1e-12 * 1e9),
+    #             bbox=dict(facecolor='blue', alpha=0.1), fontsize=fontsize_base * 1, ha='left'
+    #              )
 
     if plot_binned:
-        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_bins, index_bins)*1e-12, label='Power Law Binned Data', linewidth=3, zorder=1)
+        edge_indices = np.insert(np.cumsum(num_in_bin), 0, 0)
+        binned_masses = [full_mass_list[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
+
+        mass_stds = [np.std(vm) for vm in binned_masses]
+
+        error_oor = mass_stds > avg_masses
+        sparses = num_in_bin < 5
+        exclude = np.invert(sparses+error_oor)
+        dim_bins = np.asarray(dim_bins)[exclude]
+        avg_masses = np.asarray(avg_masses)[exclude]
+        mass_stds = np.asarray(mass_stds)[exclude]
+
+        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_bins, index_bins)*1e-12, label=r'm={0:.2f}D^{1:.2f}'.format(amp_bins, index_bins), linewidth=3, zorder=1)
+        ax.errorbar(dim_bins, [a*1e-12 for a in avg_masses], yerr=[s*1e-12 for s in mass_stds], linestyle='none', fmt='none', color='k', capsize=5)
+
+        ax.scatter(90, 20e-9, s=3*10**0.8, c='g')
+        ax.scatter(110, 20e-9, s=3*100**0.8, c='g')
+        ax.scatter(130, 20e-9, s=3*1000**0.8, c='g')
+
+        ax.text(90, 21e-9, '10')
+        ax.text(110, 21e-9, '100')
+        ax.text(130, 21e-9, '1000')
     else:
         ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full)*1e-12, label='Power Law Fit', linewidth=3, zorder=1, c='orange')
 
     if plot_massdim:
         ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
         # ax.plot(dims_spaced, brown_franc, label='Brown&Francis 95', linestyle='--', zorder=1)
-        ax.plot(dims_spaced, brown_franc_cgs, label='Brown&Francis cgs', linestyle='--', zorder=1)
+        ax.plot(dims_spaced, brown_franc_cgs, label='Brown&Francis 1995', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1)
         ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
@@ -258,7 +280,7 @@ def main():
         if compare:
             ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
 
-    plt.xlabel('Area equivalent diameter in $\mathrm{\mu m}$', fontsize=fontsize_base)
+    plt.xlabel('Maximum dimension in $\mathrm{\mu m}$', fontsize=fontsize_base)
     plt.ylabel('Mass in ng', fontsize=fontsize_base)
     ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y*1e9))
     ax.yaxis.set_major_formatter(ticks_y)
@@ -337,6 +359,7 @@ def rmse(predictions, targets):
     mean_of_differences_squared = differences_squared.mean()
     rmse_val = np.sqrt(mean_of_differences_squared)
     return rmse_val
+
 
 if __name__ == "__main__":
     main()

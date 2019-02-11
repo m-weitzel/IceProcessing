@@ -89,7 +89,7 @@ class MicroImg:
             this_data['Center Points'] = this_center
             data.append(this_data)
 
-            cv2.putText(img, "{:.2f}mm".format(2*la/1000 / self.pixels_per_metric),
+            cv2.putText(img, "{:.2f}um".format(2*la / self.pixels_per_metric),
                         (int(this_center[0] - 150), int(this_center[1]-la)), cv2.FONT_HERSHEY_SIMPLEX,
                          2, (45, 255, 45), 4)
 
