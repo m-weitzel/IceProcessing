@@ -20,8 +20,7 @@ from IceSizing import MicroImg
 
 try:
     import matplotlib.pyplot as plt
-    from savefig_central import savefig_ipa
-    from make_pretty_figure import imshow_in_figure, create_hist
+    from make_pretty_figure import imshow_in_figure, create_hist, savefig_ipa
 except ImportError:
     pass
 
@@ -204,16 +203,16 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr, all_four=True):
         axs = fig.subplots(2)
 
         ax = axs[0]
-        # bins = np.arange(0, np.max(vs), 10)
-        _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max)
+        bins = np.arange(0, 120, 5)
+        _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max, grid=False)
         ax.set_title('Terminal Velocity in mm/s', fontsize=20)
 
         ax = axs[1]
         bins = np.arange(0, np.max(area_eq_diam_list), 5)
-        _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max)
+        _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max, grid=False)
         ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
 
-    plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=24)
+    # plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=24)
 
     # plt.savefig(fldr + 'histogram.png')
 
