@@ -40,7 +40,7 @@ def main():
 
     if static_velocity:
         vel_guess = lambda x, y: -x/y
-        vel_in_mm_p_s = 70              # guess for velocity (in mm/s)
+        vel_in_mm_p_s = 50              # guess for velocity (in mm/s)
         base_velocity_guess = [0, vel_guess(vel_in_mm_p_s, fr), 0]
     else:
         # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
@@ -108,7 +108,9 @@ def main():
                     ps_in_holos[new_streak.particle_streak[-2].holonum+1].remove(ext_by)  # remove particle from list of particles in current (next) hologram
                     if len(new_streak.particle_streak) > 2:
                         # Starting with the third particle, velocity guess for finding new particles is derived from the last two found particles
+                        old_guess = velocity_guess
                         velocity_guess = new_streak.particle_streak[-1].spatial_position-new_streak.particle_streak[-2].spatial_position
+                        print('Old guess: {}, new guess: {}'.format(old_guess, velocity_guess))
             if len(new_streak.particle_streak) >= min_length:
                 streak_list.append(new_streak)
 
@@ -119,9 +121,9 @@ def main():
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
 
+        print('Saving {} streaks in '.format(len(streak_list))+os.path.join(path, 'streak_data.dat.'))
         save_dict = {"folder": path, "streaks": streak_list, "temperature": temperature}
         pickle.dump(save_dict, open(os.path.join(path, 'streak_data.dat'), 'wb'), -1)
-        print('{} streaks saved in '.format(len(streak_list))+os.path.join(path, 'streak_data.dat.'))
 
     plt.show()
 
@@ -133,7 +135,7 @@ class FallParticle:
         self.xpos = xpos
         self.ypos = ypos
         self.zpos = zpos
-        self.habit = habit
+        self.habit = 'Unclassified' if habit == 'Particle_nubbly' else habit
         self.spatial_position = np.asarray([self.xpos, self.ypos, self.zpos])
         self.majsiz = majsiz
         self.minsiz = minsiz
