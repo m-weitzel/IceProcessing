@@ -78,7 +78,7 @@ def main():
         while 1:
             adaptive_window = cv2.getTrackbarPos('AdaptiveWindow', window_title)
             dilation = cv2.getTrackbarPos('Dilation', window_title)
-            img_ice = MicroImg('Ice', folder, ice_file, 1, ('Adaptive', 2*adaptive_window+1), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=1)  # Pixel size 1 because dimension is calculated in pixels and converted later
+            img_ice = MicroImg('Ice', folder, ice_file, 0.33, ('Adaptive', 2*adaptive_window+1), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=1)  # Pixel size 1 because dimension is calculated in pixels and converted later
             # img_ice = MicroImg('Ice', folder, ice_file, 1, ('Bin', 0), 750, 100000, dilation)
             # img_ice = MicroImg('Ice', folder, ice_file, 1, ('Otsu', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
             # img_ice = MicroImg('Ice', folder, ice_file, 1, ('Gradient', 0), maxsize=np.inf, dilation=dilation, fill_flag=False, min_dist_to_edge=0)
