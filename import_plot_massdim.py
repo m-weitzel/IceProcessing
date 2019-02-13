@@ -150,7 +150,7 @@ def main():
         # xmax = 1.1*np.max(full_dim_list)
         xmax = 145
         ymin = 0
-        ymax = 1.1*np.max(full_mass_list)*1e-12
+        ymax = 1.1*np.max(full_mass_list)
 
         plt.xlim(xmin, xmax)
         plt.ylim(ymin, ymax)
@@ -167,16 +167,16 @@ def main():
 
     dims_spaced = np.arange(maxsize)
     if plot_binned:
-        amp_bins, index_bins = fit_powerlaw(dim_bins, avg_masses)
-    amp_full, index_full = fit_powerlaw(full_dim_list, full_mass_list)
-    mass_bulk = np.pi / 6*(dims_spaced*1e-6) ** 3 * 916.7*1000      # D in m, m in g
-    brown_franc = 0.0185 * (dims_spaced*1e-6) ** 1.9*1000     # D in m, m in kg
-    brown_franc_cgs = 0.00294*(dims_spaced*1e-4)**1.9         # cgs, from Heymsfield 2010
-    mitchell_90 = 0.022*(dims_spaced*1e-3)**2/1000
-    mitchell_2010 = 0.08274*(dims_spaced*1e-4) ** 2.814      # cgs,
-    heymsfield2010 = 0.007*(dims_spaced*1e-4)**2.2           # cgs
+        amp_bins, index_bins = fit_powerlaw([d*1e-6 for d in dim_bins], avg_masses)
+    amp_full, index_full = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
+    mass_bulk = np.pi / 6*(dims_spaced*1e-6) ** 3 * 916.7            # D in m, m in kg
+    brown_franc = 0.0185 * (dims_spaced*1e-6) ** 1.9                 # D in m, m in kg, equal to LH1974
+    # brown_franc_cgs = 0.00294*(dims_spaced*1e-4)**1.9/1000           # cgs, from Heymsfield 2010
+    mitchell_90 = 0.022*(dims_spaced*1e-3)**2/1e6                    # D in mm, m in mg
+    mitchell_2010 = 0.08274*(dims_spaced*1e-4) ** 2.814/1000         # cgs
+    heymsfield2010 = 0.007*(dims_spaced*1e-4)**2.2/1000              # cgs
 
-    bakerlawson = 0.115*(dims_spaced*1e-6)**1.218/1000          # A in mm², m in mg
+    # bakerlawson = 0.115*(dims_spaced*1e-6)**1.218/1000               # A in mm², m in mg
     # D in mm, m in mg
     # heymsfield = 0.176*dims_spaced**2.2*1000
 
@@ -236,23 +236,24 @@ def main():
         avg_masses = np.asarray(avg_masses)[exclude]
         mass_stds = np.asarray(mass_stds)[exclude]
 
-        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_bins, index_bins)*1e-12, label=r'm={0:.2f}D^{1:.2f}'.format(amp_bins, index_bins), linewidth=3, zorder=1)
-        ax.errorbar(dim_bins, [a*1e-12 for a in avg_masses], yerr=[s*1e-12 for s in mass_stds], linestyle='none', fmt='none', color='k', capsize=5)
+        ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_bins, index_bins), label=r'm={0:.5f}D^{1:.2f}'.format(amp_bins, index_bins), linewidth=3, zorder=1)
+        print(amp_bins)
+        ax.errorbar(dim_bins, avg_masses, yerr=mass_stds, linestyle='none', fmt='none', color='k', capsize=5)
 
-        ax.scatter(90, 20e-9, s=3*10**0.8, c='g')
-        ax.scatter(110, 20e-9, s=3*100**0.8, c='g')
-        ax.scatter(130, 20e-9, s=3*1000**0.8, c='g')
+        ax.scatter(90, 20e-12, s=3*10**0.8, c='g')
+        ax.scatter(110, 20e-12, s=3*100**0.8, c='g')
+        ax.scatter(130, 20e-12, s=3*1000**0.8, c='g')
 
-        ax.text(90, 21e-9, '10')
-        ax.text(110, 21e-9, '100')
-        ax.text(130, 21e-9, '1000')
+        ax.text(90, 21e-12, '10')
+        ax.text(110, 21e-12, '100')
+        ax.text(130, 21e-12, '1000')
     else:
-        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full)*1e-12, label='Power Law Fit', linewidth=3, zorder=1, c='orange')
+        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Fit', linewidth=3, zorder=1, c='orange')
 
     if plot_massdim:
         ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
-        # ax.plot(dims_spaced, brown_franc, label='Brown&Francis 95', linestyle='--', zorder=1)
-        ax.plot(dims_spaced, brown_franc_cgs, label='Brown&Francis 1995', linestyle='--', zorder=1)
+        ax.plot(dims_spaced, brown_franc, label='Brown&Francis 95', linestyle='--', zorder=1)
+        # ax.plot(dims_spaced, brown_franc_cgs, label='Brown&Francis 1995', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1)
         ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
@@ -271,18 +272,17 @@ def main():
             # ax.scatter(this_dim_list, this_mass_list, c=col_list, marker=next(symbolcycler), alpha=1,
             #            edgecolors=almost_black, linewidth=1)
             if plot_binned:
-                ax.scatter(dim_bins, [f*1e-12 for f in avg_masses], alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
+                ax.scatter(dim_bins, avg_masses, alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
             else:
-                ax.scatter(full_dim_list, [f*1e-12 for f in full_mass_list], alpha=1,
-                           edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
+                ax.scatter(full_dim_list, mass_list, alpha=1, edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
             # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
         if compare:
-            ax.scatter(comp_dim_list, [m*1e-12 for m in comp_mass_list], alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
+            ax.scatter(comp_dim_list, comp_mass_list, alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
 
     plt.xlabel('Maximum dimension in $\mathrm{\mu m}$', fontsize=fontsize_base)
     plt.ylabel('Mass in ng', fontsize=fontsize_base)
-    ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y*1e9))
+    ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y*1e12))
     ax.yaxis.set_major_formatter(ticks_y)
     ax.tick_params(axis='both', which='major', labelsize=fontsize_base)
     # ax.set_xticks([25,50,75,100])
@@ -319,7 +319,7 @@ def dim_list(c_list, type):
     elif type == 'cap':
         return [0.134 * (0.58 * a['Short Axis'] / 2 * (1 + 0.95 * (a['Long Axis'] / a['Short Axis']) ** 0.75)) for a in c_list]      # Capacitance
     elif type == 'mass':
-        return [np.pi/6*a['Drop Diameter']**3 for a in c_list]
+        return [np.pi/6*(a['Drop Diameter']*1e-6)**3*1000 for a in c_list]
     elif type == 'minsiz':
         return [float(a['Short Axis']) for a in c_list]
     elif type == 'dropdiam':
