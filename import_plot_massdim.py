@@ -101,7 +101,8 @@ def main():
     full_dim_list, full_mass_list, index_list = zip(*sorted(zip(full_dim_list, full_mass_list, index_list)))
 
     # bins = np.linspace(7.5, 157.5, 31)
-    bins = np.linspace(5, 155, 16)
+    # bins = np.linspace(5, 155, 16)
+    bins = np.linspace(15, 105, 11)
 
     avg_masses, bin_edges, binnumber = stats.binned_statistic(full_dim_list, full_mass_list,
                                                               statistic='mean', bins=bins)
