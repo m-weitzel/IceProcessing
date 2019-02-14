@@ -162,23 +162,24 @@ def main():
     powerlaw = lambda x, amp, index: amp * (x**index)
 
     dims_spaced = np.arange(maxsize)
-    if plot_binned:
-        amp_bins, index_bins = fit_powerlaw([d*1e-6 for d in dim_bins], avg_masses)
-    amp_full, index_full = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
-    mass_bulk = np.pi / 6*(dims_spaced*1e-6) ** 3 * 916.7            # D in m, m in kg
-    brown_franc = 0.0185 * (dims_spaced*1e-6) ** 1.9                 # D in m, m in kg, equal to LH1974
-    # brown_franc_cgs = 0.00294*(dims_spaced*1e-4)**1.9/1000           # cgs, from Heymsfield 2010
-    mitchell_90 = 0.022*(dims_spaced*1e-3)**2/1e6                    # D in mm, m in mg
-    mitchell_2010 = 0.08274*(dims_spaced*1e-4) ** 2.814/1000         # cgs
-    heymsfield2010 = 0.007*(dims_spaced*1e-4)**2.2/1000              # cgs
 
+    mass_bulk = np.pi / 6*(dims_spaced*1e-6) ** 3 * 916.7
+    brown_franc = 0.0185 * (dims_spaced*1e-6) ** 1.9                 # equal to LH1974
+    mitchell_90 = 0.022*(dims_spaced*1e-6)**2
+    mitchell_2010 = 35.133*(dims_spaced*1e-6) ** 2.814
+    heymsfield2010 = 0.1758*(dims_spaced*1e-6)**2.2
+    cotton2013 = 0.026*(dims_spaced*1e-6)**2
+
+    # brown_franc_cgs = 0.00294*(dims_spaced*1e-4)**1.9/1000           # cgs, from Heymsfield 2010
+    # mitchell_90 = 0.022*(dims_spaced*1e-3)**2/1e6                    # D in mm, m in mg
     # bakerlawson = 0.115*(dims_spaced*1e-6)**1.218/1000               # A in mm², m in mg
+    # mitchell_2010 = 0.08274*(dims_spaced*1e-4) ** 2.814/1000         # cgs
     # D in mm, m in mg
     # heymsfield = 0.176*dims_spaced**2.2*1000
 
-    rmse_of_fit = rmse([amp_full*d**index_full for d in full_dim_list], full_mass_list)
-
-    loc_count = 0
+    # rmse_of_fit = rmse([amp_full*d**index_full for d in full_dim_list], full_mass_list)
+    #
+    # loc_count = 0
 
     # if plot_massdim:
     #     plt.text(xloc, ymax*yloc[loc_count], 'Brown&Francis: $m=0.0185\cdot D^{1.9}$\n Mitchell: $m=0.022\cdot D^{2.0}$', bbox=dict(facecolor='red', alpha=0.2), fontsize=fontsize_base*0.7)
@@ -220,6 +221,7 @@ def main():
     #              )
 
     if plot_binned:
+        amp_bins, index_bins, _ = fit_powerlaw([d*1e-6 for d in dim_bins], avg_masses)
         edge_indices = np.insert(np.cumsum(num_in_bin), 0, 0)
         binned_masses = [full_mass_list[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
 
@@ -232,7 +234,7 @@ def main():
         avg_masses = np.asarray(avg_masses)[exclude]
         mass_stds = np.asarray(mass_stds)[exclude]
 
-        ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_bins, index_bins), label=r'm={0:.5f}D^{1:.2f}'.format(amp_bins, index_bins), linewidth=3, zorder=1)
+        ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_bins, index_bins), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_bins, index_bins), linewidth=3, zorder=1)
         print(amp_bins)
         ax.errorbar(dim_bins, avg_masses, yerr=mass_stds, linestyle='none', fmt='none', color='k', capsize=5)
 
@@ -244,15 +246,18 @@ def main():
         ax.text(110, 21e-12, '100')
         ax.text(130, 21e-12, '1000')
     else:
-        ax.plot(dims_spaced, powerlaw(dims_spaced, amp_full, index_full), label='Power Law Fit', linewidth=3, zorder=1, c='orange')
+        amp_full, index_full, _ = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
+        ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
 
     if plot_massdim:
         ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
         ax.plot(dims_spaced, brown_franc, label='Brown&Francis 95', linestyle='--', zorder=1)
-        # ax.plot(dims_spaced, brown_franc_cgs, label='Brown&Francis 1995', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1)
         ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
+        ax.plot(dims_spaced, cotton2013, label='Cotton 2013', linestyle='--', zorder=1)
+        ax.plot(dims_spaced, brown_franc, label='Brown&Francis 1995', linestyle='--', zorder=1)
+
     # else:
     #     ax.plot(dims_spaced, bakerlawson, label='Baker&Lawson 06', linestyle='--', zorder=1)
     # ax.plot(dims_spaced, heymsfield, label='Heymsfield 2011', linestyle='--')
@@ -270,7 +275,7 @@ def main():
             if plot_binned:
                 ax.scatter(dim_bins, avg_masses, alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
             else:
-                ax.scatter(full_dim_list, mass_list, alpha=1, edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
+                ax.scatter(full_dim_list, full_mass_list, alpha=1, edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
             # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
         if compare:
