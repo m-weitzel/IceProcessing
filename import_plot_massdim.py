@@ -2,19 +2,14 @@
 puts all mass and dimension values in a list and scatter plots them. Then defines a parameterization that is also plotted,
 along with parameterizations from literature."""
 
-from matplotlib import pyplot as plt
 from matplotlib import ticker
-import numpy as np
 import pickle
-from scipy import optimize
 from scipy import stats
 from itertools import cycle
-import os
 from utilities.find_ccr_folder import find_ccr
 from utilities.make_pretty_figure import *
 from utilities.plot_size_distribution import plot_size_dist
-# from matplotlib import style
-# style.use('dark_background')
+from utilities.fit_powerlaw import fit_powerlaw
 
 
 def main():
@@ -127,7 +122,7 @@ def main():
     max_aspr = max([max(a) for a in folders_aspr_list])
 
     # fig, ax = plt.subplots(1)
-    fig, ax = imshow_in_figure()
+    fig, ax = imshow_in_figure(figspan=(18, 10))
 
     if logscale:
         xlim = 10
@@ -326,39 +321,6 @@ def dim_list(c_list, type):
         return [float(a['Drop Diameter']) for a in c_list]
     else:
         return [a['Long Axis'] for a in c_list]
-
-
-def fit_powerlaw(x, y):
-
-    x = [this_x for this_x, this_y in zip(x, y) if not(np.isnan(this_y))]
-    y = [this_y for this_y in y if not(np.isnan(this_y))]
-
-    logx = np.log10(x)
-    logy = np.log10(y)
-
-    fitfunc = lambda p, x: p[0]+p[1]*x
-    errfunc = lambda p, x, y: (y-fitfunc(p,x))
-
-    pinit = [1.0, -1.0]
-    out = optimize.leastsq(errfunc, pinit, args=(logx, logy), full_output=1)
-
-    pfinal = out[0]
-    covar = out[1]
-
-    index = pfinal[1]
-    amp = 10.0**pfinal[0]
-    pl = amp * (x**index)
-
-    return amp, index
-
-
-def rmse(predictions, targets):
-
-    differences = np.asarray(predictions) - np.asarray(targets)
-    differences_squared = differences ** 2
-    mean_of_differences_squared = differences_squared.mean()
-    rmse_val = np.sqrt(mean_of_differences_squared)
-    return rmse_val
 
 
 if __name__ == "__main__":
