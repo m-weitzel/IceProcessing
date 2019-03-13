@@ -24,14 +24,14 @@ def main():
 
     folder_list = list()
 
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905/ps/seq2')
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
 
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
@@ -60,10 +60,10 @@ def main():
     hist_plots = False
     calc_means = False
     plot_powerlaws = True
-    plot_stokes = False
+    plot_stokes = True
     plot_folder_means = False
     # plot_all_3d = False
-    binned_full_scatter = True
+    binned_full_scatter = False
 
     oversizing_correction = True
     capacity_flag = False
@@ -174,6 +174,7 @@ def main():
     # different_separators.remove('Needle')
     # different_separators = ['Unclassified']
     # different_separators = ['Aggregate']
+    # different_separators = ['Column']
 
     for sep in different_separators:
         if separate_by == 'habit':
@@ -247,6 +248,12 @@ def main():
         stokes_vod_max = [2*((d-1.2)*1e-6/2)**2*9.81*((rho_o+100)-1.34)/(9*eta(temp_stokes+2.5))*1000 for d in ds]
         ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3, color='black')
         ax.fill_between(ds, stokes_vod_min, stokes_vod_max, facecolor='grey', alpha=0.6)
+
+        # mass_param = [0.03097*(d*1e-6)**2.13 for d in ds]
+        # mass_param = [0.00003*(d*1e-6)**1.35 for d in ds]
+        mass_param = [0.022*(d*1e-6)**2 for d in ds]
+        stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, ds)]
+        ax.plot(ds, stokes_v)
 
     ax.legend(fontsize=16)
     savefig_ipa(fig, 'v_dim_scatter')
@@ -341,6 +348,9 @@ def main():
         ax.errorbar(dim_bins, avg_vs, yerr=v_stds, linestyle='none', fmt='none', label='Means', color='k', capsize=5)
 
         ax.plot(plot_bins, plaw_bin, label=r'v={0:.2f}D^{1:.2f}'.format(plaw_vals_bin[0], plaw_vals_bin[1]))
+        mass_param = [0.03097*(d*1e-6)**2.13 for d in plot_bins]
+        stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, plot_bins)]
+        ax.plot(plot_bins, stokes_v)
         ax.scatter(100, 15, s=3*10**0.8, c='g')
         ax.scatter(120, 15, s=3*100**0.8, c='g')
         ax.scatter(140, 15, s=3*1000**0.8, c='g')
