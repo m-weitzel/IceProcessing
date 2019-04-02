@@ -54,7 +54,7 @@ def main():
     plot_massdim = True
     logscale = False
     plot_binned = True
-    fontsize_base = 20
+    fontsize_base = 24
 
     # folder_list = (os.path.join(basedir, '26Sep')),
     #                '/uni-mainz.de/homes/maweitze/Dropbox/Dissertation/Ergebnisse/EisMainz/2203/M2/')
@@ -75,6 +75,7 @@ def main():
         crystal_list = tmp['crystal']
 
         this_dim_list = dim_list(crystal_list, 'majsiz')
+        # this_dim_list = dim_list(crystal_list, 'areaeq')
         this_mass_list = dim_list(crystal_list, 'mass')
         this_aspr_list = dim_list(crystal_list, 'aspr')
 
@@ -124,6 +125,7 @@ def main():
 
     # fig, ax = plt.subplots(1)
     fig, ax = imshow_in_figure(figspan=(18, 10))
+    # fig, ax = imshow_in_figure()
 
     if logscale:
         xlim = 10
@@ -221,7 +223,7 @@ def main():
     #              )
 
     if plot_binned:
-        amp_bins, index_bins, _ = fit_powerlaw([d*1e-6 for d in dim_bins], avg_masses)
+        amp_bins, index_bins, r2_bins = fit_powerlaw([d*1e-6 for d in dim_bins], avg_masses)
         edge_indices = np.insert(np.cumsum(num_in_bin), 0, 0)
         binned_masses = [full_mass_list[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
 
@@ -234,24 +236,29 @@ def main():
         avg_masses = np.asarray(avg_masses)[exclude]
         mass_stds = np.asarray(mass_stds)[exclude]
 
-        ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_bins, index_bins), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_bins, index_bins), linewidth=3, zorder=1)
+        # ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_bins, index_bins), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_bins, index_bins), linewidth=3, zorder=1)
         print(amp_bins)
         ax.errorbar(dim_bins, avg_masses, yerr=mass_stds, linestyle='none', fmt='none', color='k', capsize=5)
+        print(r'm={0:.5f}D^{{{1:.2f}}}, R^2={2:.1f}%'.format(amp_bins, index_bins, r2_bins*100))
 
         ax.scatter(90, 20e-12, s=3*10**0.8, c='g')
         ax.scatter(110, 20e-12, s=3*100**0.8, c='g')
         ax.scatter(130, 20e-12, s=3*1000**0.8, c='g')
 
-        ax.text(90, 21e-12, '10')
-        ax.text(110, 21e-12, '100')
-        ax.text(130, 21e-12, '1000')
-    else:
-        amp_full, index_full, _ = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
-        ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
+        ax.text(90, 21e-12, 'n=10', fontsize=20)
+        ax.text(110, 21e-12, 'n=100', fontsize=20)
+        ax.text(130, 21e-12, 'n=1000', fontsize=20)
+    #else:
+    amp_full, index_full, r2_full = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
+    print(r'm={0:.5f}D^{{{1:.2f}}}, R^2={2:.1f}%'.format(amp_full, index_full, r2_full*100))
+    ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
+
+    # amp_full, index_full, r2 = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list, method='other')
+    # ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
+    # param2 = powerlaw(dims_spaced*1e-6, amp_full, index_full)
 
     if plot_massdim:
         ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
-        ax.plot(dims_spaced, brown_franc, label='Brown&Francis 95', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1)
         ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1)
         ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
@@ -302,7 +309,7 @@ def main():
     savefig_ipa(fig, 'MassDimScatter')
 
     # fig_hist, _ = create_hist(full_dim_list)
-    fig_hist, _ = plot_size_dist(full_dim_list, 25, xlabel='Size in micrometers')
+    fig_hist, _ = plot_size_dist(full_dim_list, 25, xlabel=r'Maximum dimension in $\mathrm{\mu m}$')
     savefig_ipa(fig_hist, 'MassDimHist')
 
     plt.show()

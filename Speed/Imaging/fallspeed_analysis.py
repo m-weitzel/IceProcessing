@@ -31,11 +31,11 @@ exposure_time = 85000  # in µs
 
 save_only_flag = 0
 
-histogram_plt_flag = 1
+histogram_plt_flag = 0
 orientation_polar_flag = 0
 v_t_series_flag = 0
 ori_scatter_flag = 0
-centerpt_density_flag = 0
+centerpt_density_flag = 1
 
 
 def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn_flag=1):

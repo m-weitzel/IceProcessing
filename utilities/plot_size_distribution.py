@@ -1,23 +1,26 @@
-import matplotlib.pyplot as plt
+from utilities.make_pretty_figure import *
+from matplotlib import ticker
 
 
-def plot_size_dist(sizes, n_bins, normed=True, log=False, lims=False, xlabel=''):
-    fig_h = plt.figure()
-    ax = fig_h.add_subplot(111)
+def plot_size_dist(sizes, n_bins, normed=True, log=False, lims=False, xlabel='', **kwargs):
+    fig_h, ax = imshow_in_figure(grid=False, figspan=(18, 6))
+    # ax = fig_h.add_subplot(111)
 
     if lims:
-        ax.hist(sizes, n_bins, histtype='step', fill=True, label='N = {}'.format(len(sizes)), linewidth=3, density=normed, log=log, edgecolor='k', range=lims[0])
+        ax.hist(sizes, n_bins, histtype='bar', label='N = {}'.format(len(sizes)), linewidth=3, density=normed, log=log, edgecolor='k', range=lims[0])
+        # ax.hist(sizes, n_bins, histtype='stepfilled', density=normed, log=log, range=lims[0], fc=(0, 0, 1, 0.001))
         ax.set_xlim(lims[0])
         try:
             ax.set_ylim(lims[1])
         except IndexError:
             pass
     else:
-        ax.hist(sizes, n_bins, histtype='step', fill=True, label='N = {}'.format(len(sizes)), linewidth=3, density=normed, log=log, edgecolor='k')
+        ax.hist(sizes, n_bins, histtype='bar', label='N = {}'.format(len(sizes)), linewidth=3, density=normed, log=log, edgecolor='k')
+        # ax.hist(sizes, n_bins, histtype='stepfilled', density=normed, log=log, fc=(0, 0, 1, 0.001))
 
-    ax.set_xlabel(xlabel, fontsize=20)
-    ax.set_ylabel('Relative occurence', fontsize=20)
-    ax.set_ylabel('Relative occurence', fontsize=20)
-    ax.grid()
+    ax.set_xlabel(xlabel, fontsize=24)
+    ax.set_ylabel('PDF', fontsize=24)
+    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2e'))
+    # ax.grid()
 
     return fig_h, ax
