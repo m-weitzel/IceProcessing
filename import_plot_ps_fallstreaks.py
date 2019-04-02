@@ -80,7 +80,7 @@ def main():
         this_folders_v_list = list()
         framerate = get_folder_framerate(folder)
         for i, s in enumerate(this_folders_streak_list):
-            this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
+            this_folders_dim_list.append([p.majsiz * 1e6 -(oversizing_correction*1.5*2.22) for p in s.particle_streak])
             # this_folders_dim_list.append([2*np.sqrt(p.area/np.pi)*1e6 for p in s.particle_streak])
             this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
             info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
@@ -96,21 +96,11 @@ def main():
         # except KeyError:
         #     pass
 
-    full_dim_list = list()
-    full_dim_median_list = list()
-    full_v_list = list()
-    full_v_median_list = list()
-    full_streak_list = list()
-
-    for d, s, v in zip(list_of_folder_dim_lists, list_of_folder_streak_lists, list_of_folder_v_lists):
-        for d1, s1, v1 in zip(d, s, v):
-            if oversizing_correction:
-                d1 = [td-1.5*2.22 for td in d1]
-            full_dim_list.append(d1)
-            full_dim_median_list.append(np.median(d1))
-            full_v_list.append(v1)
-            full_v_median_list.append(np.median(v1))
-            full_streak_list.append(s1)
+    full_dim_list = [j for i in list_of_folder_dim_lists for j in i]
+    full_dim_median_list = [np.median(j) for i in list_of_folder_dim_lists for j in i]
+    full_v_list = [j for i in list_of_folder_v_lists for j in i]
+    full_v_median_list = [np.median(j) for i in list_of_folder_v_lists for j in i]
+    full_streak_list = [j for i in list_of_folder_streak_lists for j in i]
 
     indexes = list(range(len(full_dim_median_list)))
     indexes.sort(key=full_dim_median_list.__getitem__)
