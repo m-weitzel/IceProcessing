@@ -16,7 +16,7 @@ from utilities.fit_powerlaw import fit_powerlaw
 
 
 def main():
-    path = '/ipa/holo/mweitzel/HIVIS_Holograms/26Sep'
+    path = '/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/'
     temperature = -12
     filename_ps = 'ps_bypredict.mat'
 
@@ -56,7 +56,8 @@ def main():
         p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size,
                                    a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size,
                                    a['prediction'][k].rstrip(), a['majsiz'][k][0],
-                                   a['minsiz'][k][0], a['ims'][k][0]))
+                                   a['minsiz'][k][0], a['area'][k][0],
+                                   a['angle'][k][0], a['ims'][k][0]))
 
     print('{} particles loaded.'.format(len(p_list)))
     last_holonum = p_list[-1].holonum
@@ -110,7 +111,7 @@ def main():
                         # Starting with the third particle, velocity guess for finding new particles is derived from the last two found particles
                         old_guess = velocity_guess
                         velocity_guess = new_streak.particle_streak[-1].spatial_position-new_streak.particle_streak[-2].spatial_position
-                        print('Old guess: {}, new guess: {}'.format(old_guess, velocity_guess))
+                        # print('Old guess: {}, new guess: {}'.format(old_guess, velocity_guess))
             if len(new_streak.particle_streak) >= min_length:
                 streak_list.append(new_streak)
 
@@ -129,7 +130,7 @@ def main():
 
 
 class FallParticle:
-    def __init__(self, holonum, index_in_hologram, xpos, ypos, zpos, habit, majsiz, minsiz, *args):
+    def __init__(self, holonum, index_in_hologram, xpos, ypos, zpos, habit, majsiz, minsiz, area, orient, *args):
         self.holonum = holonum
         self.index_in_hologram = index_in_hologram
         self.xpos = xpos
@@ -140,6 +141,8 @@ class FallParticle:
         self.majsiz = majsiz
         self.minsiz = minsiz
         self.aspr = majsiz/minsiz
+        self.area = area
+        self.orient = orient
         if len(args) > 0:
             self.partimg = args[0]
 
@@ -217,7 +220,7 @@ def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_
     predicted_particle.ypos = predicted_position[1]
     predicted_particle.zpos = predicted_position[2]
 
-    dists = [dist(predicted_particle, pb, ignore_zpos=True) for pb in particle_list]
+    dists = [dist(predicted_particle, pb, ignore_zpos=False) for pb in particle_list]
 
     size_diffs = [abs(pb.majsiz-predicted_particle.majsiz)/predicted_particle.majsiz for pb in particle_list]
     dists_s, sizes_s = (list(x) for x in zip(*sorted(zip(dists, size_diffs), key=lambda pair: pair[0])))

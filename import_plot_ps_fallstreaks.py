@@ -3,20 +3,22 @@
 import os
 from matplotlib import pyplot as plt
 from matplotlib import ticker
+# from matplotlib.widgets import CheckButtons
+# from matplotlib import style
+import matplotlib.gridspec as gridspec
+from mpl_toolkits.mplot3d import Axes3D
+
 import numpy as np
 from scipy import stats
 import pickle
-from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate, eta
-# from utilities.plot_size_distribution import plot_size_dist
-from utilities.fit_powerlaw import fit_powerlaw
-from itertools import cycle, compress, chain
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.gridspec as gridspec
-from utilities.make_pretty_figure import *
 from cycler import cycler
-# from matplotlib.widgets import CheckButtons
-# from matplotlib import style
-# style.use('dark_background')
+from itertools import cycle, compress, chain
+
+from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate, eta
+from utilities.fit_powerlaw import fit_powerlaw
+from utilities.tempsave_extracted_streaks import *
+from utilities.make_pretty_figure import *
+# from utilities.plot_size_distribution import plot_size_dist
 
 
 def main():
@@ -24,13 +26,13 @@ def main():
 
     folder_list = list()
 
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905/ps/seq2')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905/ps/seq2')
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
 
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
@@ -50,58 +52,49 @@ def main():
 
     # # Properties for filtering streaks
 
-    angle_leniency_deg = 20
-    min_streak_length = 3  # for separation between short and long streaks
-
-    rho_o = 2500
-
-    separate_by = 'habit'
-
     hist_plots = False
     calc_means = False
     plot_powerlaws = True
     plot_stokes = True
     plot_folder_means = False
     # plot_all_3d = False
-    binned_full_scatter = False
+    binned_full_scatter = True
 
     oversizing_correction = True
     capacity_flag = False
 
+    separate_by = 'habit'
+    rho_o = 2500
+
+    list_of_folder_streak_lists = load_streaks(folder_list, 'ps_streaks_file.dat')
+
     list_of_folder_dim_lists = list()
-    list_of_folder_streak_lists = list()
     list_of_folder_v_lists = list()
     info_list = list()
     temp_by_folder = list()
 
-    for folder in folder_list:
-        tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
-        framerate = get_folder_framerate(tmp['folder'])
-        this_folders_streak_list = tmp['streaks']
-        print('Added {} streaks from {}.'.format(len(this_folders_streak_list), folder))
-        this_folders_streak_list = refine_streaks(this_folders_streak_list, angle_leniency_deg)
-        this_folders_streak_list = [a for a in this_folders_streak_list if (len(a.particle_streak) >= min_streak_length)]
+    for i, folder in enumerate(folder_list):
+        this_folders_streak_list = list_of_folder_streak_lists[i]
         this_folders_mean_angle = np.mean([s.mean_angle for s in this_folders_streak_list])
         this_folders_dim_list = list()
         this_folders_v_list = list()
+        framerate = get_folder_framerate(folder)
         for i, s in enumerate(this_folders_streak_list):
             this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
+            # this_folders_dim_list.append([2*np.sqrt(p.area/np.pi)*1e6 for p in s.particle_streak])
             this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
             info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
-            try:
-                info_list[i]['temperature'] = tmp['temperature']
-            except KeyError:
-                pass
+            # try:
+            #     info_list[i]['temperature'] = tmp['temperature']
+            # except KeyError:
+            #     pass
 
         list_of_folder_dim_lists.append(this_folders_dim_list)
-        list_of_folder_streak_lists.append(this_folders_streak_list)
         list_of_folder_v_lists.append(this_folders_v_list)
-        try:
-            temp_by_folder.append(tmp['temperature'])
-        except KeyError:
-            pass
-
-        print('Kept {} streaks longer than {}.'.format(len(this_folders_streak_list), min_streak_length))
+        # try:
+        #     temp_by_folder.append(tmp['temperature'])
+        # except KeyError:
+        #     pass
 
     full_dim_list = list()
     full_dim_median_list = list()
@@ -136,6 +129,7 @@ def main():
     full_streakid_list = list()
     full_habit_list = list()
     full_pos_list = list()
+    full_orientation_list = list()
     for s in full_streak_list:
         full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])  # aspect ratio of all p
         this_caps = [0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)*1e6 for p in s.particle_streak]
@@ -145,6 +139,10 @@ def main():
         full_streakid_list.append(streak_id)
         full_habit_list.append(s.streak_habit)
         full_pos_list.append([p.spatial_position for p in s.particle_streak])
+        try:
+            full_orientation_list.append(np.median([p.orient for p in s.particle_streak]))
+        except AttributeError:
+            full_orientation_list.append([0 for p in s.particle_streak])
 
         streak_id += 1
 
@@ -157,6 +155,7 @@ def main():
     dim_dict = dict()
     v_median_dict = dict()
     aspr_dict = dict()
+    orient_dict = dict()
 
     if plot_powerlaws:
         plaw_by_habits = dict()
@@ -184,13 +183,16 @@ def main():
         else:
             print('Separator not found, showing full lists.')
             selector_index_dict[sep] = [1]*len(full_streak_list)
-        v_median_dict[sep] = list(compress(full_v_median_list, selector_index_dict[sep]))
-        dim_dict[sep] = list(compress(full_dim_median_list, selector_index_dict[sep]))
-        aspr_dict[sep] = list(compress(full_aspr_median_list, selector_index_dict[sep]))
-        streaks_by_separator = list(compress(full_streak_list, selector_index_dict[sep]))
-        info_by_separator = list(compress(info_list, selector_index_dict[sep]))
+
+        list_sep = lambda fulllist: list(compress(fulllist, selector_index_dict[sep]))
+        v_median_dict[sep] = list_sep(full_v_median_list)
+        dim_dict[sep] = list_sep(full_dim_median_list)
+        aspr_dict[sep] = list_sep(full_aspr_median_list)
+        orient_dict[sep] = list_sep(full_orientation_list)
 
         if hist_plots:
+            streaks_by_separator = list_sep(full_streak_list)
+            info_by_separator = list_sep(info_list)
             if len(streaks_by_separator) > 0:
                 plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
 
@@ -202,11 +204,6 @@ def main():
     #                         full_streakid_list, info_list, full_pos_list)
 
     # ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
-
-    try:
-        temp_stokes = info_list[0]['temperature']
-    except KeyError:
-        temp_stokes = -10
 
     # if plot_all_3d:
     #     f_3d = plt.figure(figsize=(18, 10), dpi=100)
@@ -234,6 +231,10 @@ def main():
                 ax.legend(fontsize=8)
 
     if plot_stokes:
+        try:
+            temp_stokes = info_list[0]['temperature']
+        except KeyError:
+            temp_stokes = -10
         d_mean = 30e-6
         # y_vel_min = -2*((d_mean+1.2e-6)/2)**2*9.81*(rho_o-100-1.34)/(9*eta(temp_stokes-2.5))*1e3
         # y_vel_mean = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
@@ -350,7 +351,7 @@ def main():
         ax.plot(plot_bins, plaw_bin, label=r'v={0:.2f}D^{1:.2f}'.format(plaw_vals_bin[0], plaw_vals_bin[1]))
         mass_param = [0.03097*(d*1e-6)**2.13 for d in plot_bins]
         stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, plot_bins)]
-        ax.plot(plot_bins, stokes_v)
+        ax.plot(plot_bins, stokes_v, label='Stokes')
         ax.scatter(100, 15, s=3*10**0.8, c='g')
         ax.scatter(120, 15, s=3*100**0.8, c='g')
         ax.scatter(140, 15, s=3*1000**0.8, c='g')
@@ -370,6 +371,39 @@ def main():
         savefig_ipa(fig, 'bin_scatter')
 
     plt.show()
+
+
+def load_streaks(folder_list, streak_fn, min_streak_length=3, angle_leniency_deg=20, minsiz=25e-6):
+    lo_folder_streak_lists = extract_streaks(streak_fn)
+    if len(lo_folder_streak_lists) < 1:
+        for folder in folder_list:
+            tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
+            tf_streak_list = tmp['streaks']
+            print('Added {} streaks from {}.'.format(len(tf_streak_list), folder))
+            tf_streak_list = refine_streaks(tf_streak_list, angle_leniency_deg)
+            # try:
+            #     angle_change = [np.abs(p.particle_streak[-1].orient-p.particle_streak[0].orient) for p in this_folders_streak_list]
+            #     for i, a in enumerate(angle_change):
+            #         if a > 90:
+            #             angle_change[i] = 180-a
+            #
+            #     this_folders_streak_list = [a for a, b in zip(this_folders_streak_list, angle_change) if ((len(a.particle_streak) >= min_streak_length)
+            #                                                                                               and (np.mean([p.majsiz for p in a.particle_streak]) > minsiz)
+            #                                                                                               # and (b > 20) and (a.particle_streak[0].aspr > 2)
+            #                                                                                               )]
+            # except AttributeError:
+            #     this_folders_streak_list = list()
+            tf_streak_list = [a for a in tf_streak_list if ((len(a.particle_streak) >= min_streak_length)
+                                                                                and (np.mean([p.majsiz for p in a.particle_streak]) > minsiz)
+                                                                                )]
+            lo_folder_streak_lists.append(tf_streak_list)
+        print('Kept {} streaks fulfilling criteria.')
+        print('Saving new streaks.')
+        save_streaks(lo_folder_streak_lists, streak_fn)
+    else:
+        print('Loading saved streaks.')
+
+    return lo_folder_streak_lists
 
 
 def plot_best_vs_reynolds(v_list, dim_list, aspr_list, cap_flag=False):
@@ -487,6 +521,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
         t_v = list(compress(v_median_list, selector_list[sep]))
         if len(t_v) > 0:
             t_ln = ax.scatter(t_dim, t_v, alpha=1,
+                              # linewidth=1, zorder=0, picker=i, marker='+', c=c['color'])
                               linewidth=1, zorder=0, picker=i, marker=marker_dict[sep], c=c['color'])
             t_ln.set_label('{} (N={})'.format(sep, sum(selector_list[sep])))
             # t_ln.set_label('v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)))
@@ -609,7 +644,8 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         #                info_list[streakid_list[hab][dataind]]['folder'][47:], info_list[streakid_list[hab][dataind]]['local_index']), fontsize=20)
 
         iml = im_list[global_streakid]
-        im_maxsize = max([im.shape for im in iml])
+        imshapes = [im.shape for im in iml]
+        im_maxsize = (np.max([b[0] for b in imshapes]), np.max([b[1] for b in imshapes]))
 
         # gs1 = gridspec.GridSpec(2, n)
         gs1 = gridspec.GridSpec(n, 2)
@@ -659,7 +695,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         # ax = plt.subplot(gs1[0:2, n:-1], projection='3d')
 
         f3, a3 = p3d(ax, pos_list[global_streakid])
-        gs1.tight_layout(fig_i)#, rect=[0, 0.03, 1, 0.95])
+        gs1.tight_layout(fig_i) #, rect=[0, 0.03, 1, 0.95])
         fig_i.show()
         f3.show()
         # f_3d.show()
