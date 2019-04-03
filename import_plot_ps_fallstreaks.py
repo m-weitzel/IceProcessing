@@ -52,15 +52,16 @@ def main():
 
     # # Properties for filtering streaks
 
-    hist_plots = False
     calc_means = False
-    plot_powerlaws = True
-    plot_stokes = True
+    plot_powerlaws = False
+    plot_stokes = False
     plot_folder_means = False
     # plot_all_3d = False
-    binned_full_scatter = True
+    binned_full_scatter = False
+    hist_plots = False
 
     oversizing_correction = True
+    special_properties = False
     capacity_flag = False
 
     separate_by = 'habit'
@@ -81,7 +82,7 @@ def main():
         framerate = get_folder_framerate(folder)
         for i, s in enumerate(this_folders_streak_list):
             this_folders_dim_list.append([p.majsiz * 1e6 -(oversizing_correction*1.5*2.22) for p in s.particle_streak])
-            # this_folders_dim_list.append([2*np.sqrt(p.area/np.pi)*1e6 for p in s.particle_streak])
+            # this_folders_dim_list.append([2*np.sqrt(p.area/np.pi)*1e6-(oversizing_correction*1.5*2.22) for p in s.particle_streak])
             this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
             info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
             # try:
@@ -101,6 +102,31 @@ def main():
     full_v_list = [j for i in list_of_folder_v_lists for j in i]
     full_v_median_list = [np.median(j) for i in list_of_folder_v_lists for j in i]
     full_streak_list = [j for i in list_of_folder_streak_lists for j in i]
+    full_im_list = list()
+    full_pos_list = list()
+    full_streakid_list = list()
+    for i, s in enumerate(full_streak_list):
+        full_im_list.append([p.partimg for p in s.particle_streak])
+        full_pos_list.append([p.spatial_position for p in s.particle_streak])
+        full_streakid_list.append(i)
+
+    if separate_by == 'habit':
+        different_separators = list(set([f.strip() for f in [s.streak_habit for s in full_streak_list]]))
+    elif separate_by == 'folder':
+        different_separators = folder_list
+    else:
+        different_separators = ['']
+
+    selector_index_dict = dict()
+
+    print('Passing {} fall tracks to scatter routine.'.format(len(full_dim_median_list)))
+
+    # fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
+    #                         full_streakid_list, info_list, full_pos_list)
+
+    # fig_r, ax_r = imshow_in_figure()
+    dynamic_r = westbrook(full_dim_median_list, full_v_median_list)
+    # ax_r.scatter(full_dim_median_list, dynamic_r)
 
     indexes = list(range(len(full_dim_median_list)))
     indexes.sort(key=full_dim_median_list.__getitem__)
@@ -110,86 +136,70 @@ def main():
     info_list = list(map(info_list.__getitem__, indexes))
     full_v_list = list(map(full_v_list.__getitem__, indexes))
     full_v_median_list = list(map(full_v_median_list.__getitem__, indexes))
+    dynamic_r = list(map(dynamic_r.__getitem__, indexes))
 
-    streak_id = 0
-    full_aspr_list = list()
-    full_cap_list = list()
-    full_cap_median_list = list()
-    full_im_list = list()
-    full_streakid_list = list()
-    full_habit_list = list()
-    full_pos_list = list()
-    full_orientation_list = list()
-    for s in full_streak_list:
-        full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])  # aspect ratio of all p
-        this_caps = [0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)*1e6 for p in s.particle_streak]
-        full_cap_list.append(this_caps)
-        full_cap_median_list.append(np.median(this_caps))
-        full_im_list.append([np.transpose(p.partimg) for p in s.particle_streak])
-        full_streakid_list.append(streak_id)
-        full_habit_list.append(s.streak_habit)
-        full_pos_list.append([p.spatial_position for p in s.particle_streak])
-        try:
-            full_orientation_list.append(np.median([p.orient for p in s.particle_streak]))
-        except AttributeError:
-            full_orientation_list.append([0 for p in s.particle_streak])
+    for sep in different_separators:
+            if separate_by == 'habit':
+                selector_index_dict[sep] = [1 if s.streak_habit == sep else 0 for s in full_streak_list]
+            elif separate_by == 'folder':
+                selector_index_dict[sep] = [1 if i['folder'] == sep else 0 for i in info_list]
+            else:
+                print('Separator not found, showing full lists.')
+                selector_index_dict[sep] = [1]*len(full_streak_list)
 
-        streak_id += 1
+    if special_properties:
+        full_aspr_list = list()
+        full_cap_list = list()
+        full_cap_median_list = list()
+        full_orientation_list = list()
+        for s in full_streak_list:
+            full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])  # aspect ratio of all p
+            this_caps = [0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)*1e6 for p in s.particle_streak]
+            full_cap_list.append(this_caps)
+            full_cap_median_list.append(np.median(this_caps))
+            try:
+                full_orientation_list.append(np.median([p.orient for p in s.particle_streak]))
+            except AttributeError:
+                full_orientation_list.append([0 for p in s.particle_streak])
 
-    if capacity_flag:
-        full_dim_list = full_cap_list
-        full_dim_median_list = full_cap_median_list
+            # streak_id += 1
 
-    full_aspr_median_list = [np.median(c) for c in full_aspr_list]
-    selector_index_dict = dict()
-    dim_dict = dict()
-    v_median_dict = dict()
-    aspr_dict = dict()
-    orient_dict = dict()
+        # full_aspr_median_list = [np.median(c) for c in full_aspr_list]
 
-    if plot_powerlaws:
-        plaw_by_habits = dict()
-        plaw_vals_by_habits = dict()
-    if separate_by == 'habit':
-        different_separators = list(set([f.strip() for f in full_habit_list]))
-    elif separate_by == 'folder':
-        different_separators = folder_list
-    else:
-        different_separators = ['']
+        if capacity_flag:
+            full_dim_list = full_cap_list
+            full_dim_median_list = full_cap_median_list
 
+    # aspr_dict = dict()
+    # orient_dict = dict()
+    #
     # Plotting
-
+    #
     # different_separators.remove('Unclassified')
     # different_separators.remove('Needle')
     # different_separators = ['Unclassified']
     # different_separators = ['Aggregate']
     # different_separators = ['Column']
 
+    dim_dict = dict()
+    v_median_dict = dict()
     for sep in different_separators:
-        if separate_by == 'habit':
-            selector_index_dict[sep] = [1 if s.streak_habit == sep else 0 for s in full_streak_list]
-        elif separate_by == 'folder':
-            selector_index_dict[sep] = [1 if i['folder'] == sep else 0 for i in info_list]
-        else:
-            print('Separator not found, showing full lists.')
-            selector_index_dict[sep] = [1]*len(full_streak_list)
-
         list_sep = lambda fulllist: list(compress(fulllist, selector_index_dict[sep]))
-        v_median_dict[sep] = list_sep(full_v_median_list)
         dim_dict[sep] = list_sep(full_dim_median_list)
-        aspr_dict[sep] = list_sep(full_aspr_median_list)
-        orient_dict[sep] = list_sep(full_orientation_list)
+        v_median_dict[sep] = list_sep(full_v_median_list)
 
-        if hist_plots:
-            streaks_by_separator = list_sep(full_streak_list)
-            info_by_separator = list_sep(info_list)
-            if len(streaks_by_separator) > 0:
-                plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
+    #     aspr_dict[sep] = list_sep(full_aspr_median_list)
+    #     orient_dict[sep] = list_sep(full_orientation_list)
+    #
+    #     if hist_plots:
+    #         streaks_by_separator = list_sep(full_streak_list)
+    #         info_by_separator = list_sep(info_list)
+    #         if len(streaks_by_separator) > 0:
+    #             plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
 
-    print('Passing {} fall tracks to scatter routine.'.format(len(full_dim_median_list)))
+    fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list)
+    ax.plot(np.arange(100), np.arange(100))
 
-    fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
-                            full_streakid_list, info_list, full_pos_list)
     # fig, ax = v_dim_scatter(selector_index_dict, full_cap_list, full_cap_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
     #                         full_streakid_list, info_list, full_pos_list)
 
@@ -206,6 +216,8 @@ def main():
                                  list(compress(full_v_list, selector_index_dict[sep])))
 
     if plot_powerlaws:
+        plaw_by_habits = dict()
+        plaw_vals_by_habits = dict()
         # colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
         colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
         for c, sep in zip(cycler(color=colors), different_separators):
@@ -760,6 +772,13 @@ def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_lis
 #     ax.legend(loc='upper right')
 #     ax.set_title('z position for {}'.format(habit))
 #     ax.grid()
+
+
+def westbrook(dim_list, v_list):
+    parameterized_m_list = [0.03097*d**2.13 for d in dim_list]
+    R = [9.81/(6*np.pi*eta(-10))*m/(v*1000) if v > 20 else np.nan for m, v in zip(parameterized_m_list, v_list)]
+    D = [2*r for r in R]
+    return D
 
 
 if __name__ == "__main__":
