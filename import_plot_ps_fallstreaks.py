@@ -397,6 +397,7 @@ def load_streaks(folder_list, streak_fn, min_streak_length=3, angle_leniency_deg
             #     this_folders_streak_list = list()
             tf_streak_list = [a for a in tf_streak_list if ((len(a.particle_streak) >= min_streak_length)
                                                                                 and (np.mean([p.majsiz for p in a.particle_streak]) > minsiz)
+                                                                                and (np.mean([p.majsiz for p in a.particle_streak]) < 200e-6)
                                                                                 )]
             lo_folder_streak_lists.append(tf_streak_list)
         print('Kept {} streaks fulfilling criteria.')
