@@ -105,15 +105,11 @@ def main():
     full_im_list = list()
     full_pos_list = list()
     full_streakid_list = list()
-    for i, s in enumerate(full_streak_list):
-        full_im_list.append([p.partimg for p in s.particle_streak])
-        full_pos_list.append([p.spatial_position for p in s.particle_streak])
-        full_streakid_list.append(i)
 
     if separate_by == 'habit':
-        different_separators = list(set([f.strip() for f in [s.streak_habit for s in full_streak_list]]))
+        different_separators = sorted(list(set([f.strip() for f in [s.streak_habit for s in full_streak_list]])))
     elif separate_by == 'folder':
-        different_separators = folder_list
+        different_separators = sorted(folder_list)
     else:
         different_separators = ['']
 
@@ -125,7 +121,7 @@ def main():
     #                         full_streakid_list, info_list, full_pos_list)
 
     # fig_r, ax_r = imshow_in_figure()
-    dynamic_r = westbrook(full_dim_median_list, full_v_median_list)
+    dynamic_D = westbrook(full_dim_median_list, full_v_median_list)
     # ax_r.scatter(full_dim_median_list, dynamic_r)
 
     indexes = list(range(len(full_dim_median_list)))
@@ -136,7 +132,12 @@ def main():
     info_list = list(map(info_list.__getitem__, indexes))
     full_v_list = list(map(full_v_list.__getitem__, indexes))
     full_v_median_list = list(map(full_v_median_list.__getitem__, indexes))
-    dynamic_r = list(map(dynamic_r.__getitem__, indexes))
+    dynamic_D = list(map(dynamic_D.__getitem__, indexes))
+
+    for i, s in enumerate(full_streak_list):
+        full_im_list.append([p.partimg for p in s.particle_streak])
+        full_pos_list.append([p.spatial_position for p in s.particle_streak])
+        full_streakid_list.append(i)
 
     for sep in different_separators:
             if separate_by == 'habit':
@@ -197,9 +198,6 @@ def main():
     #         if len(streaks_by_separator) > 0:
     #             plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
 
-    fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list)
-    ax.plot(np.arange(100), np.arange(100))
-
     # fig, ax = v_dim_scatter(selector_index_dict, full_cap_list, full_cap_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
     #                         full_streakid_list, info_list, full_pos_list)
 
@@ -209,6 +207,10 @@ def main():
     #     f_3d = plt.figure(figsize=(18, 10), dpi=100)
     #     for p in full_pos_list:
     #         p3d(f_3d, p)
+
+    print('Plotting scatter...')
+    fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, dynamic_D, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list)
+    ax.plot(np.arange(200), np.arange(200), label='D=R', lw=2, c='b')
 
     if calc_means:
         for sep in different_separators:
@@ -516,21 +518,23 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # different_separators = ['Needle']
 
     # colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
-    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
-    sepd_v_max = 0
+    colors = ['tab:orange', 'tab:blue', 'tab:green', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:red', 'tab:olive', 'tab:cyan']
+    # sepd_v_max = 0
 
-    for i, (c, sep) in enumerate(zip(cycler(color=colors), different_separators)):
+    # for i, (c, sep) in enumerate(zip(cycler(color=colors), different_separators)):
+    for i, (c, sep) in enumerate(zip(colors, different_separators)):
         t_dim = list(compress(dim_median_list, selector_list[sep]))
         t_v = list(compress(v_median_list, selector_list[sep]))
         if len(t_v) > 0:
             t_ln = ax.scatter(t_dim, t_v, alpha=1,
                               # linewidth=1, zorder=0, picker=i, marker='+', c=c['color'])
-                              linewidth=1, zorder=0, picker=i, marker=marker_dict[sep], c=c['color'])
+                              # linewidth=1, zorder=0, picker=i, marker=marker_dict[sep], c=c['color'])
+                                linewidth=1, zorder=0, picker=i, marker=marker_dict[sep], c=c)
             t_ln.set_label('{} (N={})'.format(sep, sum(selector_list[sep])))
             # t_ln.set_label('v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)))
             lines.append(t_ln)
             streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
-            sepd_v_max = np.max([sepd_v_max, np.nanmax(t_v)])
+            # sepd_v_max = np.max([sepd_v_max, np.nanmax(t_v)])
 
     ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
