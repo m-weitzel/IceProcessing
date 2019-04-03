@@ -1,16 +1,9 @@
 """ Creates v(D) plot of all fall track (Holography) data ('streak_data.dat') from all folders listed in folder list."""
 
-import os
-from matplotlib import pyplot as plt
 from matplotlib import ticker
-# from matplotlib.widgets import CheckButtons
-# from matplotlib import style
 import matplotlib.gridspec as gridspec
-from mpl_toolkits.mplot3d import Axes3D
 
-import numpy as np
 from scipy import stats
-import pickle
 from cycler import cycler
 from itertools import cycle, compress, chain
 
@@ -18,8 +11,15 @@ from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, 
 from utilities.fit_powerlaw import fit_powerlaw
 from utilities.tempsave_extracted_streaks import *
 from utilities.make_pretty_figure import *
-# from utilities.plot_size_distribution import plot_size_dist
 
+# from utilities.plot_size_distribution import plot_size_dist
+# from mpl_toolkits.mplot3d import Axes3D
+# import numpy as np
+# import pickle
+# from matplotlib.widgets import CheckButtons
+# from matplotlib import style
+# import os
+# from matplotlib import pyplot as plt
 
 def main():
     # Loading data ############################
