@@ -51,9 +51,9 @@ def main():
     minsize = 0
     maxsize = 150
     plot_scatter = True
-    plot_massdim = True
+    plot_massdim = False
     logscale = False
-    plot_binned = True
+    plot_binned = False
     fontsize_base = 24
 
     # folder_list = (os.path.join(basedir, '26Sep')),
@@ -146,7 +146,7 @@ def main():
     else:
         xmin = 15
         # xmax = 1.1*np.max(full_dim_list)
-        xmax = 145
+        xmax = 150
         ymin = 0
         ymax = 1.1*np.max(full_mass_list)
 
@@ -239,7 +239,7 @@ def main():
         # ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_bins, index_bins), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_bins, index_bins), linewidth=3, zorder=1)
         print(amp_bins)
         ax.errorbar(dim_bins, avg_masses, yerr=mass_stds, linestyle='none', fmt='none', color='k', capsize=5)
-        print(r'm={0:.5f}D^{{{1:.2f}}}, R^2={2:.1f}%'.format(amp_bins, index_bins, r2_bins*100))
+        print(r'm={0:.4f}D^{{{1:.2f}}}, R^2={2:.1f}%'.format(amp_bins, index_bins, r2_bins*100))
 
         ax.scatter(90, 20e-12, s=3*10**0.8, c='g')
         ax.scatter(110, 20e-12, s=3*100**0.8, c='g')
@@ -250,7 +250,7 @@ def main():
         ax.text(130, 21e-12, 'n=1000', fontsize=20)
     #else:
     amp_full, index_full, r2_full = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
-    print(r'm={0:.5f}D^{{{1:.2f}}}, R^2={2:.1f}%'.format(amp_full, index_full, r2_full*100))
+    print(r'm={0:.5f}D^{{{1:.2f}}}, R^2={2:.1f}% (n={3:0f})'.format(amp_full, index_full, r2_full*100, len(full_dim_list)))
     ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
 
     # amp_full, index_full, r2 = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list, method='other')
@@ -264,6 +264,7 @@ def main():
         ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
         ax.plot(dims_spaced, cotton2013, label='Cotton 2013', linestyle='--', zorder=1)
         ax.plot(dims_spaced, brown_franc, label='Brown&Francis 1995', linestyle='--', zorder=1)
+        ax.plot(dims_spaced, [0.03097*(d*1e-6)**2.13 for d in dims_spaced], label='General parameterization', zorder=1)
 
     # else:
     #     ax.plot(dims_spaced, bakerlawson, label='Baker&Lawson 06', linestyle='--', zorder=1)
@@ -309,7 +310,8 @@ def main():
     savefig_ipa(fig, 'MassDimScatter')
 
     # fig_hist, _ = create_hist(full_dim_list)
-    fig_hist, _ = plot_size_dist(full_dim_list, 25, xlabel=r'Maximum dimension in $\mathrm{\mu m}$')
+    fig_hist, ax = plot_size_dist(full_dim_list, 25, xlabel=r'Maximum dimension in $\mathrm{\mu m}$')
+    ax.set_xlim(15, 150)
     savefig_ipa(fig_hist, 'MassDimHist')
 
     plt.show()

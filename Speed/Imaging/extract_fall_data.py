@@ -2,10 +2,10 @@ import os
 import sys
 sys.path.append('../../utilities')
 sys.path.append('../../Mass')
-from IceSizing import MicroImg
+from utilities.IceSizing import MicroImg
 import cv2
 import pickle
-import find_couples
+import Mass.find_couples
 import numpy as np
 
 
@@ -50,20 +50,22 @@ def initialize_data(fldr, fldr_list, pixel_size):
             # plt.imshow(img.processed_image)
             cv2.imwrite(os.path.join(fldr, 'Fall', 'processed', filename+'_processed.png'), img.processed_image)
             if fall_dist:
-                list_of_file_data.append([i, filename, fall_dist, orientation, centerpt, time_list])
+                list_of_file_data.append([i, filename, fall_dist, orientation, centerpt, time_list, list(np.ones(len(centerpt)))])
 
     # list_of_lists = (cont_real, fall_dist, orientation, centerpt, time_list)
     # pickle.dump(list_of_lists, open(fldr+'fall_speed_data.dat', 'wb'))
 
     # pickle.dump(list_of_file_data, open(os.path.join(fldr, 'fall_speed_data.dat'), 'wb'))
 
-    list_of_file_data = condense_streaks(list_of_file_data)
-
+    print('Number of streaks before condensation: {}.'.format(len(list_of_file_data)))
+    list_of_file_data = condense_streaks(list_of_file_data, pixel_size)
+    print('Number of streaks after condensation: {}.'.format(len(list_of_file_data)))
     cont_list = list()
     fall_dist = list()
     orientation = list()
     centerpt = list()
     time_list = list()
+    chainlength_list = list()
 
     for file in list_of_file_data:
         cont_list.extend(file[1])
@@ -71,29 +73,32 @@ def initialize_data(fldr, fldr_list, pixel_size):
         orientation.extend(file[3])
         centerpt.extend(file[4])
         time_list.extend(file[5])
+        chainlength_list.extend(file[6])
 
-    list_of_lists = cont_list, fall_dist, orientation, centerpt, time_list
+    list_of_lists = cont_list, fall_dist, orientation, centerpt, time_list, chainlength_list
     pickle.dump(list_of_lists, open(os.path.join(fldr, 'fall_speed_data.dat'), 'wb'))
 
     return list_of_lists
 
 
-def condense_streaks(list_of_file_data):
+def condense_streaks(list_of_file_data, pxl_size):
 
     for i, (this_file, next_file) in enumerate(zip(list_of_file_data[0:-2], list_of_file_data[1:])):
         if this_file[0] == next_file[0]-1:                                                                                  # if the next file is actually the next file in chronological order
-            predicted_ctrs = [(ct[0], ct[1]+fs) for fs, ct in zip(this_file[2], this_file[4])]                         # predict where the p center would be in the next image (frame rate 11.7 fps = 1/85000µs)
+            predicted_ctrs = [(ct[0], ct[1]+fs/pxl_size) for fs, ct in zip(this_file[2], this_file[4])]                         # predict where the p center would be in the next image (frame rate 11.7 fps = 1/85000µs)
             for ctr in predicted_ctrs:                                                                                      # for each of the predicted ctr points try to find a closest
-                found_flag = find_couples.find_closest_drop(ctr, next_file[4], 0, 0, 5)                                   # object in the ctrs of the next image within certain distance
+                found_flag = Mass.find_couples.find_closest_drop(ctr, next_file[4], 0, 0, 50)                                   # object in the ctrs of the next image within certain distance
                 if found_flag:
                     index_this = predicted_ctrs.index(ctr)                                                                  # if one is found, save index of the current obj in current list
                     index_next = next_file[4].index(found_flag)                                                             # and the index of the found next obj in next list
-                    for j in range(2, 5):
-                        if j != 4:                                                                                          # not moving center point due to issue in finding mean ctr pt
-                            this_file[j][index_this] = np.mean((this_file[j][index_this], next_file[j][index_next]))        # but take mean for all other parameters
-                        next_file[j].pop(index_next)                                                                        # and remove the second object to not have duplicates
-                    # this_file[5][index_this] = np.append(this_file[5][index_this], next_file[5][index_next])
-                    # next_file[5].pop(index_next)
+                    for j in range(2, 6):
+                        if j != 4:
+                            # print('i={}, j={}, index_this={}, index_next={}'.format(i, j, index_this, index_next))
+                            next_file[j][index_next] = np.mean((this_file[j][index_this], next_file[j][index_next]))        # but take mean for all other parameters
+                        this_file[j].pop(index_this)
+                    predicted_ctrs.pop(index_this)  # and remove the second object to not have duplicates
+                    next_file[6][index_next] = this_file[6][index_this]+1
+                    this_file[6].pop(index_this)
         else:
             pass
     return list_of_file_data

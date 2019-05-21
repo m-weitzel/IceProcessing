@@ -33,20 +33,20 @@ def main():
     fr = get_folder_framerate(path)
 
     # Properties for finding streaks
-    min_length = 3                  # minimum number of consecutive particles to be considered a streak
+    min_length = 5                  # minimum number of consecutive particles to be considered a streak
     max_size_diff = 0.2             # relative size difference - 0.1 corresponds to 10%
     max_dist_from_predict = 1       # total, mostly in mm
     static_velocity = True          # True: Velocity fixed at vel_in_mm between two frames, False: automatically calculated (from Stokes)
 
     if static_velocity:
         vel_guess = lambda x, y: -x/y
-        vel_in_mm_p_s = 50              # guess for velocity (in mm/s)
+        vel_in_mm_p_s = 60              # guess for velocity (in mm/s)
         base_velocity_guess = [0, vel_guess(vel_in_mm_p_s, fr), 0]
     else:
         # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
                                                             # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
         # y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
-        rho_o = 2500
+        rho_o = 1000
         y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta(temperature))/fr*1e3   # Stokes
 
     # End of properties
@@ -97,7 +97,7 @@ def main():
                     else:
                         # Else find streak particles in next hologram
                         new_streak, extended, ext_by = find_streak_particles(new_streak, ps_in_holos[new_streak.particle_streak[-1].holonum+1],
-                                                                             velocity_guess, max_dist=max_dist_from_predict, max_size_diff=max_size_diff)
+                                                                             velocity_guess, max_dist=max_dist_from_predict, max_size_diff=max_size_diff, prevent_upwards=False)
                 except IndexError:
                     # If last hologram is reached, end the streak
                     extended = False
@@ -115,7 +115,7 @@ def main():
             if len(new_streak.particle_streak) >= min_length:
                 streak_list.append(new_streak)
 
-    save_flag = input('Save data to file?')
+    save_flag = input('Save {} streaks to file?'.format(len(streak_list)))
     if save_flag == 'Yes' or save_flag == 'yes':
 
         plot_dir = os.path.join(path, 'plots')
@@ -207,11 +207,11 @@ def get_folder_framerate(folder):
 
     fr = np.int(len(filelist)/4)/np.median([total_time(first_q), total_time(secnd_q), total_time(third_q), total_time(fourt_q)])
     # fr = 54
-    print('Frame rate for {}: {} fps'.format(folder, fr))
+    print('Frame rate for {0}: {1:.1f} fps'.format(folder, fr))
     return fr
 
 
-def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_ind=10, max_size_diff=0.05):
+def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_ind=10, max_size_diff=0.05, prevent_upwards=True):
     initial_particle = this_streak.particle_streak[-1]
 
     predicted_position = np.asarray(initial_particle.spatial_position)+np.asarray(velocity)
@@ -232,15 +232,19 @@ def find_streak_particles(this_streak, particle_list, velocity, max_dist=1, max_
             index_closest = dists.index(closest)
             closest_particle = particle_list[index_closest]
             if sizes_s[dist_ind] < max_size_diff:
-                this_streak.add_particle(closest_particle)
-                extended = True
-                ext_by = closest_particle
-                break
+                if (closest_particle.spatial_position[1] > initial_particle.spatial_position[1]) & prevent_upwards:
+                    print('Upwards fall!')
+                    dist_ind += 1
+                else:
+                    this_streak.add_particle(closest_particle)
+                    extended = True
+                    ext_by = closest_particle
+                    break
             else:
                 dist_ind += 1
         if not extended:
             ext_by = []
-
+        # print(dist_ind)
         return this_streak, extended, ext_by
     except IndexError:
         return this_streak, [], []

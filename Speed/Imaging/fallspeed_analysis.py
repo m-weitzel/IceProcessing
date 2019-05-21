@@ -11,12 +11,12 @@ import pickle
 from scipy.stats import norm
 import cv2
 import time
-sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
-sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Mass')
-sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Speed')
-from find_ccr_folder import find_ccr
-from Imaging import extract_fall_data
-from IceSizing import MicroImg
+# sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/utilities')
+# sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Mass')
+# sys.path.append('/uni-mainz.de/homes/maweitze/PycharmProjects/MassDimSpeed/Speed')
+from utilities.find_ccr_folder import find_ccr
+import extract_fall_data
+from utilities.IceSizing import MicroImg
 
 try:
     import matplotlib.pyplot as plt
@@ -25,38 +25,43 @@ except ImportError:
     pass
 
 folder = find_ccr()
-folder = os.path.join(folder, 'Y2017/0908/M1')
+folder = os.path.join(folder, 'Y2017/1107/M1')
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
 save_only_flag = 0
 
-histogram_plt_flag = 0
-orientation_polar_flag = 0
-v_t_series_flag = 0
-ori_scatter_flag = 0
-centerpt_density_flag = 1
+histogram_plt_flag = True
+orientation_polar_flag = False
+v_t_series_flag = True
+ori_scatter_flag = False
+centerpt_density_flag = True
 
 
-def main(fldr, pxl_size, exp_time, save_only=0, h_flag=1, op_flag=1, vt_flag=1, or_flag=1, dn_flag=1):
+def main(fldr, pxl_size, exp_time, save_only=False, h_flag=True, op_flag=True, vt_flag=True, or_flag=True, dn_flag=True):
 
     fall_folder = os.path.join(fldr, 'Fall')
     folder_list = sorted(os.listdir(fall_folder))
-    folder_list = [f for f in folder_list if '.png' in f]
+    folder_list = [f for f in folder_list if '.png' in f][20:]
     im_for_shape_acq = MicroImg('Streak', fall_folder, folder_list[0], pxl_size, ('Bin', 0))
     imsize = im_for_shape_acq.processed_image.shape
 
     plot_descriptor_list = list()
 
     try:
-        fall_dist, orientation, centerpt, time_list = load_v_data(fldr)
+        fall_dist, orientation, centerpt, time_list, chainlength = load_v_data(fldr)
     except FileNotFoundError:
-        _, fall_dist, orientation, centerpt, time_list = extract_fall_data.initialize_data(fldr, folder_list, pxl_size)
+
+        _, fall_dist, orientation, centerpt, time_list, chainlength = extract_fall_data.initialize_data(fldr, folder_list, pxl_size)
         # list_of_file_data = extract_fall_data.initialize_data(fldr, folder_list)
 
     vs = np.asarray(fall_dist) / exp_time * 1000  # in mm/s
     projected_vs = [v * np.cos(o) for (v, o) in zip(vs, orientation)]
     print('Number of fall streaks: '+str(len(projected_vs)))
+    clens, ccounts = np.unique(chainlength, return_counts=True)
+    total_streaks = np.sum([l*c for l, c in zip(clens, ccounts)])
+    for l, c in zip(clens, ccounts):
+        print('Amount of streaks with length {0:.0f}: {1:.1f}% ({2:.1f}% of all {3:.0f} streaks contained)'.format(l, c/np.sum(ccounts)*100, l*c/total_streaks*100, total_streaks))
 
     t0 = time.time()
     if not save_only:
@@ -114,8 +119,9 @@ def load_v_data(fldr):
     orientation = list_of_lists[2]
     centerpt = list_of_lists[3]
     time_list = list_of_lists[4]
+    chainlen = list_of_lists[5]
 
-    return fall_dist, orientation, centerpt, time_list
+    return fall_dist, orientation, centerpt, time_list, chainlen
 
 
 def load_mass_data(fldr):
@@ -183,8 +189,8 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr, all_four=True):
         ax = axs[0][1]
         _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max)
         # plot_param_hist(ax, area_eq_diam_list, ae_max, n_bins, '$\mu m$')
-        ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
-        # ax.set_xlabel('Area equivalent diameter in um')
+        # ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
+        ax.set_xlabel('Area equivalent diameter in um')
 
         ax = axs[1][1]
         _, ax = create_hist(max_diam_list, ax=ax, bins=bins, maxval=mxdim_max)
@@ -205,12 +211,16 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr, all_four=True):
         ax = axs[0]
         bins = np.arange(0, 120, 5)
         _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max, grid=False)
-        ax.set_title('Terminal Velocity in mm/s', fontsize=20)
+        ax.set_title('Terminal Velocity in mm/s', fontsize=24)
 
         ax = axs[1]
-        bins = np.arange(0, np.max(area_eq_diam_list), 5)
-        _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max, grid=False)
-        ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
+        bins = np.arange(0, np.max(area_eq_diam_list), 4)
+        # _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max, grid=False)
+        # ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
+        _, ax = create_hist(max_diam_list, ax=ax, bins=bins, maxval=mxdim_max)
+        # plot_param_hist(ax, max_diam_list, mxdim_max, n_bins, '$\mu m$')
+        # ax.set_title(r'Maximum diameter in $\mu m$', fontsize=20)
+        ax.set_xlabel('Maximum diameter in um', fontsize=24)
 
     # plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=24)
 
@@ -289,21 +299,22 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     start_time = np.float16(f_start[21:23])*60+np.float16(f_start[24:26])+np.float16(f_start[27:30])/1000
     time_fl = [np.float16(f[21:23])*60+np.float16(f[24:26])+np.float16(f[27:30])/1000-start_time for f in folder_list if '.png' in f]
 
-    f, ax = imshow_in_figure(figspan=(18, 10))
-    ax.plot(time_fl, rm_vs, color='b')
+    f, ax = imshow_in_figure(figspan=(18, 10), dpi=100)
+    # ax = ax2.twinx()
+    # ax2.bar([t+0.5 for t in time_fl], streaks_in_pic, zorder=0, alpha=0.4)
+    ax.plot(time_fl, rm_vs, color='b', zorder=5)
     # ax.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std, color='b', linestyle='--')
     # ax.plot(time_fl[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)], rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]-rm_std, color='b', linestyle='--')
     # ax.set_ylim([0, np.max(rm_vs[np.int((n_bins-1)/2):np.int(-(n_bins-1)/2)]+rm_std)])
-    ax.plot(time_fl, rm_vs+rm_std, color='b', linestyle='--')
-    ax.plot(time_fl, rm_vs-rm_std, color='b', linestyle='--')
+    ax.plot(time_fl, rm_vs+rm_std, color='b', linestyle='--', zorder=5, dashes=[2, 4])
+    ax.plot(time_fl, rm_vs-rm_std, color='b', linestyle='--', zorder=5, dashes=[2, 4])
     ax.set_xlim([0, max(time_fl)])
-    ax.set_ylim([0, 1.1*np.max(rm_vs+rm_std)])
-    ax.set_title('Running mean of fall velocity over time', fontsize=20)
-    ax.set_xlabel('Time since start of experiment in seconds')
-    ax.set_ylabel('Running mean of fall velocity in mm/s', fontsize=20)
+    ax.set_ylim([0, 1.1*np.nanmax(rm_vs+rm_std)])
+    ax.set_title('Running mean of fall velocity over time', fontsize=24)
+    ax.set_xlabel('Time since start of experiment in seconds', fontsize=24)
+    ax.set_ylabel('Running mean of fall velocity in mm/s', fontsize=24)
 
-    f2, ax2 = imshow_in_figure(figspan=(18, 10))
-    ax2.bar([t+0.5 for t in time_fl], streaks_in_pic)
+    # f2, ax2 = imshow_in_figure(figspan=(18, 10))
 
 
 def orientation_scatter(centerpt, orientation):
@@ -378,19 +389,20 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size, relative=True)
     # f, ax = plt.subplots(figsize=(8, 14))
     f, ax = imshow_in_figure(figspan=(8, 14))
     ax.set_aspect('equal')
-    ax.set_xlim([xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000])
-    ax.set_ylim([ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000])
+    # ax.set_xlim([xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000])
+    # ax.set_ylim([ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000])
     f.canvas.draw()
     cmap = plt.cm.YlOrRd
     # cmap = plt.cm.Spectral_r
     cmap.set_under(color='white')
     im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0), cmap=cmap, vmin=0.0001)
+    # im = ax.matshow(binned_n, cmap=cmap)
     cbar = f.colorbar(im)
     cbar.ax.tick_params(labelsize=20)
     # cbar.set_ticks([0, 0.25, 0.5, 0.75, 1])
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('PDF of fall streak distribution in sample volume', fontsize=20)
+    ax.set_title('Relative fall streak occurence', fontsize=24)
     ax.tick_params(axis='both', which='major', labelsize=20)
 
     # ax.axis([0, 1000, 0, 1000])
@@ -430,7 +442,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size, relative=True)
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_xlabel('x in $mm$', fontsize=20)
     ax.set_ylabel('y in $mm$', fontsize=20)
-    ax.set_title('Quiver plot of mean orientation and fall speed', fontsize=20)
+    ax.set_title('Mean and orientation\n of fall velocity', fontsize=24)
 
 
 def get_angles(img):

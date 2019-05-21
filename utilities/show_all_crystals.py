@@ -38,69 +38,6 @@ for l in list_of_folder_streak_lists:
     except IndexError:
         pass
 
-# if len(full_streak_list) < 1:
-#     print('No streak file found, loading new...')
-#     for folder in folder_list:
-#         tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
-#         # framerate = get_folder_framerate(tmp['folder'])
-#         this_folders_streak_list = tmp['streaks']
-#         print('Added {} streaks from {}.'.format(len(this_folders_streak_list), folder))
-#         this_folders_streak_list = refine_streaks(this_folders_streak_list, angle_leniency_deg)
-#         try:
-#             angle_change = [np.abs(p.particle_streak[-1].orient-p.particle_streak[0].orient) for p in this_folders_streak_list]
-#             for i, a in enumerate(angle_change):
-#                 if a > 90:
-#                     angle_change[i] = 180-a
-#
-#             this_folders_streak_list = [a for a, b in zip(this_folders_streak_list, angle_change) if ((len(a.particle_streak) >= min_streak_length)
-#                                                                                                       and (np.mean([p.majsiz for p in a.particle_streak]) > 25e-6)
-#                                                                                                       and (b > 20) and (a.particle_streak[0].aspr > 2)
-#                                                                                                       )]
-#         except AttributeError:
-#             this_folders_streak_list = list()
-#
-#         this_folders_mean_angle = np.mean([s.mean_angle for s in this_folders_streak_list])
-#         # this_folders_dim_list = list()
-#         # this_folders_v_list = list()
-#         for i, s in enumerate(this_folders_streak_list):
-#             s.mean_angle -= this_folders_mean_angle
-#             # try:
-#             #     for p in s.particle_streak:
-#             #         p.orient -= np.rad2deg(this_folders_mean_angle)
-#             # except AttributeError:
-#             #     pass
-#             #
-#
-#             #     this_folders_dim_list.append([p.majsiz * 1e6 for p in s.particle_streak])
-#         #     # this_folders_dim_list.append([2*np.sqrt(p.area/np.pi)*1e6 for p in s.particle_streak])
-#         #     this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
-#         #     info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
-#         #     try:
-#         #         info_list[i]['temperature'] = tmp['temperature']
-#         #     except KeyError:
-#         #         pass
-#
-#         print('Kept {} streaks longer than {}.'.format(len(this_folders_streak_list), min_streak_length))
-#         full_streak_list.extend(this_folders_streak_list)
-#         try:
-#             a = this_folders_streak_list[0].initial_particle.orient
-#             only_orient_list.extend(this_folders_streak_list)
-#         except AttributeError:
-#             print('No orientation in {}.'.format(folder))
-#         except IndexError:
-#             pass
-#     print('Saving streaks to file.')
-#     save_streaks(full_streak_list, 'allcrystal_streak_save.dat')
-# else:
-#     only_orient_list = list()
-#     for strk in full_streak_list:
-#         try:
-#             _ = strk.initial_particle.orient
-#             only_orient_list.append(strk)
-#         except AttributeError:
-#             pass
-#     print('{} streaks loaded from file.'.format(len(full_streak_list)))
-
 ips = [s.initial_particle for s in full_streak_list]
 ims = [p.partimg for p in ips]
 sizs = [i.shape for i in ims]
@@ -112,18 +49,6 @@ this_folders_streak_list = list(map(full_streak_list.__getitem__, indexes))
 ims = list(map(ims.__getitem__, indexes))
 sizs = list(map(sizs.__getitem__, indexes))
 
-# mean_ang = [np.rad2deg(s.mean_angle) for s in full_streak_list]
-# pos = [s.particle_streak[np.int(np.ceil(len(s.particle_streak)/2))].spatial_position for s in full_streak_list]
-# density_plot(mean_ang, pos, 2.22, (2048, 2592))
-#
-# orient_ips = [s.initial_particle for s in only_orient_list]
-# fig2, ax = plot_size_dist([np.abs(p.orient) for p in orient_ips], 20, normed=True)
-# ax.grid(which='major', alpha=0.5)
-# savefig_ipa(fig2, 'OrientationHistogram')
-# plt.show()
-
-
-# def orientation_evolution(streak_list):
 delta_an = list()
 gt_thresh_counter = 0
 angle_thresh = 20
@@ -154,6 +79,15 @@ fig, ax = imshow_in_figure()
 ax.hist(delta_an)
 plt.show()
 
+# mean_ang = [np.rad2deg(s.mean_angle) for s in full_streak_list]
+# pos = [s.particle_streak[np.int(np.ceil(len(s.particle_streak)/2))].spatial_position for s in full_streak_list]
+# density_plot(mean_ang, pos, 2.22, (2048, 2592))
+#
+# orient_ips = [s.initial_particle for s in only_orient_list]
+# fig2, ax = plot_size_dist([np.abs(p.orient) for p in orient_ips], 20, normed=True)
+# ax.grid(which='major', alpha=0.5)
+# savefig_ipa(fig2, 'OrientationHistogram')
+# plt.show()
 
 def column_gallery(ips, ims):
     # [~, ord] = sort(total_s, 'descend');

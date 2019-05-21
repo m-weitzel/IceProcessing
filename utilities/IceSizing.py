@@ -18,7 +18,6 @@ import numpy as np
 from scipy.spatial import distance as dist
 from imutils import perspective
 from imutils import contours
-from sklearn.cluster import KMeans
 import os
 
 
@@ -33,14 +32,22 @@ class MicroImg:
         self.maxsize = maxsize
         self.dilation = dilation
         self.fill_flag = fill_flag
-        self.initial_image = cv2.imread(self.full_path())
+        # self.initial_image = cv2.imread(self.full_path())
         # self.initial_image = cv2.Laplacian(cv2.imread(self.full_path()), cv2.CV_64F)
+        self.initial_image = self.load_img()
         self.thresh_type = thresh_type
         self.thresh_img = self.binarize_image()
         self.contours = self.get_contours_from_img()
         self.bin_img = self.fill_contours()
         self.streak_flag = (type_phase == 'Streak')
         self.data, self.processed_image = self.get_data_and_process(optional_object_filter_condition, self.streak_flag)
+
+    def load_img(self):
+        im = cv2.imread(self.full_path())
+        if im is None:
+            raise Exception('No image found - path: {}.'.format(os.path.join(self.folder, self.filename)))
+        else:
+            return im
 
     def get_contours_from_img(self):
 
@@ -56,13 +63,13 @@ class MicroImg:
         for c in cnts:
             c_area = cv2.contourArea(c)
             this_center, la = cv2.minEnclosingCircle(c)
-            if (c_area > self.minsize) & (c_area < self.maxsize) & (not((np.asarray([c-la for c in this_center]) < 0).any())):
-                # box = cv2.minAreaRect(c)
-                # box = cv2.boxPoints(box)
-                # box = np.array(box, dtype="int")
+            if (c_area > self.minsize) & (c_area < self.maxsize):# & (not((np.asarray([c-la for c in this_center]) < 0).any())):
+                box = cv2.minAreaRect(c)
+                box = cv2.boxPoints(box)
+                box = np.array(box, dtype="int")
 
-                # if ~((box > (self.thresh_img.shape[0]-self.mindisttoedge)).any() or (box < self.mindisttoedge).any()):
-                filtered_contours.append(c)
+                if True:#~((box > (self.thresh_img.shape[0]-self.mindisttoedge)).any()):# or (box < self.mindisttoedge).any()):
+                    filtered_contours.append(c)
         return filtered_contours
 
     def get_data_and_process(self, optional_object_filter_condition, streak_flag):
@@ -138,12 +145,15 @@ class MicroImg:
                     canny_high = 3*canny_low
 
                 thresh = cv2.Canny(gray, canny_low, canny_high, L2gradient=True)
+                if self.dilation < 20:
+                    self.dilation = 20
+                    print('Overriding dilation to 20 for Canny edge detection.')
             elif self.thresh_type[0] == "Bin":
                 if self.thresh_type[1] != 0:
                     threshold = self.thresh_type[1]
                 else:
                     threshold = gray.mean()-0.5*gray.std()
-                    print('Using threshold value of {} (mean grey value minus 0.5*sigma)'.format(threshold))
+                    print('Using threshold value of {0:.1f} (mean grey value minus 0.5*sigma)'.format(threshold))
                 if np.sign(self.thresh_type[1]) == -1:
                     print('Received negative threshold value, using inverted thresholding.')
                     rt, thresh = cv2.threshold(gray, -threshold, 255, cv2.THRESH_BINARY)
@@ -173,25 +183,32 @@ class MicroImg:
                 rt, thresh = cv2.threshold(grad_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
             elif self.thresh_type[0] == "kmeans":
-                # if self.thresh_type[3] == "Multi":
-                #     print('\nUsing multidimensional cluster for kmeans.')
-                #     # grad_img = np.uint8(
-                #     #     np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
-                #     grad_img = cv2.Laplacian(gray, cv2.CV_8U)
-                #     p_r = cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(gray))))))))
-                #     p_r = np.abs(p_r-gray)
-                #
-                #     im_list = gray.reshape(gray.shape[0] * gray.shape[1])
-                #     grad_list = grad_img.reshape(grad_img.shape[0] * grad_img.shape[1])
-                #     p_r_list = p_r.reshape(p_r.shape[0] * p_r.shape[1])
-                #     comp_list = list()
-                #     for i, g, p in zip(im_list, grad_list, p_r_list):
-                #         comp_list.append((i, g, p))
-                #     clustered_data = np.asarray(comp_list)
-                #
-                # else:
-                print('\nUsing only greyscale intensity for kmeans.')
-                clustered_data = img.reshape(gray.shape[0] * gray.shape[1], 3)
+                from sklearn.cluster import KMeans
+
+                dim = 2
+
+                if len(self.thresh_type) < 4:
+                    # print('\nUsing only greyscale intensity for kmeans.')
+                    clustered_data = img.reshape(gray.shape[0] * gray.shape[1], 3)
+                else:
+                    print('\nUsing multidimensional cluster for kmeans.')
+                    grad_img = np.uint8(
+                        np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
+                    # grad_img = cv2.Laplacian(gray, cv2.CV_8U)
+                    p_r = cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(cv2.pyrDown(gray))))))))
+                    p_r = np.abs(p_r-gray)
+
+                    # im_list = gray.reshape(gray.shape[0] * gray.shape[1])
+                    # grad_list = grad_img.reshape(grad_img.shape[0] * grad_img.shape[1])
+                    # p_r_list = p_r.reshape(p_r.shape[0] * p_r.shape[1])
+                    # comp_list = list()
+                    # for i, g, p in zip(im_list, grad_list, p_r_list):
+                    #     comp_list.append((i, g, p))
+                    # clustered_data = np.asarray(comp_list)
+                if dim == 2:
+                    clustered_data = np.dstack((gray, grad_img)).reshape(-1, 2)
+                else:
+                    clustered_data = np.dstack((gray, grad_img, p_r)).reshape(-1, 3)
 
                 if self.thresh_type[1] == 0:
                     n = 2
@@ -202,15 +219,38 @@ class MicroImg:
                 except IndexError:
                     pos_label = 0
 
-                kmeans = KMeans(n_clusters=n)
+                try:
+                    rnd = self.thresh_type[3]
+                except IndexError:
+                    rnd = 5
+
+                kmeans = KMeans(n_clusters=n, random_state=rnd)
                 kmeans.fit(clustered_data)
 
-                centroids = kmeans.cluster_centers_
-                # centroids = ms.cluster_centers_
+                # centroids = kmeans.cluster_centers_
                 # labels = ms.labels_
                 labels = kmeans.labels_
+                un, ct = np.unique(labels, return_counts=True)
+                indexes = sorted(un, key=ct.__getitem__)
+                re_labels = np.zeros_like(labels)
+                for i, l in enumerate(labels):
+                    re_labels[i] = indexes.index(l)
+                # indexes = list(range(len(full_dim_median_list)))
+                # indexes.sort(key=full_dim_median_list.__getitem__)                              # sort labels and centroids for consistent analysis of different labels
+                # full_dim_list = list(map(full_dim_list.__getitem__, indexes))
 
-                la = [1 if ((l == pos_label) or (l == 1)) else 0 for l in labels]
+                la = np.zeros_like(re_labels)
+                try:
+                    for n in self.thresh_type[2]:
+                        la = [1 if ((l == n) or z) else 0 for l, z in zip(re_labels, la)]
+
+                    print('Using multiple indices as clusters for k-means.')
+                except TypeError:
+                    print('Using single index for k-means cluster.')
+                    la = [1 if (l == self.thresh_type[2]) else 0 for l in re_labels]
+                except IndexError:
+                    print('Not index found, using default cluster for k-means.')
+                    la = [1 if (l == 0) else 0 for l in re_labels]
 
                 thresh = np.reshape(la, [img.shape[0], img.shape[1]]).astype('uint8')
 

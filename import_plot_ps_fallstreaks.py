@@ -4,7 +4,7 @@ from matplotlib import ticker
 import matplotlib.gridspec as gridspec
 
 from scipy import stats
-from itertools import compress, chain
+from itertools import compress, chain, cycle
 print('Standard imports done.')
 
 from Speed.Holography.generate_fallstreaks import ParticleStreak, FallParticle, refine_streaks, get_folder_framerate, eta
@@ -36,7 +36,7 @@ def main():
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905/ps/seq2')
     folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
-
+    #
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationDrops20Aug/')
@@ -44,11 +44,11 @@ def main():
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration06SepWarm/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepStopfen/')
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration11SepVentilated/')
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration11SepNonVent/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration/Calibration11SepNonVent/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13SepSmall/')
-    # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13Sep54fps/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration/Calibration13Sep54fps/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration19SepStopfen/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Sep/')
 
@@ -63,11 +63,20 @@ def main():
     hist_plots = False
 
     oversizing_correction = True
-    special_properties = False
+    special_properties = True
     capacity_flag = False
 
     separate_by = 'habit'
-    rho_o = 2500
+
+    # different_separators.remove('CappedColumn')
+    # different_separators.remove('Needle')
+    # different_separators.remove('BulletRosette')
+    # different_separators.remove('Unclassified')
+    # different_separators.append('Unclassified')
+    # different_separators.remove('Needle')
+    # different_separators = ['Unclassified']
+    # different_separators = ['Aggregate']
+    # different_separators = ['Column']
 
     # list_of_folder_streak_lists = load_streaks(folder_list, 'ps_streaks_file.dat')
     list_of_folder_streak_lists = list()
@@ -77,7 +86,7 @@ def main():
     temp_by_folder = list()
 
     angle_leniency_deg = 20
-    min_streak_length = 5
+    min_streak_length = 3
 
     for i, folder in enumerate(folder_list):
         tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
@@ -169,30 +178,23 @@ def main():
             try:
                 full_orientation_list.append(np.median([p.orient for p in s.particle_streak]))
             except AttributeError:
-                full_orientation_list.append([0 for p in s.particle_streak])
+                # full_orientation_list.append([0 for p in s.particle_streak])
+                # full_orientation_list.append(0)
+                pass
 
             # streak_id += 1
 
-        # full_aspr_median_list = [np.median(c) for c in full_aspr_list]
+        full_aspr_median_list = [np.median(c) for c in full_aspr_list]
 
         if capacity_flag:
             full_dim_list = full_cap_list
             full_dim_median_list = full_cap_median_list
 
-    # aspr_dict = dict()
-    # orient_dict = dict()
+    aspr_dict = dict()
+    orient_dict = dict()
     #
     # Plotting
-    #
-    # different_separators.remove('CappedColumn')
-    # different_separators.remove('Needle')
-    # different_separators.remove('BulletRosette')
-    # different_separators.remove('Unclassified')
-    # different_separators.append('Unclassified')
-    # different_separators.remove('Needle')
-    # different_separators = ['Unclassified']
-    # different_separators = ['Aggregate']
-    # different_separators = ['Column']
+
 
     dim_dict = dict()
     v_median_dict = dict()
@@ -201,7 +203,7 @@ def main():
         dim_dict[sep] = list_sep(full_dim_median_list)
         v_median_dict[sep] = list_sep(full_v_median_list)
 
-    #     aspr_dict[sep] = list_sep(full_aspr_median_list)
+        aspr_dict[sep] = list_sep(full_aspr_median_list)
     #     orient_dict[sep] = list_sep(full_orientation_list)
     #
     #     if hist_plots:
@@ -210,10 +212,11 @@ def main():
     #         if len(streaks_by_separator) > 0:
     #             plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
 
-    # fig, ax = v_dim_scatter(selector_index_dict, full_cap_list, full_cap_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
+        # fig, ax = v_dim_scatter(selector_index_dict, full_cap_list, full_cap_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
     #                         full_streakid_list, info_list, full_pos_list)
 
-    # ax2 = plot_best_vs_reynolds(v_median_dict['Column         '], dim_dict['Column         '], aspr_dict['Column         '], cap_flag=True)
+    fig2, ax2 = plot_best_vs_reynolds(v_median_dict['Column'], dim_dict['Column'], aspr_dict['Column'], cap_flag=True)
+    savefig_ipa(fig2, 'best_vs_reynolds')
 
     # if plot_all_3d:
     #     f_3d = plt.figure(figsize=(18, 10), dpi=100)
@@ -222,10 +225,15 @@ def main():
 
     print('Plotting scatter...')
 
+    fig_h, ax_h = create_hist(full_dim_median_list, minval=25)
+    print('D={0:.2f}+-{1:.2f}um'.format(np.mean(full_dim_median_list), np.std(full_dim_median_list)))
+    ax_h.set_xlabel(r'Diameter in $\mu$m')
+    savefig_ipa(fig_h, 'calibration_size_hist')
     fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list)
     # fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, dynamic_D, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list)
 
-    # ax.plot(np.arange(200), np.arange(200), label='D=R', lw=2, c='b')
+    # ax.plot(np.arange(200), np.arange(200), label=r'$D_{hyd}=D_{max}$', lw=2, c='b')
+    ax.legend(fontsize=24, loc='upper left')
 
     if calc_means:
         for sep in different_separators:
@@ -255,6 +263,8 @@ def main():
         except KeyError:
             temp_stokes = -10
         d_mean = 30e-6
+
+        rho_o = 2500
         # y_vel_min = -2*((d_mean+1.2e-6)/2)**2*9.81*(rho_o-100-1.34)/(9*eta(temp_stokes-2.5))*1e3
         # y_vel_mean = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
         # y_vel_max = -2*((d_mean-1.2e-6)/2)**2*9.81*(rho_o+100-1.34)/(9*eta(temp_stokes+2.5))*1e3
@@ -263,20 +273,19 @@ def main():
         # ax.legend(loc='upper left')
 
         ds = np.arange(np.round(1.2*np.max(dim_dict[sep])))
-        stokes_vod_min = [2*((d+1.2)*1e-6/2)**2*9.81*((rho_o-100)-1.34)/(9*eta(temp_stokes-2.5))*1000 for d in ds]
+        stokes_vod_min = [2*((d+2.5)*1e-6/2)**2*9.81*((rho_o-100)-1.34)/(9*eta(temp_stokes-1))*1000 for d in ds]
         stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1000 for d in ds]
-        stokes_vod_max = [2*((d-1.2)*1e-6/2)**2*9.81*((rho_o+100)-1.34)/(9*eta(temp_stokes+2.5))*1000 for d in ds]
+        stokes_vod_max = [2*((d-2.5)*1e-6/2)**2*9.81*((rho_o+100)-1.34)/(9*eta(temp_stokes+1))*1000 for d in ds]
         ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3, color='black')
         ax.fill_between(ds, stokes_vod_min, stokes_vod_max, facecolor='grey', alpha=0.6)
+        ax.set_xlim(20, 42)
+        ax.set_ylim(0, 150)
 
         # mass_param = [0.03097*(d*1e-6)**2.13 for d in ds]
         # mass_param = [0.00003*(d*1e-6)**1.35 for d in ds]
         mass_param = [0.022*(d*1e-6)**2 for d in ds]
         stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, ds)]
-        ax.plot(ds, stokes_v)
-
-    ax.legend(fontsize=16)
-    savefig_ipa(fig, 'v_dim_scatter')
+        # ax.plot(ds, stokes_v)
 
     if plot_folder_means:
         fig_mean = plt.figure(figsize=(18, 10), dpi=100)
@@ -292,6 +301,7 @@ def main():
             folder_mean_dims.append(np.mean([np.mean(dl) for dl in fdl]))
             folder_std_dims.append(np.std([np.mean(dl) for dl in fdl]))
         ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
+        ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
         ax_mean.set_xticks(np.arange(len(folder_list)))
         ax_mean.set_xticklabels([f[47:-1] for f in folder_list], fontsize=20)
         # ax_mean.set_xlim(0, 5)
@@ -300,6 +310,7 @@ def main():
         ax_mean.set_ylabel('Mean velocity', fontsize=20)
         # ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
         r_mean = 30e-6
+        rho_o = 2500
         y_vel = lambda T: -2*(r_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(T))*1e3
 
         fig_box = plt.figure(figsize=(18, 10), dpi=100)
@@ -389,6 +400,8 @@ def main():
 
         savefig_ipa(fig, 'bin_scatter')
 
+    # ax.legend(fontsize=24)
+    savefig_ipa(fig, 'v_dim_scatter')
     plt.show()
 
 
@@ -443,10 +456,28 @@ def plot_best_vs_reynolds(v_list, dim_list, aspr_list, cap_flag=False):
     rey_best_fit = fit_powerlaw(reynolds_list, best_list)
     burgesser = [40 * r ** 1.36 for r in reynolds_list]
 
+    b0 = -1.11812
+    b1 = 0.97084
+    b2 = -0.05881
+    b3 = 0.002159
+
+    best_steps = np.arange(1, 20, 0.1)
+
+    log_nre_param_5 = [10**(b0+b1*np.log(b)+b2*np.log(b)**2+b3*np.log(b)**3) for b in best_steps]
+
+    b0 = -0.90629
+    b1 = 0.90412
+    b2 = -0.059312
+    b3 = 0.0029941
+
+    log_nre_param_1 = [10**(b0+b1*np.log(b)+b2*np.log(b)**2+b3*np.log(b)**3) for b in best_steps]
+
     br_ax = fig.add_subplot(111)
     br_ax.scatter(reynolds_list, best_list, label='Data', edgecolor=almost_black)
     br_ax.plot(reynolds_list, [rey_best_fit[0]*r**rey_best_fit[1] for r in reynolds_list], label='Data Fit')
     br_ax.plot(reynolds_list, burgesser, color='r', label='Burgesser Power Law')
+    br_ax.plot(log_nre_param_1, best_steps, color='m', label='Jayaweera, d/L=0.1')
+    br_ax.plot(log_nre_param_5, best_steps, color='g', label='Jayaweera, d/L=0.5')
     br_ax.legend(fontsize=16)
     br_ax.grid(b=True, which='major', linestyle='-')
     br_ax.grid(b=True, which='minor', linestyle='--', linewidth=0.5)
@@ -455,12 +486,14 @@ def plot_best_vs_reynolds(v_list, dim_list, aspr_list, cap_flag=False):
     br_ax.set_title('Be vs. Re', fontsize=20)
     br_ax.set_xscale('log')
     br_ax.set_yscale('log')
-    br_ax.set_xlim(0.7*min(reynolds_list), 1.7*max(reynolds_list))
-    br_ax.set_ylim(0.2*min(best_list), 5*max(best_list))
+    br_ax.set_xlim(0.05, 0.5)
+    br_ax.set_ylim(0.5, 20)
+    # br_ax.set_xlim(0.7*min(reynolds_list), 1.7*max(reynolds_list))
+    # br_ax.set_ylim(0.2*min(best_list), 5*max(best_list))
     br_ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
     br_ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
 
-    return br_ax
+    return fig, br_ax
 
 
 def reynolds_number(v, d):
@@ -476,7 +509,7 @@ def best_number(d, aspr):
     a_m = 0.008
     b_m = 2.026
     m = a_m*(d*100)**b_m*1e-3
-    best_n = 4*m*d*rho*g/(aspr*2*d*eta**2)
+    best_n = 4*m*rho*g/(d*eta**2)*(d/2/aspr)
     return best_n
 
 
@@ -487,8 +520,8 @@ def plot_mean_in_scatter(ax, dim_list, v_list):
     std_v = np.std(list(chain.from_iterable(v_list)))
 
     ax.errorbar(mean_dim, mean_v, std_v, std_dim, marker='s', markersize=12, capsize=5, picker=2, mew=1, mec='k', elinewidth=2, ecolor='k')
-    ax.text(5, 175, 'v={0:.2f}+-{1:.2f}m/s, D={2:.2f}+-{3:.2f}\mu m'.format(mean_v, std_v, mean_dim, std_dim),
-            bbox=dict(facecolor='green', alpha=0.2), fontsize=12)
+    # ax.text(5, 175, 'v={0:.2f}+-{1:.2f}m/s, D={2:.2f}+-{3:.2f}\mu m'.format(mean_v, std_v, mean_dim, std_dim),
+    #         bbox=dict(facecolor='green', alpha=0.2), fontsize=12)
 
 
 def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
@@ -505,7 +538,7 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
 
     almost_black = '#262626'
-    fig = plt.figure(figsize=(18, 12), dpi=150)
+    fig = plt.figure(figsize=(18, 12), dpi=100)
     fig.canvas.set_window_title('v-D scatter')
     ax = fig.add_subplot(111)
 
@@ -535,22 +568,29 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
 
     # colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
     colors = ['tab:orange', 'tab:blue', 'tab:green', 'tab:cyan', 'tab:red', 'tab:pink', 'tab:gray', 'tab:red', 'tab:olive', 'tab:purple']
+    marker_cycle = cycle(['+', 'x', 'o', 'D', '*', '<', '>'])
+    # colors = ['tab:blue']
     # sepd_v_max = 0
 
     for i, (c, sep) in enumerate(zip(colors, different_separators)):
         t_dim = list(compress(dim_median_list, selector_list[sep]))
         t_v = list(compress(v_median_list, selector_list[sep]))
         if len(t_v) > 0:
-            if sep=='Unclassified':
+            if sep == 'Unclassified':
                 zord = 0
             else:
                 zord = 2
+            if len(set(different_separators)&set(marker_dict.keys())) > 0:
+                marker = marker_dict[sep]
+            else:
+                marker = next(marker_cycle)
+
             t_ln = ax.scatter(t_dim, t_v,
                               # linewidth=1, zorder=0, picker=i, marker='+', c=c['color'])
                               # linewidth=1, zorder=0, picker=i, marker=marker_dict[sep], c=c['color'])
-                                linewidth=1, picker=i, marker=marker_dict[sep], c=c, zorder=zord)
+                                linewidth=1, picker=i, marker=marker, c=c, zorder=zord)
             t_ln.set_label('{} (N={})'.format(sep, sum(selector_list[sep])))
-            # t_ln.set_label('v={0:.2f}$\pm${1:.2f}$m/s$\n D={2:.2f}$\pm${3:.2f}$\mu m$'.format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)))
+            # t_ln.set_label('v={0:.1f}$\pm${1:.1f}$m/s$\n D={2:.1f}$\pm${3:.1f}$\mu m$'.format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)))
             lines.append(t_ln)
             streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
             # sepd_v_max = np.max([sepd_v_max, np.nanmax(t_v)])
@@ -560,19 +600,21 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
     # ax.set_xlim([0, np.max(dims_spaced)])
     # ax.set_xlim([20, 200])
-    ax.set_xlabel('Maximum dimension in µm', fontsize=24)
+    fontsize = 32
+    ax.set_xlabel('Maximum dimension in µm', fontsize=fontsize)
     # ax.set_ylim([0, 1.05 * sepd_v_max])
     # ax.set_ylim([0, 1.1*maximum_vel])
     # ax.set_ylim([5, 500])
-    ax.set_ylabel(r'Hydrodynamic diameter in µm', fontsize=24)
-    plt.rc('font', size=24)
-    ax.tick_params(axis='both', which='major', labelsize=24)
-    ax.tick_params(axis='both', which='mino r', labelsize=20)
+    ax.set_ylabel(r'Hydrodynamic diameter in µm', fontsize=fontsize)
+    # ax.set_ylabel('Sedipmentation velocity in mm/s', fontsize=fontsize)
+    # plt.rc('font', size=24)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize)
+    ax.tick_params(axis='both', which='minor', labelsize=fontsize-4)
     # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
     # ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
     # ax.set_title('Fall speed vs. dimension for Calibration Beads of $30\mu$m diameter', fontsize=24)
-    ax.legend(fontsize=24, loc='upper left')
+    ax.legend(fontsize=fontsize-2, loc='upper left')
     # ax.set_xscale('log')
     # ax.set_yscale('log')
 
@@ -698,8 +740,10 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         fdl = dim_list[global_streakid]
         ax = plt.subplot(gs1[:n, 1])
         xrange = list(np.arange(1, len(fdl)+1))
-        ax.plot(xrange, fdl, c='b', lw=3)
+
         ax.axhline(y=dim_median_list[global_streakid], ls='--', c='b')
+        ax.plot(xrange, fdl, c='b', lw=3)
+        ax.errorbar(xrange, fdl, yerr=2.22*np.ones_like(fdl), c='b', lw=1, capsize=5)
         ax.set_xlim(1, len(fdl))
         ax.set_ylim(0, 1.1*np.max(fdl))
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
@@ -711,6 +755,7 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
         xrange = np.arange(1, len(fvl)+1)+0.5
         ax.plot(xrange, fvl, c='g', lw=3)
         ax.axhline(y=v_median_list[global_streakid], ls='--', c='g')
+        ax.errorbar(xrange, fvl, yerr=5*np.ones_like(fvl), c='g', lw=1, capsize=5)
         ax.set_ylim(0, 2*np.max(fvl))
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         ax.set_ylabel('Fall Speed (mm/s)', fontsize=20)

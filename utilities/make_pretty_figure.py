@@ -38,24 +38,32 @@ def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hi
 
 
 def create_hist(vals, ax=None, minval=0, maxval=None, bins=None, step=1, **kwargs):
-
+    from scipy.stats import skew, kurtosis
     if maxval is None:
         maxval = np.max(vals)
 
     if bins is None:
         bins = np.arange(minval, maxval, step)
     if ax is None:
-        fig, ax = imshow_in_figure(grid=True, figspan=(10, 5), ax=ax, **kwargs)
+        fig, ax = imshow_in_figure(grid=True, figspan=(10, 6), ax=ax, **kwargs)
     else:
         fig = None
 
-    _, b, _ = ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=False, weights=np.ones(len(vals))/len(vals), label='N = {}'.format(len(vals)))
-    ax.set_xlim(0, b[-1])
+    _, b, _ = ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=False, weights=np.ones(len(vals))/len(vals), label='N = {}'.format(len(vals)), zorder=3)
+    s = skew(vals)
+    k = kurtosis(vals)
+    ax.set_xlim(minval, 2*b[-1]-b[-2])
     ax.set_ylabel('PDF', fontsize=20)
-    ax.grid(which='major', linestyle='-')
+
+    ax.set_xlabel(r'Fall orientation in $\degree$', fontsize=20)
+    # ax.get_legend().set_visible(False)
+
+    ax.grid(which='major', linestyle='-', zorder=0)
     # ax.legend(fontsize=20, loc='upper right')
 
     ax.tick_params(axis='both', which='major', labelsize=20)
+    print('Skewness of distribution: {}'.format(s))
+    print('Kurtosis of distribution: {}'.format(k))
 
     return fig, ax
 
@@ -72,12 +80,13 @@ def savefig_ipa(fig, fn):
         os.mkdir(datepath)
     except FileExistsError:
         pass
-    fig.savefig(os.path.join(datepath, fn+time+'.png'), bbox_inches='tight',)
+    # fig.savefig(os.path.join(datepath, fn+time+'.png'), bbox_inches='tight',)
+    fig.savefig(os.path.join(datepath, fn+time+'.png'))
 
 
 def density_plot(values, position, pxl_size, imsize, relative=True, nan_val=0):
 
-    class value_class:
+    class ValueClass:
         def __init__(self, val, position):
             self.val = val
             self.xpos = position[0]
@@ -85,7 +94,7 @@ def density_plot(values, position, pxl_size, imsize, relative=True, nan_val=0):
 
     summary_values = list()
     for v, p, in zip(values, position):
-        summary_values.append(value_class(v, p))
+        summary_values.append(ValueClass(v, p))
 
     xs = np.arange(-imsize[0]*pxl_size/1000/2, imsize[0]*pxl_size/1000/2, 0.35)
     ys = np.arange(-imsize[1]*pxl_size/1000/2, imsize[1]*pxl_size/1000/2, 0.35)
