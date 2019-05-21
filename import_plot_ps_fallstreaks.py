@@ -502,15 +502,59 @@ def reynolds_number(v, d):
     return v*d*rho/eta
 
 
-def best_number(d, aspr):
+def best_number(d, aspr, rey_hab):
     rho = 1.341
     eta = 17.1*1e-6
     g = 9.81
-    a_m = 0.008
-    b_m = 2.026
-    m = a_m*(d*100)**b_m*1e-3
-    best_n = 4*m*rho*g/(d*eta**2)*(d/2/aspr)
+    a_m = 0.181
+    b_m = 2.267
+    m = a_m*d**b_m
+    if rey_hab == 'Particle_nubbly':
+        best_n = 8*m*g*rho/(np.pi*eta**2)
+    elif rey_hab == 'Column':
+        best_n = 4*m*rho*g/(d*eta**2)*(d/aspr/2)
+
+    # best_n = 16*m*rho*g/(3*np.sqrt(3)*eta**2)
     return best_n
+
+
+def rey_best_param(best_number_list, B, rey_hab):
+    if rey_hab == 'Particle_nubbly':
+        return [np.exp(B[0]+B[1]*np.log(X)+B[2]*np.log(X)**2+B[3]*np.log(X)**3+B[4]*np.log(X)**4+B[5]*np.log(X)**5+B[6]*np.log(X)**6) for X in best_number_list]
+    elif rey_hab == 'Column':
+        return [10**(B[0]+B[1]*np.log10(X)+B[2]*np.log10(X)**2+B[3]*np.log10(X)**3) for X in best_number_list]
+
+
+def rey_best_2(best_list, dim_list, br_ax, rey_hab, best_in_vdim):
+    indexes_best = list(range(len(best_list)))
+    indexes_best.sort(key=best_list.__getitem__)
+    best_list = list(map(best_list.__getitem__, indexes_best))
+    if rey_hab == 'Particle_nubbly':
+        B = (-0.318657*10, 0.992696, -0.153193*1e-2, -0.987059*1e-3, -0.578878*1e-3, 0.855176*1e-4, -0.327815*1e-5)
+        emp = 'Parametrization Pruppacher+Klett - spherical'
+        rey_best_p = rey_best_param(best_list, B, rey_hab)
+        # br_ax.plot(rey_best_p, best_list, label=emp, linewidth=3, color='darkred', linestyle='--')
+
+    elif rey_hab == 'Column':
+        # B = ((-1.31, 0.98968, -0.042379, 0), (-1.11812, 0.97084, -0.05881, 0.002159), (-0.90629, 0.90412, -0.0593212, 0.0029941), (-0.79888, 0.80817, -0.030528, 0)) # Columns
+        # emp = ('d/L=1.0', 'd/L=0.5', 'd/L=0.1', 'infinite')
+        B = ((-1.11812, 0.97084, -0.05881, 0.002159), (-0.90629, 0.90412, -0.0593212, 0.0029941)) # Columns
+        emp = ('Parametrization d/L=0.5', 'Parametrization d/L=0.1')
+        for b, e, c, ls in zip(B, emp, ('darkred', 'darkmagenta'), ('--', ':')):
+            if best_in_vdim:
+                best_spaced = np.arange(5, 100) / 10
+                rey_best_p = rey_best_param(best_spaced, b, rey_hab)
+                br_ax.plot(rey_best_p, best_spaced, label=e, linewidth=3, color=c, linestyle=ls)
+                # plaw = fit_powerlaw(rey_best_p, best_list)
+                # br_ax.plot(rey_best_p, plaw[0]*rey_best_p**plaw[1], label=e, linewidth=3, color=c, linestyle=ls)
+            else:
+                rey_best_p = rey_best_param(best_list, b, rey_hab)
+                br_ax.plot(rey_best_p, best_list, label=e, linewidth=3, color=c, linestyle=ls)
+
+    eta = 17.1 * 1e-6
+    rho = 1.341
+    u_best = [eta*r/(2*rho*d*1e-6/2) for r, d in zip(rey_best_p, dim_list)]
+    return u_best
 
 
 def plot_mean_in_scatter(ax, dim_list, v_list):
