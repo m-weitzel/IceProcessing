@@ -34,10 +34,10 @@ def main():
         os.path.join(basedir, '0103/'),      # Dendritic (aggregates)
         os.path.join(basedir, '26Sep'),
         #
-        #
+
         # # Unclean measurements
         #
-        # os.path.join(basedir, '2804/M1/'),      # Irregular, Columnar
+        # os.path.join(basedir, 'Y2017/2804/M1/'),      # Irregular, Columnar
         # os.path.join(basedir, 'Y2017/1503/M1/'),    # Irregular Dendritic, Aggregates
         # os.path.join(basedir, 'Y2017/1907/M1/'),    # Dendritic
         # os.path.join(basedir, 'Y2017/1907/M2/'),    # Dendritic
@@ -54,6 +54,27 @@ def main():
     plot_massdim = False
     logscale = False
     plot_binned = False
+    plot_errorbar = True
+
+
+    # Preset Mass-Dim-Scatter
+
+    # plot_scatter = True
+    # plot_massdim = False
+    # logscale = False
+    # plot_binned = False
+    # plot_errorbar = True
+
+    # Preset Powerlaw Comparison
+
+    # plot_scatter = True
+    # plot_massdim = True
+    # logscale = False
+    # plot_binned = False
+    # plot_errorbar = False
+
+
+
     fontsize_base = 24
 
     # folder_list = (os.path.join(basedir, '26Sep')),
@@ -74,8 +95,8 @@ def main():
         tmp = pickle.load(open(os.path.join(folder, 'mass_dim_data.dat'), 'rb'))
         crystal_list = tmp['crystal']
 
-        this_dim_list = dim_list(crystal_list, 'majsiz')
-        # this_dim_list = dim_list(crystal_list, 'areaeq')
+        # this_dim_list = dim_list(crystal_list, 'majsiz')
+        this_dim_list = dim_list(crystal_list, 'areaeq')
         this_mass_list = dim_list(crystal_list, 'mass')
         this_aspr_list = dim_list(crystal_list, 'aspr')
 
@@ -146,7 +167,7 @@ def main():
     else:
         xmin = 15
         # xmax = 1.1*np.max(full_dim_list)
-        xmax = 150
+        xmax = 130
         ymin = 0
         ymax = 1.1*np.max(full_mass_list)
 
@@ -249,22 +270,29 @@ def main():
         ax.text(110, 21e-12, 'n=100', fontsize=20)
         ax.text(130, 21e-12, 'n=1000', fontsize=20)
     #else:
-    amp_full, index_full, r2_full = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
+    amp_full, index_full, _, r2_full = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list)
     print(r'm={0:.5f}D^{{{1:.2f}}}, R^2={2:.1f}% (n={3:0f})'.format(amp_full, index_full, r2_full*100, len(full_dim_list)))
-    ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
+    # ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
 
     # amp_full, index_full, r2 = fit_powerlaw([d*1e-6 for d in full_dim_list], full_mass_list, method='other')
     # ax.plot(dims_spaced, powerlaw(dims_spaced*1e-6, amp_full, index_full), label=r'$m={0:.5f}D^{{{1:.2f}}}$'.format(amp_full, index_full), linewidth=3, zorder=1, c='orange')
     # param2 = powerlaw(dims_spaced*1e-6, amp_full, index_full)
 
     if plot_massdim:
-        ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1)
-        ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1)
-        ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1)
-        ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1)
-        ax.plot(dims_spaced, cotton2013, label='Cotton 2013', linestyle='--', zorder=1)
-        ax.plot(dims_spaced, brown_franc, label='Brown&Francis 1995', linestyle='--', zorder=1)
-        ax.plot(dims_spaced, [0.03097*(d*1e-6)**2.13 for d in dims_spaced], label='General parameterization', zorder=1)
+        # colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:pink', 'tab:purple', 'tab:brown', 'tab:red', 'tab:gray', 'tab:olive', 'tab:cyan']
+        colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:pink', 'k', 'tab:red', 'y', 'c']
+        ax.plot(dims_spaced, [0.4972*(d*1e-6)**2.36 for d in dims_spaced], label=r'Data fit for $D_{ae}$', zorder=1, lw=3, c=colors[0])
+        ax.plot(dims_spaced, [0.03097*(d*1e-6)**2.13 for d in dims_spaced], label=r'Data fit for $D_{sec}$', zorder=1, lw=3, c=colors[1])
+        ax.plot(dims_spaced, mass_bulk, label='Solid Ice Spheres', linestyle='-.', linewidth=3, zorder=1, c=colors[2])
+
+        ax.plot(dims_spaced, cotton2013, label='Cotton 2013', linestyle='--', zorder=1, c=colors[3])
+        ax.plot(dims_spaced, mitchell_2010, label='Mitchell 2010', linestyle='--', zorder=1, c=colors[4])
+
+        ax.plot(dims_spaced, mitchell_90, label='Mitchell 1990', linestyle='--', zorder=1, c=colors[5])
+        ax.plot(dims_spaced, heymsfield2010, label='Heymsfield 2010', linestyle='--', zorder=1, c=colors[6])
+        ax.plot(dims_spaced, brown_franc, label='Brown&Francis 1995', linestyle='--', zorder=1, c=colors[7])
+
+        ax.set_ylim(0, 550e-12)
 
     # else:
     #     ax.plot(dims_spaced, bakerlawson, label='Baker&Lawson 06', linestyle='--', zorder=1)
@@ -272,24 +300,55 @@ def main():
     # plt.plot(dims_spaced, dims_spaced)
 
     if plot_scatter:
-        for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_dim_list, folders_mass_list, folders_aspr_list, folder_list):
-            # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=next(colorcycler), marker=next(symbolcycler), alpha=1, edgecolor=almost_black, linewidth=0.15)
-            # col_list = [[1 / (max_aspr - 1) * (c - 1), 1 / (max_aspr - 1) * (max_aspr - c), 0] for c in this_aspr_list]
-            col_list = [[1, 0, 0] if 1.5 < c < 2.5 else [0, 0, 1] if c < 1.5 else [0, 1, 0] for c in this_aspr_list]
-            # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=col_list, marker=next(symbolcycler), alpha=1,
-            #            edgecolors=almost_black, linewidth=1)
-            # ax.scatter(this_dim_list, this_mass_list, c=col_list, marker=next(symbolcycler), alpha=1,
-            #            edgecolors=almost_black, linewidth=1)
-            if plot_binned:
+        if plot_binned:
+            for this_dim_list, this_mass_list, this_aspr_list, this_folder in zip(folders_dim_list, folders_mass_list, folders_aspr_list, folder_list):
+                # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=next(colorcycler), marker=next(symbolcycler), alpha=1, edgecolor=almost_black, linewidth=0.15)
+                # col_list = [[1 / (max_aspr - 1) * (c - 1), 1 / (max_aspr - 1) * (max_aspr - c), 0] for c in this_aspr_list]
+                col_list = [[1, 0, 0] if 1.5 < c < 2.5 else [0, 0, 1] if c < 1.5 else [0, 1, 0] for c in this_aspr_list]
+                # ax.scatter(this_dim_list, this_mass_list, label=this_folder[-8:], c=col_list, marker=next(symbolcycler), alpha=1,
+                #            edgecolors=almost_black, linewidth=1)
+                # ax.scatter(this_dim_list, this_mass_list, c=col_list, marker=next(symbolcycler), alpha=1,
+                #            edgecolors=almost_black, linewidth=1)
                 ax.scatter(dim_bins, avg_masses, alpha=1, edgecolors=almost_black, linewidth=1, s=3*num_in_bin**0.8, zorder=2)
-            else:
-                ax.scatter(full_dim_list, full_mass_list, alpha=1, edgecolors=almost_black, linewidth=1, zorder=0)#, c=col_list)
+
+        else:
+            # ax.scatter(full_dim_list, full_mass_list, marker='o', alpha=0.8, linewidth=1, zorder=0, edgecolors=almost_black)#, label=r'Data ($D_{ae}$)', c=col_list)
+            ax.scatter(full_dim_list, full_mass_list, marker='x', alpha=0.8, linewidth=1, zorder=0, color='tab:blue', label=r'Data ($D_{ae}$)')#, edgecolors=almost_black)#, label=r'Data ($D_{ae}$)', c=col_list)
             # ax.errorbar([(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])], avg_masses, yerr=mass_std, fmt='o')
 
         if compare:
             ax.scatter(comp_dim_list, comp_mass_list, alpha=1, edgecolor=almost_black, linewidth=1, zorder=0, c='y')
 
-    plt.xlabel('Maximum dimension in $\mathrm{\mu m}$', fontsize=fontsize_base)
+    if plot_errorbar:
+        error_dim = list()
+
+        min_d = 40
+        max_d = 50
+        min_m = 90
+        max_m = 100
+        error_dim.extend([(d, m) for d, m in zip(full_dim_list, full_mass_list) if ((d > min_d) & (d < max_d) & ((m*1e12) > min_m) & ((m*1e12) < max_m))])
+
+        min_d = 62
+        max_d = 63
+        min_m = 120
+        max_m = 125
+        error_dim.extend([(d, m) for d, m in zip(full_dim_list, full_mass_list) if ((d > min_d) & (d < max_d) & ((m*1e12) > min_m) & ((m*1e12) < max_m))])
+
+        min_d = 100
+        max_d = 110
+        min_m = 230
+        max_m = 250
+        error_dim.extend([(d, m) for d, m in zip(full_dim_list, full_mass_list) if ((d > min_d) & (d < max_d) & ((m*1e12) > min_m) & ((m*1e12) < max_m))])
+        d_err = 1.5
+        d_from_m = lambda m: (m*6/np.pi/1000)**(1/3)*1e6
+        m_from_d = lambda d: np.pi/6*(d*1e-6)**3*1000
+        for e in error_dim:
+            m_err = m_from_d(d_from_m(e[1])+1.2)-e[1]
+            ax.errorbar(e[0], e[1], xerr=d_err, yerr=m_err, capsize=5, c='b')
+        pass
+
+    # plt.xlabel('Maximum dimension in $\mathrm{\mu m}$', fontsize=fontsize_base)
+    plt.xlabel('Maximum dimension ($D_{ae}$) in $\mathrm{\mu m}$', fontsize=fontsize_base)
     plt.ylabel('Mass in ng', fontsize=fontsize_base)
     ticks_y = ticker.FuncFormatter(lambda y, pos: '{0:g}'.format(y*1e12))
     ax.yaxis.set_major_formatter(ticks_y)
@@ -309,8 +368,8 @@ def main():
 
     savefig_ipa(fig, 'MassDimScatter')
 
-    # fig_hist, _ = create_hist(full_dim_list)
-    fig_hist, ax = plot_size_dist(full_dim_list, 25, xlabel=r'Maximum dimension in $\mathrm{\mu m}$')
+    fig_hist, _ = create_hist(full_dim_list, bins=20)
+    # fig_hist, ax = plot_size_dist(full_dim_list, 25, xlabel=r'Maximum dimension in $\mathrm{\mu m}$')
     ax.set_xlim(15, 150)
     savefig_ipa(fig_hist, 'MassDimHist')
 

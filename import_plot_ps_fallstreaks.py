@@ -1,6 +1,6 @@
 """ Creates v(D) plot of all fall track (Holography) data ('streak_data.dat') from all folders listed in folder list."""
 
-from matplotlib import ticker
+from matplotlib import ticker, rcParams
 import matplotlib.gridspec as gridspec
 
 from scipy import stats
@@ -27,15 +27,22 @@ def main():
     # Loading data ############################
 
     folder_list = list()
+    exp_list = list()
 
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/')  # Columnar, Irregular
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/')  # Dendritic
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/')  # Dendritic
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/')   # Columnar
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/')   # Columnar
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/')
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905/ps/seq2')
-    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23Feb/'), exp_list.append('C1')  # Columnar, Irregular
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Prev23FebOrient/'), exp_list.append('C1b')  # Columnar, Irregular
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28Feb/M2/'), exp_list.append('C2')  # Dendritic
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas28FebOrient'), exp_list.append('C2b')  # Dendritic
+    # # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01Mar/'), exp_list.append('C3')  # Dendritic
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas01MarOrient/'), exp_list.append('C3b')  # Dendritic
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/'), exp_list.append('C4')   # Columnar
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Meas23May/M2/'), exp_list.append('C5')   # Columnar
+    # # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1/'), exp_list.append('C6')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905M1Orient/'), exp_list.append('C6b')
+    # # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905/ps/seq2'), exp_list.append('C7')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/2905Orient'), exp_list.append('C7b')
+    # # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26Sep/'), exp_list.append('D1')
+    folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/26SepOrient/'), exp_list.append('D1b')
     #
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads07Jun/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/CalibrationBeads08Jun/')
@@ -43,366 +50,379 @@ def main():
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration22AugN2/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration06SepWarm/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration11SepStopfen/')
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration11SepVentilated/')
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration/Calibration11SepNonVent/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration/Calibration11SepVentilated/'), exp_list.append('11SepVentilated')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration/Calibration11SepNonVent/'), exp_list.append('11SepNonVent')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Aug/')
     # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration22AugN1/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration13SepSmall/')
-    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration/Calibration13Sep54fps/')
+    # folder_list.append('/ipa/holo/mweitzel/HIVIS_Holograms/Calibration/Calibration13Sep54fps/'), exp_list.append('13Sep54fps')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration19SepStopfen/')
     # folder_list.append('/ipa2/holo/mweitzel/HIVIS_Holograms/Calibration20Sep/')
 
     # # Properties for filtering streaks
 
-    calc_means = False
-    plot_powerlaws = False
-    plot_stokes = False
-    plot_folder_means = False
-    # plot_all_3d = False
-    binned_full_scatter = False
-    hist_plots = False
+    # folder_list_list = [[l] for l in folder_list]
+    folder_list_list = [folder_list]
+    exp_list_list = [[e] for e in exp_list]
 
-    oversizing_correction = True
-    special_properties = True
-    capacity_flag = False
+    for folder_list, exp_list in zip(folder_list_list, exp_list_list):
 
-    separate_by = 'habit'
+        calc_means = False
+        plot_powerlaws = False
+        plot_stokes = False
+        plot_folder_means = False
+        # plot_all_3d = False
+        binned_full_scatter = False
+        hist_plots = False
 
-    # different_separators.remove('CappedColumn')
-    # different_separators.remove('Needle')
-    # different_separators.remove('BulletRosette')
-    # different_separators.remove('Unclassified')
-    # different_separators.append('Unclassified')
-    # different_separators.remove('Needle')
-    # different_separators = ['Unclassified']
-    # different_separators = ['Aggregate']
-    # different_separators = ['Column']
+        oversizing_correction = True
+        special_properties = True
+        capacity_flag = False
 
-    # list_of_folder_streak_lists = load_streaks(folder_list, 'ps_streaks_file.dat')
-    list_of_folder_streak_lists = list()
-    list_of_folder_dim_lists = list()
-    list_of_folder_v_lists = list()
-    info_list = list()
-    temp_by_folder = list()
+        separate_by = 'habit'
 
-    angle_leniency_deg = 20
-    min_streak_length = 3
+        # list_of_folder_streak_lists = load_streaks(folder_list, 'ps_streaks_file.dat')
+        list_of_folder_streak_lists = list()
+        list_of_folder_dim_lists = list()
+        list_of_folder_v_lists = list()
+        info_list = list()
+        temp_by_folder = list()
 
-    for i, folder in enumerate(folder_list):
-        tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
-        this_folders_streak_list = tmp['streaks']
-        del tmp
-        this_folders_streak_list = refine_streaks(this_folders_streak_list, angle_leniency_deg)
-        this_folders_streak_list = [a for a in this_folders_streak_list if (len(a.particle_streak) == min_streak_length)]
-        # this_folders_streak_list = list_of_folder_streak_lists[i]
-        this_folders_mean_angle = np.mean([s.mean_angle for s in this_folders_streak_list])
-        this_folders_dim_list = list()
-        this_folders_v_list = list()
-        framerate = get_folder_framerate(folder)
-        for i, s in enumerate(this_folders_streak_list):
-            this_folders_dim_list.append([p.majsiz * 1e6 -(oversizing_correction*1.5*2.22) for p in s.particle_streak])
-            # this_folders_dim_list.append([2*np.sqrt(p.area/np.pi)*1e6-(oversizing_correction*1.5*2.22) for p in s.particle_streak])
-            this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
-            info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
+        angle_leniency_deg = 20
+        min_streak_length = 3
+
+        for i, folder in enumerate(folder_list):
+            tmp = pickle.load(open(os.path.join(folder, 'streak_data.dat'), 'rb'))
+            this_folders_streak_list = tmp['streaks']
+            del tmp
+            this_folders_streak_list = refine_streaks(this_folders_streak_list, angle_leniency_deg)
+            this_folders_streak_list = [a for a in this_folders_streak_list if (len(a.particle_streak) >= min_streak_length)]
+            # this_folders_streak_list = list_of_folder_streak_lists[i]
+            this_folders_mean_angle = np.mean([s.mean_angle for s in this_folders_streak_list])
+            this_folders_dim_list = list()
+            this_folders_v_list = list()
+            framerate = get_folder_framerate(folder)
+            for i, s in enumerate(this_folders_streak_list):
+                this_folders_dim_list.append([p.majsiz * 1e6 -(oversizing_correction*3.0) for p in s.particle_streak])
+                # this_folders_dim_list.append([2*np.sqrt(p.area/np.pi)*1e6-(oversizing_correction*1.5*2.22) for p in s.particle_streak])
+                this_folders_v_list.append(s.get_projected_velocity(this_folders_mean_angle, framerate))
+                info_list.append({'folder': folder, 'local_index': i, 'holonum': s.particle_streak[0].holonum})
+                # try:
+                #     info_list[i]['temperature'] = tmp['temperature']
+                # except KeyError:
+                #     pass
+
+            list_of_folder_dim_lists.append(this_folders_dim_list)
+            list_of_folder_streak_lists.append(this_folders_streak_list)
+            list_of_folder_v_lists.append(this_folders_v_list)
             # try:
-            #     info_list[i]['temperature'] = tmp['temperature']
+            #     temp_by_folder.append(tmp['temperature'])
             # except KeyError:
             #     pass
 
-        list_of_folder_dim_lists.append(this_folders_dim_list)
-        list_of_folder_streak_lists.append(this_folders_streak_list)
-        list_of_folder_v_lists.append(this_folders_v_list)
-        # try:
-        #     temp_by_folder.append(tmp['temperature'])
-        # except KeyError:
-        #     pass
+        full_dim_list = [j for i in list_of_folder_dim_lists for j in i]
+        full_dim_median_list = [np.median(j) for i in list_of_folder_dim_lists for j in i]
+        full_v_list = [j for i in list_of_folder_v_lists for j in i]
+        full_v_median_list = [np.median(j) for i in list_of_folder_v_lists for j in i]
+        full_streak_list = [j for i in list_of_folder_streak_lists for j in i]
+        full_im_list = list()
+        full_pos_list = list()
+        full_streakid_list = list()
 
-    full_dim_list = [j for i in list_of_folder_dim_lists for j in i]
-    full_dim_median_list = [np.median(j) for i in list_of_folder_dim_lists for j in i]
-    full_v_list = [j for i in list_of_folder_v_lists for j in i]
-    full_v_median_list = [np.median(j) for i in list_of_folder_v_lists for j in i]
-    full_streak_list = [j for i in list_of_folder_streak_lists for j in i]
-    full_im_list = list()
-    full_pos_list = list()
-    full_streakid_list = list()
+        if separate_by == 'habit':
+            # pass
+            different_separators = [
+                                      'Aggregate',
+                                    # 'BulletRosette',
+                                    # 'CappedColumn',
+                                    'Column',
+                                    'Dendrite',
+                                    'Needle',
+                                    'Plate',
+                                    'Unclassified'
+                                    ]
+            # different_separators = sorted(list(set([f.strip() for f in [s.streak_habit for s in full_streak_list]])))
+        elif separate_by == 'folder':
+            different_separators = sorted(folder_list)
+        else:
+            different_separators = ['']
 
-    if separate_by == 'habit':
-        different_separators = sorted(list(set([f.strip() for f in [s.streak_habit for s in full_streak_list]])))
-    elif separate_by == 'folder':
-        different_separators = sorted(folder_list)
-    else:
-        different_separators = ['']
+        selector_index_dict = dict()
 
-    selector_index_dict = dict()
+        print('Passing {} fall tracks to scatter routine.'.format(len(full_dim_median_list)))
 
-    print('Passing {} fall tracks to scatter routine.'.format(len(full_dim_median_list)))
+        # fig_r, ax_r = imshow_in_figure()
+        dynamic_D = westbrook(full_dim_median_list, full_v_median_list)
+        # ax_r.scatter(full_dim_median_list, dynamic_r)
 
-    # fig_r, ax_r = imshow_in_figure()
-    dynamic_D = westbrook(full_dim_median_list, full_v_median_list)
-    # ax_r.scatter(full_dim_median_list, dynamic_r)
+        indexes = list(range(len(full_dim_median_list)))
+        indexes.sort(key=full_dim_median_list.__getitem__)
+        full_dim_list = list(map(full_dim_list.__getitem__, indexes))
+        full_dim_median_list = list(map(full_dim_median_list.__getitem__, indexes))
+        full_streak_list = list(map(full_streak_list.__getitem__, indexes))
+        info_list = list(map(info_list.__getitem__, indexes))
+        full_v_list = list(map(full_v_list.__getitem__, indexes))
+        full_v_median_list = list(map(full_v_median_list.__getitem__, indexes))
+        dynamic_D = list(map(dynamic_D.__getitem__, indexes))
 
-    indexes = list(range(len(full_dim_median_list)))
-    indexes.sort(key=full_dim_median_list.__getitem__)
-    full_dim_list = list(map(full_dim_list.__getitem__, indexes))
-    full_dim_median_list = list(map(full_dim_median_list.__getitem__, indexes))
-    full_streak_list = list(map(full_streak_list.__getitem__, indexes))
-    info_list = list(map(info_list.__getitem__, indexes))
-    full_v_list = list(map(full_v_list.__getitem__, indexes))
-    full_v_median_list = list(map(full_v_median_list.__getitem__, indexes))
-    dynamic_D = list(map(dynamic_D.__getitem__, indexes))
+        for i, s in enumerate(full_streak_list):
+            full_im_list.append([p.partimg for p in s.particle_streak])
+            full_pos_list.append([p.spatial_position for p in s.particle_streak])
+            full_streakid_list.append(i)
 
-    for i, s in enumerate(full_streak_list):
-        full_im_list.append([p.partimg for p in s.particle_streak])
-        full_pos_list.append([p.spatial_position for p in s.particle_streak])
-        full_streakid_list.append(i)
-
-    for sep in different_separators:
-            if separate_by == 'habit':
-                selector_index_dict[sep] = [1 if s.streak_habit == sep else 0 for s in full_streak_list]
-            elif separate_by == 'folder':
-                selector_index_dict[sep] = [1 if i['folder'] == sep else 0 for i in info_list]
-            else:
-                print('Separator not found, showing full lists.')
-                selector_index_dict[sep] = [1]*len(full_streak_list)
-
-    if special_properties:
-        full_aspr_list = list()
-        full_cap_list = list()
-        full_cap_median_list = list()
-        full_orientation_list = list()
-        for s in full_streak_list:
-            full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])  # aspect ratio of all p
-            this_caps = [0.58 * p.minsiz / 2 * (1 + 0.95 * (p.majsiz / p.minsiz) ** 0.75)*1e6 for p in s.particle_streak]
-            full_cap_list.append(this_caps)
-            full_cap_median_list.append(np.median(this_caps))
-            try:
-                full_orientation_list.append(np.median([p.orient for p in s.particle_streak]))
-            except AttributeError:
-                # full_orientation_list.append([0 for p in s.particle_streak])
-                # full_orientation_list.append(0)
-                pass
-
-            # streak_id += 1
-
-        full_aspr_median_list = [np.median(c) for c in full_aspr_list]
-
-        if capacity_flag:
-            full_dim_list = full_cap_list
-            full_dim_median_list = full_cap_median_list
-
-    aspr_dict = dict()
-    orient_dict = dict()
-    #
-    # Plotting
-
-
-    dim_dict = dict()
-    v_median_dict = dict()
-    for sep in different_separators:
-        list_sep = lambda fulllist: list(compress(fulllist, selector_index_dict[sep]))
-        dim_dict[sep] = list_sep(full_dim_median_list)
-        v_median_dict[sep] = list_sep(full_v_median_list)
-
-        aspr_dict[sep] = list_sep(full_aspr_median_list)
-    #     orient_dict[sep] = list_sep(full_orientation_list)
-    #
-    #     if hist_plots:
-    #         streaks_by_separator = list_sep(full_streak_list)
-    #         info_by_separator = list_sep(info_list)
-    #         if len(streaks_by_separator) > 0:
-    #             plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator)
-
-        # fig, ax = v_dim_scatter(selector_index_dict, full_cap_list, full_cap_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
-    #                         full_streakid_list, info_list, full_pos_list)
-
-    fig2, ax2 = plot_best_vs_reynolds(v_median_dict['Column'], dim_dict['Column'], aspr_dict['Column'], cap_flag=True)
-    savefig_ipa(fig2, 'best_vs_reynolds')
-
-    # if plot_all_3d:
-    #     f_3d = plt.figure(figsize=(18, 10), dpi=100)
-    #     for p in full_pos_list:
-    #         p3d(f_3d, p)
-
-    print('Plotting scatter...')
-
-    fig_h, ax_h = create_hist(full_dim_median_list, minval=25)
-    print('D={0:.2f}+-{1:.2f}um'.format(np.mean(full_dim_median_list), np.std(full_dim_median_list)))
-    ax_h.set_xlabel(r'Diameter in $\mu$m')
-    savefig_ipa(fig_h, 'calibration_size_hist')
-    fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list)
-    # fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, dynamic_D, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list)
-
-    # ax.plot(np.arange(200), np.arange(200), label=r'$D_{hyd}=D_{max}$', lw=2, c='b')
-    ax.legend(fontsize=24, loc='upper left')
-
-    if calc_means:
         for sep in different_separators:
-            plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[sep])),
-                                 list(compress(full_v_list, selector_index_dict[sep])))
+                if separate_by == 'habit':
+                    selector_index_dict[sep] = [1 if s.streak_habit.strip() == sep else 0 for s in full_streak_list]
+                elif separate_by == 'folder':
+                    selector_index_dict[sep] = [1 if i['folder'] == sep else 0 for i in info_list]
+                else:
+                    print('Separator not found, showing full lists.')
+                    selector_index_dict[sep] = [1]*len(full_streak_list)
 
-    if plot_powerlaws:
-        plaw_by_habits = dict()
-        plaw_vals_by_habits = dict()
-        # colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
-        colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
-        for c, sep in zip(colors, different_separators):
-            if len(dim_dict[sep]) > 5:
-                plaw_vals_by_habits[sep] = fit_powerlaw(dim_dict[sep], v_median_dict[sep])
-                powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
-                plaw_by_habits[sep] = powerlaw(dim_dict[sep], plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1])
+        if special_properties:
+            full_aspr_list = list()
+            full_cap_list = list()
+            full_cap_median_list = list()
+            full_orientation_list = list()
+            for s in full_streak_list:
+                full_aspr_list.append([p.majsiz / p.minsiz for p in s.particle_streak])  # aspect ratio of all p
+                this_caps = [0.58 * (p.minsiz-(oversizing_correction*3.0)) / 2 * (1 + 0.95 * ((p.majsiz-(oversizing_correction*3.0)) / (p.minsiz-(oversizing_correction*3.0))) ** 0.75)*1e6 for p in s.particle_streak]
+                full_cap_list.append(this_caps)
+                full_cap_median_list.append(np.median(this_caps))
+                try:
+                    full_orientation_list.append(np.median([p.orient for p in s.particle_streak]))
+                except AttributeError:
+                    # full_orientation_list.append([0 for p in s.particle_streak])
+                    # full_orientation_list.append(0)
+                    print('No orientation for {}.')
+                    pass
 
-                # ax.plot(dim_dict[hab], plaw_by_habits[hab])
-                ax.plot(dim_dict[sep], plaw_by_habits[sep],
-                        # label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1], plaw_vals_by_habits[sep][2]))
-                        label=r'{0}, v={1:.2f}D^{2:.2f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1]), linewidth=5, c=c)
-                ax.legend(fontsize=8)
+                # streak_id += 1
 
-    if plot_stokes:
-        try:
-            temp_stokes = info_list[0]['temperature']
-        except KeyError:
-            temp_stokes = -10
-        d_mean = 30e-6
+            full_aspr_median_list = [np.median(c) for c in full_aspr_list]
 
-        rho_o = 2500
-        # y_vel_min = -2*((d_mean+1.2e-6)/2)**2*9.81*(rho_o-100-1.34)/(9*eta(temp_stokes-2.5))*1e3
-        # y_vel_mean = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
-        # y_vel_max = -2*((d_mean-1.2e-6)/2)**2*9.81*(rho_o+100-1.34)/(9*eta(temp_stokes+2.5))*1e3
-        # ax.axhline(-y_vel_mean, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel_mean))
-        # ax.fill_between(np.arange(0, 1.2*np.max(full_dim_median_list)), -y_vel_min, -y_vel_max, facecolor='grey', alpha=0.4)
-        # ax.legend(loc='upper left')
+            if capacity_flag:
+                full_dim_list = full_cap_list
+                full_dim_median_list = full_cap_median_list
 
-        ds = np.arange(np.round(1.2*np.max(dim_dict[sep])))
-        stokes_vod_min = [2*((d+2.5)*1e-6/2)**2*9.81*((rho_o-100)-1.34)/(9*eta(temp_stokes-1))*1000 for d in ds]
-        stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1000 for d in ds]
-        stokes_vod_max = [2*((d-2.5)*1e-6/2)**2*9.81*((rho_o+100)-1.34)/(9*eta(temp_stokes+1))*1000 for d in ds]
-        ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3, color='black')
-        ax.fill_between(ds, stokes_vod_min, stokes_vod_max, facecolor='grey', alpha=0.6)
-        ax.set_xlim(20, 42)
-        ax.set_ylim(0, 150)
+        aspr_dict = dict()
+        orient_dict = dict()
+        #
+        # Plotting
 
-        # mass_param = [0.03097*(d*1e-6)**2.13 for d in ds]
-        # mass_param = [0.00003*(d*1e-6)**1.35 for d in ds]
-        mass_param = [0.022*(d*1e-6)**2 for d in ds]
-        stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, ds)]
-        # ax.plot(ds, stokes_v)
+        dim_dict = dict()
+        v_median_dict = dict()
+        for sep in different_separators:
+            list_sep = lambda fulllist: list(compress(fulllist, selector_index_dict[sep]))
+            dim_dict[sep] = list_sep(full_dim_median_list)
+            v_median_dict[sep] = list_sep(full_v_median_list)
+            if special_properties:
+                aspr_dict[sep] = list_sep(full_aspr_median_list)
+                orient_dict[sep] = list_sep(full_orientation_list)
+            #
+            if hist_plots & special_properties:
+                streaks_by_separator = list_sep(full_streak_list)
+                info_by_separator = list_sep(info_list)
+                if len(streaks_by_separator) > 0:
+                    plot_hists_by_habit(sep, streaks_by_separator, dim_dict[sep], aspr_dict[sep], info_by_separator, v_median_dict[sep])
 
-    if plot_folder_means:
-        fig_mean = plt.figure(figsize=(18, 10), dpi=100)
-        fig_mean.canvas.set_window_title('Mean values for different folders')
-        ax_mean = fig_mean.add_subplot(111)
-        folder_mean_vs = list()
-        folder_std_vs = list()
-        folder_mean_dims = list()
-        folder_std_dims = list()
-        for fvl, fdl in zip(list_of_folder_v_lists, list_of_folder_dim_lists):
-            folder_mean_vs.append(np.mean([np.mean(vl) for vl in fvl]))
-            folder_std_vs.append(np.std([np.mean(vl) for vl in fvl]))
-            folder_mean_dims.append(np.mean([np.mean(dl) for dl in fdl]))
-            folder_std_dims.append(np.std([np.mean(dl) for dl in fdl]))
-        ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
-        ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
-        ax_mean.set_xticks(np.arange(len(folder_list)))
-        ax_mean.set_xticklabels([f[47:-1] for f in folder_list], fontsize=20)
-        # ax_mean.set_xlim(0, 5)
-        ax_mean.set_ylim(0, 110)
-        ax_mean.grid(b=True, which='major', linestyle='-')
-        ax_mean.set_ylabel('Mean velocity', fontsize=20)
-        # ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
-        r_mean = 30e-6
-        rho_o = 2500
-        y_vel = lambda T: -2*(r_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(T))*1e3
+            # fig, ax = v_dim_scatter(selector_index_dict, full_cap_list, full_cap_median_list, full_v_median_list, full_v_list, different_separators, full_im_list,
+        #                         full_streakid_list, info_list, full_pos_list)
+        # rey_hab = 'Column'
+        # fig2, ax2, _ = plot_best_vs_reynolds(v_median_dict[rey_hab], dim_dict[rey_hab], aspr_dict[rey_hab], orient_dict[rey_hab], rey_hab, True, cap_flag=False)
+        # savefig_ipa(fig2, 'best_vs_reynolds')
 
-        fig_box = plt.figure(figsize=(18, 10), dpi=100)
-        ax_box = fig_box.add_subplot(111)
-        fig_box.canvas.set_window_title('Box-whisker for different folders')
+        # if plot_all_3d:
+        #     f_3d = plt.figure(figsize=(18, 10), dpi=100)
+        #     for p in full_pos_list:
+        #         p3d(f_3d, p)
+
+        print('Plotting scatter...')
+
+        # fig_h, ax_h = create_hist(full_dim_median_list, minval=25)
+        # print('D={0:.2f}+-{1:.2f}um'.format(np.mean(full_dim_median_list), np.std(full_dim_median_list)))
+        # ax_h.set_xlabel(r'Diameter in $\mu$m')
+
+        fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, full_v_median_list, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list, exp_list)
+        # fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, dynamic_D, full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list, exp_list)
+        # fig, ax = v_dim_scatter(selector_index_dict, full_dim_list, full_dim_median_list, [d/D for d, D in zip(dynamic_D, full_dim_median_list)], full_v_list, different_separators, full_im_list, full_streakid_list, info_list, full_pos_list, exp_list)
+
+        # ax.plot(np.arange(200), np.arange(200), label=r'$D_{hyd}=D_{max}$', lw=2, c='b')
+        # ax.legend(fontsize=18, loc='upper left')
+
+        if calc_means:
+            for sep in different_separators:
+                plot_mean_in_scatter(ax, list(compress(full_dim_list, selector_index_dict[sep])),
+                                     list(compress(full_v_list, selector_index_dict[sep])))
+
+        if plot_powerlaws:
+            plaw_by_habits = dict()
+            plaw_vals_by_habits = dict()
+            # colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
+            colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+            for c, sep in zip(colors, different_separators):
+                if len(dim_dict[sep]) > 5:
+                    plaw_vals_by_habits[sep] = fit_powerlaw(dim_dict[sep], v_median_dict[sep])
+                    powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
+                    plaw_by_habits[sep] = powerlaw(dim_dict[sep], plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1])
+
+                    # ax.plot(dim_dict[hab], plaw_by_habits[hab])
+                    ax.plot(dim_dict[sep], plaw_by_habits[sep],
+                            # label='{0}, v={1:.2f}d^{2:.2f}, R^2={3:.3f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1], plaw_vals_by_habits[sep][2]))
+                            label=r'{0}, v={1:.2f}D^{2:.2f}'.format(sep, plaw_vals_by_habits[sep][0], plaw_vals_by_habits[sep][1]), linewidth=5, c=c)
+                    ax.legend(fontsize=8)
+
         if plot_stokes:
-            hline_stokes = lambda T, ax_st, i: ax_st.plot([i-0.5, i+0.5], [-y_vel(T)]*2, color='b', lw=3,
-                                                          label='Expected value from Stokes, v={0:.2f} mm/s for T={1:d}°C'.format(y_vel(T), T))
-            for i, t in enumerate(temp_by_folder):
-                hline_stokes(t, ax_mean, i)
-                hline_stokes(t, ax_box, i+1)
-        # ax_mean.plot(np.arange(2, 6)-0.5, [-y_vel_p25]*4, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
-        # ax_mean.plot(np.arange(5, 7)-0.5, [-y_vel_m10]*2, color='g', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
-        ax_mean.legend(loc='upper left')
+            try:
+                temp_stokes = info_list[0]['temperature']
+            except KeyError:
+                temp_stokes = -10
+            d_mean = 30e-6
 
-        fs = list(set(v_median_dict))
-        ax_box.boxplot([v_median_dict[p] for p in fs])
-        ax_box.set_xticklabels([f[47:-1] for f in fs], fontsize=20)
-        ax_box.grid(b=True, which='major', linestyle='-')
+            rho_o = 2500
+            # y_vel_min = -2*((d_mean+1.2e-6)/2)**2*9.81*(rho_o-100-1.34)/(9*eta(temp_stokes-2.5))*1e3
+            # y_vel_mean = -2*(d_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1e3
+            # y_vel_max = -2*((d_mean-1.2e-6)/2)**2*9.81*(rho_o+100-1.34)/(9*eta(temp_stokes+2.5))*1e3
+            # ax.axhline(-y_vel_mean, color='k', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s'.format(-y_vel_mean))
+            # ax.fill_between(np.arange(0, 1.2*np.max(full_dim_median_list)), -y_vel_min, -y_vel_max, facecolor='grey', alpha=0.4)
+            # ax.legend(loc='upper left')
 
-    if binned_full_scatter:
-        v_in_seps = list()
-        dims_in_seps = list()
-        for sep in different_separators:
-            v_in_seps.extend(v_median_dict[sep])
-            dims_in_seps.extend(dim_dict[sep])
+            ds = np.arange(np.round(1.2*np.max(dim_dict[sep])))
+            stokes_vod_min = [2*((d+2.5)*1e-6/2)**2*9.81*((rho_o-100)-1.34)/(9*eta(temp_stokes-1))*1000 for d in ds]
+            stokes_v_over_d = [2*(d*1e-6/2)**2*9.81*(rho_o-1.34)/(9*eta(temp_stokes))*1000 for d in ds]
+            stokes_vod_max = [2*((d-2.5)*1e-6/2)**2*9.81*((rho_o+100)-1.34)/(9*eta(temp_stokes+1))*1000 for d in ds]
+            ax.plot(ds, stokes_v_over_d, label='Stokes', linewidth=3, color='black')
+            ax.fill_between(ds, stokes_vod_min, stokes_vod_max, facecolor='grey', alpha=0.6)
+            # ax.set_xlim(20, 42)
+            # ax.set_ylim(0, 150)
 
-        binsize = 10
-        lowest = (int(np.min(dims_in_seps)/binsize)-0.5)*binsize
-        highest = int(np.max(dims_in_seps)/binsize+0.5)*binsize
-        size_bins = np.arange(lowest, highest, binsize)
-        plot_bins = np.arange(5, 1.1*highest, 5)
-        avg_vs, bin_edges, binnumber = stats.binned_statistic(dims_in_seps, v_in_seps,
-                                                              statistic='mean', bins=size_bins)
-        num_in_bin, _, _ = stats.binned_statistic(dims_in_seps, v_in_seps,
-                                                  statistic='count', bins=size_bins)
-        dim_bins = [(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])]
+            # mass_param = [0.03097*(d*1e-6)**2.13 for d in ds]
+            # mass_param = [0.00003*(d*1e-6)**1.35 for d in ds]
+            mass_param = [0.022*(d*1e-6)**2 for d in ds]
+            stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, ds)]
+            # ax.plot(ds, stokes_v)
 
-        edge_indices = np.insert(np.cumsum(num_in_bin), 0, 0)
+        if plot_folder_means:
+            fig_mean = plt.figure(figsize=(18, 10), dpi=100)
+            fig_mean.canvas.set_window_title('Mean values for different folders')
+            ax_mean = fig_mean.add_subplot(111)
+            folder_mean_vs = list()
+            folder_std_vs = list()
+            folder_mean_dims = list()
+            folder_std_dims = list()
+            for fvl, fdl in zip(list_of_folder_v_lists, list_of_folder_dim_lists):
+                folder_mean_vs.append(np.mean([np.mean(vl) for vl in fvl]))
+                folder_std_vs.append(np.std([np.mean(vl) for vl in fvl]))
+                folder_mean_dims.append(np.mean([np.mean(dl) for dl in fdl]))
+                folder_std_dims.append(np.std([np.mean(dl) for dl in fdl]))
+            ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
+            ax_mean.errorbar(np.arange(len(folder_mean_vs)), folder_mean_vs, folder_std_vs, [0]*len(folder_mean_vs), linestyle='none', marker='s', markersize=12, label='Means', color='k', capsize=5)
+            ax_mean.set_xticks(np.arange(len(folder_list)))
+            ax_mean.set_xticklabels([f[47:-1] for f in folder_list], fontsize=20)
+            # ax_mean.set_xlim(0, 5)
+            ax_mean.set_ylim(0, 110)
+            ax_mean.grid(b=True, which='major', linestyle='-')
+            ax_mean.set_ylabel('Mean velocity', fontsize=20)
+            # ax_mean.set_title('Fall speed of 30 $\mu m$ calibration glass spheres', fontsize=20)
+            r_mean = 30e-6
+            rho_o = 2500
+            y_vel = lambda T: -2*(r_mean/2)**2*9.81*(rho_o-1.34)/(9*eta(T))*1e3
 
-        # binned_dims = [full_dim_median_list[int(c):int(d)] for c, d in zip(np.insert(num_in_bin[:-1], 0, 0), num_in_bin)]       # list of all dim values in bins, length = number of bins
-        binned_vs = [v_in_seps[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
+            fig_box = plt.figure(figsize=(18, 10), dpi=100)
+            ax_box = fig_box.add_subplot(111)
+            fig_box.canvas.set_window_title('Box-whisker for different folders')
+            if plot_stokes:
+                hline_stokes = lambda T, ax_st, i: ax_st.plot([i-0.5, i+0.5], [-y_vel(T)]*2, color='b', lw=3,
+                                                              label='Expected value from Stokes, v={0:.2f} mm/s for T={1:d}°C'.format(y_vel(T), T))
+                for i, t in enumerate(temp_by_folder):
+                    hline_stokes(t, ax_mean, i)
+                    hline_stokes(t, ax_box, i+1)
+            # ax_mean.plot(np.arange(2, 6)-0.5, [-y_vel_p25]*4, color='r', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=+25°C'.format(-y_vel_p25))
+            # ax_mean.plot(np.arange(5, 7)-0.5, [-y_vel_m10]*2, color='g', lw=3, label='Expected value from Stokes, v={0:.2f} mm/s for T=-10°C'.format(-y_vel_m10))
+            ax_mean.legend(loc='upper left')
 
-        nans = np.isnan(avg_vs)                             # exclude bins where mean velocity is nan (empty)
-        sparses = num_in_bin < 5
-        exclude = np.invert(nans+sparses)
-        avg_vs = np.asarray(avg_vs)[exclude]
-        binned_vs = np.asarray(binned_vs)[exclude]
-        dim_bins = np.asarray(dim_bins)[exclude]
+            fs = list(set(v_median_dict))
+            ax_box.boxplot([v_median_dict[p] for p in fs])
+            ax_box.set_xticklabels([f[47:-1] for f in fs], fontsize=20)
+            ax_box.grid(b=True, which='major', linestyle='-')
 
-        v_stds = [np.std(vm) for vm in binned_vs]
+        if binned_full_scatter:
+            v_in_seps = list()
+            dims_in_seps = list()
+            for sep in different_separators:
+                v_in_seps.extend(v_median_dict[sep])
+                dims_in_seps.extend(dim_dict[sep])
 
-        plaw_vals_bin = fit_powerlaw(dim_bins, avg_vs)
-        powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
-        plaw_bin = powerlaw(plot_bins, plaw_vals_bin[0], plaw_vals_bin[1])
+            binsize = 10
+            lowest = (int(np.min(dims_in_seps)/binsize)-0.5)*binsize
+            highest = int(np.max(dims_in_seps)/binsize+0.5)*binsize
+            size_bins = np.arange(lowest, highest, binsize)
+            plot_bins = np.arange(5, 1.1*highest, 5)
+            avg_vs, bin_edges, binnumber = stats.binned_statistic(dims_in_seps, v_in_seps,
+                                                                  statistic='mean', bins=size_bins)
+            num_in_bin, _, _ = stats.binned_statistic(dims_in_seps, v_in_seps,
+                                                      statistic='count', bins=size_bins)
+            dim_bins = [(i+j)/2 for i, j in zip(bin_edges[:-1], bin_edges[1:])]
 
-        relative_spread = [std/val for std, val in zip(v_stds, avg_vs)]
-        # print('Relative standard deviation in each bin: {0:.2f}'.format(relative_spread))
-        print('Mean relative standard deviation: {0:.2f}'.format(np.mean(relative_spread)))
+            edge_indices = np.insert(np.cumsum(num_in_bin), 0, 0)
 
-        fig, ax = imshow_in_figure(figspan=(16, 8))
-        fig.canvas.set_window_title('Binned v-D scatter')
+            # binned_dims = [full_dim_median_list[int(c):int(d)] for c, d in zip(np.insert(num_in_bin[:-1], 0, 0), num_in_bin)]       # list of all dim values in bins, length = number of bins
+            binned_vs = [v_in_seps[int(c):int(d)] for c, d in zip(edge_indices[:-1], edge_indices[1:])]       # list of all dim values in bins, length = number of bins
 
-        print('Max dim bin: {}'.format(np.max(dim_bins)))
-        ax.scatter(dim_bins, avg_vs, alpha=1, linewidth=1, s=3*num_in_bin**0.8, zorder=2, edgecolors='k')
-        ax.errorbar(dim_bins, avg_vs, yerr=v_stds, linestyle='none', fmt='none', label='Means', color='k', capsize=5)
+            nans = np.isnan(avg_vs)                             # exclude bins where mean velocity is nan (empty)
+            sparses = num_in_bin < 5
+            exclude = np.invert(nans+sparses)
+            avg_vs = np.asarray(avg_vs)[exclude]
+            binned_vs = np.asarray(binned_vs)[exclude]
+            dim_bins = np.asarray(dim_bins)[exclude]
 
-        ax.plot(plot_bins, plaw_bin, label=r'v={0:.2f}D^{1:.2f}'.format(plaw_vals_bin[0], plaw_vals_bin[1]))
-        mass_param = [0.03097*(d*1e-6)**2.13 for d in plot_bins]
-        stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, plot_bins)]
-        ax.plot(plot_bins, stokes_v, label='Stokes')
-        ax.scatter(100, 15, s=3*10**0.8, c='g')
-        ax.scatter(120, 15, s=3*100**0.8, c='g')
-        ax.scatter(140, 15, s=3*1000**0.8, c='g')
+            v_stds = [np.std(vm) for vm in binned_vs]
 
-        ax.text(100, 16, '10')
-        ax.text(120, 16, '100')
-        ax.text(140, 16, '1000')
+            plaw_vals_bin = fit_powerlaw(dim_bins, avg_vs)
+            powerlaw = lambda x, plaw_factor, plaw_exponent: plaw_factor * (x ** plaw_exponent)
+            plaw_bin = powerlaw(plot_bins, plaw_vals_bin[0], plaw_vals_bin[1])
 
-        ax.set_xlim(15, 1.1*np.max(dim_bins))
-        ax.set_ylim(0, 80)
-        ax.legend()
-        # ax.set_title('Unclassified', fontsize=16)
+            relative_spread = [std/val for std, val in zip(v_stds, avg_vs)]
+            # print('Relative standard deviation in each bin: {0:.2f}'.format(relative_spread))
+            print('Mean relative standard deviation: {0:.2f}'.format(np.mean(relative_spread)))
 
-        ax.set_xlabel(r'Maximum dimension in $\mu$m', fontsize=20)
-        ax.set_ylabel(r'Sedimentation velocity in $\frac{mm}{s}$', fontsize=20)
+            fig, ax = imshow_in_figure(figspan=(16, 8))
+            fig.canvas.set_window_title('Binned v-D scatter')
 
-        savefig_ipa(fig, 'bin_scatter')
+            print('Max dim bin: {}'.format(np.max(dim_bins)))
+            ax.scatter(dim_bins, avg_vs, alpha=1, linewidth=1, s=3*num_in_bin**0.8, zorder=2, edgecolors='k')
+            ax.errorbar(dim_bins, avg_vs, yerr=v_stds, linestyle='none', fmt='none', label='Means', color='k', capsize=5)
 
-    # ax.legend(fontsize=24)
-    savefig_ipa(fig, 'v_dim_scatter')
-    plt.show()
+            ax.plot(plot_bins, plaw_bin, label=r'v={0:.2f}D^{1:.2f}'.format(plaw_vals_bin[0], plaw_vals_bin[1]))
+            mass_param = [0.03097*(d*1e-6)**2.13 for d in plot_bins]
+            stokes_v = [9.81/(6*np.pi*16.65e-6)*m_wb/(d/2*1e-6)*1000 for m_wb, d in zip(mass_param, plot_bins)]
+            ax.plot(plot_bins, stokes_v, label='Stokes')
+            ax.scatter(100, 15, s=3*10**0.8, c='g')
+            ax.scatter(120, 15, s=3*100**0.8, c='g')
+            ax.scatter(140, 15, s=3*1000**0.8, c='g')
+
+            ax.text(100, 16, '10')
+            ax.text(120, 16, '100')
+            ax.text(140, 16, '1000')
+
+            ax.set_xlim(15, 1.1*np.max(dim_bins))
+            ax.set_ylim(0, 80)
+            ax.legend()
+            # ax.set_title('Unclassified', fontsize=16)
+
+            ax.set_xlabel(r'Maximum dimension in $\mu$m', fontsize=20)
+            ax.set_ylabel(r'Sedimentation velocity in $\frac{mm}{s}$', fontsize=20)
+
+            # fig.subplots_adjust(bottom=0.15)
+            # rcParams.update({'figure.autolayout': True})
+            # plt.tight_layout()
+
+            savefig_ipa(fig, 'bin_scatter')
+
+        # ax.legend(fontsize=24)
+
+        # savefig_ipa(fig, 'v_dim_scatter_{}'.format(exp_list))
+        plt.show()
 
 
 def load_streaks(folder_list, streak_fn, min_streak_length=3, angle_leniency_deg=20, minsiz=25e-6):
@@ -440,60 +460,136 @@ def load_streaks(folder_list, streak_fn, min_streak_length=3, angle_leniency_deg
     return lo_folder_streak_lists
 
 
-def plot_best_vs_reynolds(v_list, dim_list, aspr_list, cap_flag=False):
-    fig = plt.figure(figsize=(18, 10), dpi=100)
-    fig.canvas.set_window_title('Best vs. Reynolds')
+def plot_best_vs_reynolds(v_list, dim_list, aspr_list, orient_list, rey_hab, best_in_vdim, cap_flag=False):
+    fig = plt.figure(figsize=(12, 8), dpi=100)
     almost_black = '#262626'
 
     if cap_flag:
         minsiz_list = [d/a for d, a in zip(dim_list, aspr_list)]
         cap_list = [0.58*w/2*(1+0.95*(l/w)**0.75) for w, l in zip(minsiz_list, dim_list)]
-        best_list = [best_number(r * 1e-6, 3) for r in cap_list]
+        best_list = [best_number(r * 1e-6, a, o, rey_hab) for r, a, o in zip(cap_list, aspr_list, orient_list)]
         reynolds_list = [reynolds_number(v / 1000, r * 1e-6) for v, r in zip(v_list, dim_list)]
+    else:
+        best_list = [best_number(r*1e-6, a, o, rey_hab) for r, a, o in zip(dim_list, aspr_list, orient_list)]
+        # best_list = [best_number(r*1e-6, a, rey_hab) for r, a in zip(dim_list, aspr_list)]
+        reynolds_list = [reynolds_number(v/1000, r*1e-6) for v, r in zip(v_list, dim_list)]
 
-    best_list = [best_number(r*1e-6, 3) for r in dim_list]
-    reynolds_list = [reynolds_number(v/1000, r*1e-6) for v, r in zip(v_list, dim_list)]
-    rey_best_fit = fit_powerlaw(reynolds_list, best_list)
-    burgesser = [40 * r ** 1.36 for r in reynolds_list]
+    spaced_re = np.arange((1.5*np.max(reynolds_list)*100))/100
+    rey_best_fit = fit_powerlaw(reynolds_list, best_list, method='leastsq')
 
-    b0 = -1.11812
-    b1 = 0.97084
-    b2 = -0.05881
-    b3 = 0.002159
+    burgesser = [40 * r ** 1.36 for r in spaced_re]
 
-    best_steps = np.arange(1, 20, 0.1)
-
-    log_nre_param_5 = [10**(b0+b1*np.log(b)+b2*np.log(b)**2+b3*np.log(b)**3) for b in best_steps]
-
-    b0 = -0.90629
-    b1 = 0.90412
-    b2 = -0.059312
-    b3 = 0.0029941
-
-    log_nre_param_1 = [10**(b0+b1*np.log(b)+b2*np.log(b)**2+b3*np.log(b)**3) for b in best_steps]
+    colors = ['tab:red', 'tab:purple', 'tab:green', 'tab:cyan', 'tab:orange', 'tab:pink', 'tab:gray', 'tab:blue', 'tab:olive']
 
     br_ax = fig.add_subplot(111)
-    br_ax.scatter(reynolds_list, best_list, label='Data', edgecolor=almost_black)
-    br_ax.plot(reynolds_list, [rey_best_fit[0]*r**rey_best_fit[1] for r in reynolds_list], label='Data Fit')
-    br_ax.plot(reynolds_list, burgesser, color='r', label='Burgesser Power Law')
-    br_ax.plot(log_nre_param_1, best_steps, color='m', label='Jayaweera, d/L=0.1')
-    br_ax.plot(log_nre_param_5, best_steps, color='g', label='Jayaweera, d/L=0.5')
-    br_ax.legend(fontsize=16)
+    u_best = rey_best_2(best_list, dim_list, br_ax, rey_hab, best_in_vdim)
+    if rey_hab == 'Particle_nubbly':
+        br_ax.scatter(reynolds_list, best_list, label='Measurement Data', edgecolor=almost_black, color='b')
+        br_ax.set_colormap('jet')
+    else:
+        br_ax.scatter(reynolds_list, best_list, label='Measurement Data, \nmedian AR: {0:.2f}'.format(1/np.median(aspr_list)), edgecolor=almost_black, color='b', alpha=0.5, marker='+')
+        # br_ax.scatter(reynolds_list, best_list, label='Measurement Data, \nmedian aspect ratio: {0:.2f}'.format(1/np.median(aspr_list)), edgecolor=almost_black, c=aspr_list, alpha=0.5, marker='+')
+    br_ax.plot(spaced_re, [rey_best_fit[0]*r**rey_best_fit[1] for r in spaced_re], label='Data Fit: X = ${0:.1f} Re^{{{1:.2}}}$'.format(rey_best_fit[0], rey_best_fit[1]), c='tab:orange')
+    br_ax.plot(spaced_re, burgesser, label='Bürgesser 2016 - X = $40Re^{1.36}$', c=colors[2])
+    # br_ax.plot(spaced_re, [rey_best_fit[0]*r for r in spaced_re])
+
+    best_err_xs = np.arange(0.05, 0.8, 0.05)
+    best_err = (0.056255236474813, 0.155839321344165, 0.282833728727021, 0.431709038995568, 0.599306324716682, 0.783511351121827, 0.982781728052016, 1.19592855476366, 1.42199949939676,
+                1.66020972932767, 1.9098981225725, 2.17049798162245, 2.44151660617255, 2.72252055322253, 3.01312469898154, 3.31298392877471, 3.62178669567757, 3.93924994052689, 4.2651150247033,
+                4.59914443028327)
+
+    br_ax.fill_between(best_err_xs, [15.261264435803502*x**1.2486232773192987-berr for x, berr in zip(best_err_xs, list(best_err))], [15.3*x**1.2+berr for x, berr in zip(best_err_xs, list(best_err))], facecolor='grey', alpha=0.6)
+
+    br_ax.legend(fontsize=16, loc='lower right')
     br_ax.grid(b=True, which='major', linestyle='-')
     br_ax.grid(b=True, which='minor', linestyle='--', linewidth=0.5)
-    br_ax.set_xlabel('Reynolds Number', fontsize=20)
-    br_ax.set_ylabel('Best Number', fontsize=20)
-    br_ax.set_title('Be vs. Re', fontsize=20)
+    # br_ax.set_xlabel('Reynolds Number', fontsize=20)
+    br_ax.set_xlabel('Re', fontsize=20)
+    # br_ax.set_ylabel('Best Number', fontsize=20)
+    br_ax.set_ylabel('Best number X', fontsize=20)
+    br_ax.set_xlim(0.8*min(reynolds_list), 1.4*max(reynolds_list))
+    # br_ax.set_ylim(0.2*min(best_list), 5*max(best_list))
+    br_ax.set_ylim(0.05, 5*max(best_list))
+    if rey_hab == 'Particle_nubbly':
+        br_ax.set_title('Irregular Crystals', fontsize=24)
+        br_ax.set_ylim(0.2, 110)
+    # elif rey_hab == 'Column':
+    #     br_ax.set_title('Columns', fontsize=24)
+    br_ax.tick_params(axis='both', which='major', labelsize=20)
+    br_ax.tick_params(axis='both', which='minor', labelsize=16)
+
     br_ax.set_xscale('log')
     br_ax.set_yscale('log')
-    br_ax.set_xlim(0.05, 0.5)
-    br_ax.set_ylim(0.5, 20)
-    # br_ax.set_xlim(0.7*min(reynolds_list), 1.7*max(reynolds_list))
-    # br_ax.set_ylim(0.2*min(best_list), 5*max(best_list))
-    br_ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
-    br_ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
 
-    return fig, br_ax
+    br_ax.set_xlim(0.05, 0.7)
+
+    xt = [0.06, 0.1, 0.2, 0.4, 0.6]
+    br_ax.set_xticks(xt)
+    br_ax.set_xticklabels([str(c) for c in xt])
+
+    fig2, ax2 = imshow_in_figure(figspan=(12, 3))
+    create_hist([1/a for a in aspr_list], ax2, bins=20, xlabel='Aspect ratio')
+    ax2.set_xlabel('Aspect ratio', fontsize=20)
+    ax2.set_xlim(0.1, 1)
+    savefig_ipa(fig2, 'hist_aspr')
+
+    return fig, br_ax, u_best
+
+#
+# def plot_best_vs_reynolds(v_list, dim_list, aspr_list, cap_flag=False):
+#     fig = plt.figure(figsize=(18, 10), dpi=100)
+#     fig.canvas.set_window_title('Best vs. Reynolds')
+#     almost_black = '#262626'
+#
+#     if cap_flag:
+#         minsiz_list = [d/a for d, a in zip(dim_list, aspr_list)]
+#         cap_list = [0.58*w/2*(1+0.95*(l/w)**0.75) for w, l in zip(minsiz_list, dim_list)]
+#         best_list = [best_number(r * 1e-6, 3) for r in cap_list]
+#         reynolds_list = [reynolds_number(v / 1000, r * 1e-6) for v, r in zip(v_list, dim_list)]
+#
+#     best_list = [best_number(r*1e-6, 3) for r in dim_list]
+#     reynolds_list = [reynolds_number(v/1000, r*1e-6) for v, r in zip(v_list, dim_list)]
+#     rey_best_fit = fit_powerlaw(reynolds_list, best_list)
+#     burgesser = [40 * r ** 1.36 for r in reynolds_list]
+#
+#     b0 = -1.11812
+#     b1 = 0.97084
+#     b2 = -0.05881
+#     b3 = 0.002159
+#
+#     best_steps = np.arange(1, 20, 0.1)
+#
+#     log_nre_param_5 = [10**(b0+b1*np.log(b)+b2*np.log(b)**2+b3*np.log(b)**3) for b in best_steps]
+#
+#     b0 = -0.90629
+#     b1 = 0.90412
+#     b2 = -0.059312
+#     b3 = 0.0029941
+#
+#     log_nre_param_1 = [10**(b0+b1*np.log(b)+b2*np.log(b)**2+b3*np.log(b)**3) for b in best_steps]
+#
+#     br_ax = fig.add_subplot(111)
+#     br_ax.scatter(reynolds_list, best_list, label='Data', edgecolor=almost_black)
+#     br_ax.plot(reynolds_list, [rey_best_fit[0]*r**rey_best_fit[1] for r in reynolds_list], label='Data Fit')
+#     br_ax.plot(reynolds_list, burgesser, color='r', label='Burgesser Power Law')
+#     br_ax.plot(log_nre_param_1, best_steps, color='m', label='Jayaweera, d/L=0.1')
+#     br_ax.plot(log_nre_param_5, best_steps, color='g', label='Jayaweera, d/L=0.5')
+#     br_ax.legend(fontsize=16)
+#     br_ax.grid(b=True, which='major', linestyle='-')
+#     br_ax.grid(b=True, which='minor', linestyle='--', linewidth=0.5)
+#     br_ax.set_xlabel('Reynolds Number', fontsize=20)
+#     br_ax.set_ylabel('Best Number', fontsize=20)
+#     br_ax.set_title('Be vs. Re', fontsize=20)
+#     br_ax.set_xscale('log')
+#     br_ax.set_yscale('log')
+#     br_ax.set_xlim(0.05, 0.5)
+#     br_ax.set_ylim(0.5, 20)
+#     # br_ax.set_xlim(0.7*min(reynolds_list), 1.7*max(reynolds_list))
+#     # br_ax.set_ylim(0.2*min(best_list), 5*max(best_list))
+#     br_ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+#     br_ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+#
+#     return fig, br_ax
 
 
 def reynolds_number(v, d):
@@ -502,25 +598,39 @@ def reynolds_number(v, d):
     return v*d*rho/eta
 
 
-def best_number(d, aspr, rey_hab):
+def best_number(d, aspr, o, rey_hab):
+# def best_number(d, aspr, rey_hab):
     rho = 1.341
     eta = 17.1*1e-6
     g = 9.81
-    a_m = 0.181
-    b_m = 2.267
-    m = a_m*d**b_m
-    if rey_hab == 'Particle_nubbly':
+    if rey_hab == 'Unclassified':
+    # if True:
+        a_m = 0.181
+        b_m = 2.267
+        m = a_m*d**b_m
         best_n = 8*m*g*rho/(np.pi*eta**2)
     elif rey_hab == 'Column':
-        best_n = 4*m*rho*g/(d*eta**2)*(d/aspr/2)
+        # a_m = 0.00373
+        # b_m = 1.91
+        a_m = 1.43536
+        b_m = 2.47
+        m = a_m*d**b_m
+        # best_n = 4*m*rho*g/(d*eta**2)*(d/aspr/2)
+        L = d
+        W = d/aspr
+        # A = L*W
+        A = W*L*np.cos(o*np.pi/180)+W*W*(1-np.cos(o*np.pi/180))*np.sqrt(3)/2
+        best_n = 2*m*g*rho*W**2/(A*eta**2)
+        if best_n > 10:
+            print('here')
 
     # best_n = 16*m*rho*g/(3*np.sqrt(3)*eta**2)
     return best_n
 
 
 def rey_best_param(best_number_list, B, rey_hab):
-    if rey_hab == 'Particle_nubbly':
-        return [np.exp(B[0]+B[1]*np.log(X)+B[2]*np.log(X)**2+B[3]*np.log(X)**3+B[4]*np.log(X)**4+B[5]*np.log(X)**5+B[6]*np.log(X)**6) for X in best_number_list]
+    if rey_hab == 'Unclassified':
+        return [10**(B[0]+B[1]*np.log10(X)+B[2]*np.log10(X)**2+B[3]*np.log10(X)**3+B[4]*np.log10(X)**4+B[5]*np.log10(X)**5+B[6]*np.log10(X)**6) for X in best_number_list]
     elif rey_hab == 'Column':
         return [10**(B[0]+B[1]*np.log10(X)+B[2]*np.log10(X)**2+B[3]*np.log10(X)**3) for X in best_number_list]
 
@@ -529,18 +639,20 @@ def rey_best_2(best_list, dim_list, br_ax, rey_hab, best_in_vdim):
     indexes_best = list(range(len(best_list)))
     indexes_best.sort(key=best_list.__getitem__)
     best_list = list(map(best_list.__getitem__, indexes_best))
-    if rey_hab == 'Particle_nubbly':
+    if rey_hab == 'Unclassified':
         B = (-0.318657*10, 0.992696, -0.153193*1e-2, -0.987059*1e-3, -0.578878*1e-3, 0.855176*1e-4, -0.327815*1e-5)
         emp = 'Parametrization Pruppacher+Klett - spherical'
         rey_best_p = rey_best_param(best_list, B, rey_hab)
-        # br_ax.plot(rey_best_p, best_list, label=emp, linewidth=3, color='darkred', linestyle='--')
+        br_ax.plot(rey_best_p, best_list, label=emp, linewidth=3, color='darkred', linestyle='--')
 
     elif rey_hab == 'Column':
         # B = ((-1.31, 0.98968, -0.042379, 0), (-1.11812, 0.97084, -0.05881, 0.002159), (-0.90629, 0.90412, -0.0593212, 0.0029941), (-0.79888, 0.80817, -0.030528, 0)) # Columns
         # emp = ('d/L=1.0', 'd/L=0.5', 'd/L=0.1', 'infinite')
         B = ((-1.11812, 0.97084, -0.05881, 0.002159), (-0.90629, 0.90412, -0.0593212, 0.0029941)) # Columns
-        emp = ('Parametrization d/L=0.5', 'Parametrization d/L=0.1')
-        for b, e, c, ls in zip(B, emp, ('darkred', 'darkmagenta'), ('--', ':')):
+        # emp = ('Parametrization d/L=0.5', 'Parametrization d/L=0.1')
+        emp = ('Jayaweera & Cottis 1969, AR=0.5', 'Jayaweera & Cottis 1969, AR=0.1')
+        # for b, e, c, ls in zip(B, emp, ('darkred', 'darkmagenta'), ('--', ':')):
+        for b, e, c, ls in zip(B, emp, ('tab:pink', 'tab:red'), ('--', ':')):
             if best_in_vdim:
                 best_spaced = np.arange(5, 100) / 10
                 rey_best_p = rey_best_param(best_spaced, b, rey_hab)
@@ -549,6 +661,8 @@ def rey_best_2(best_list, dim_list, br_ax, rey_hab, best_in_vdim):
                 # br_ax.plot(rey_best_p, plaw[0]*rey_best_p**plaw[1], label=e, linewidth=3, color=c, linestyle=ls)
             else:
                 rey_best_p = rey_best_param(best_list, b, rey_hab)
+                best_spaced = np.arange(5, 100) / 10
+                rey_best_p = rey_best_param(best_spaced, b, rey_hab)
                 br_ax.plot(rey_best_p, best_list, label=e, linewidth=3, color=c, linestyle=ls)
 
     eta = 17.1 * 1e-6
@@ -569,7 +683,7 @@ def plot_mean_in_scatter(ax, dim_list, v_list):
 
 
 def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
-                  full_v_list, different_separators, im_list, streakid_list, info_list, pos_list):
+                  full_v_list, different_separators, im_list, streakid_list, info_list, pos_list, exp_list):
 
     max_dim = 0
     for sep in different_separators:
@@ -578,7 +692,8 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
         except ValueError:
             print('No crystals of habit {} found, skipping...'.format(sep))
 
-    dims_spaced = np.arange(np.ceil(1.05 * max_dim / 10) * 10)
+    # dims_spaced = np.arange(np.ceil(1.05 * max_dim / 10) * 10)
+    dims_spaced = np.arange(250)
     # locatelli_hobbs = 0.69*(dims_spaced*1e-3)**0.41*1e3
 
     almost_black = '#262626'
@@ -611,14 +726,19 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
     # different_separators = ['Needle']
 
     # colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
-    colors = ['tab:orange', 'tab:blue', 'tab:green', 'tab:cyan', 'tab:red', 'tab:pink', 'tab:gray', 'tab:red', 'tab:olive', 'tab:purple']
+    colors = ['tab:red', 'tab:purple', 'tab:green', 'tab:cyan', 'tab:orange', 'tab:pink', 'tab:gray', 'tab:blue', 'tab:olive']
+    # colors = ['tab:red', 'tab:cyan', 'tab:orange', 'tab:gray', 'tab:blue', 'tab:olive']
+    # colors = ['tab:blue', 'tab:orange']
     marker_cycle = cycle(['+', 'x', 'o', 'D', '*', '<', '>'])
     # colors = ['tab:blue']
     # sepd_v_max = 0
 
+    v_lists = list()
+
     for i, (c, sep) in enumerate(zip(colors, different_separators)):
         t_dim = list(compress(dim_median_list, selector_list[sep]))
         t_v = list(compress(v_median_list, selector_list[sep]))
+        v_lists.append(v_lists)
         if len(t_v) > 0:
             if sep == 'Unclassified':
                 zord = 0
@@ -632,35 +752,67 @@ def v_dim_scatter(selector_list, dim_list, dim_median_list, v_median_list,
             t_ln = ax.scatter(t_dim, t_v,
                               # linewidth=1, zorder=0, picker=i, marker='+', c=c['color'])
                               # linewidth=1, zorder=0, picker=i, marker=marker_dict[sep], c=c['color'])
-                                linewidth=1, picker=i, marker=marker, c=c, zorder=zord)
+                                linewidth=3, picker=i, marker=marker, c=c, zorder=zord, s=250)
             t_ln.set_label('{} (N={})'.format(sep, sum(selector_list[sep])))
+            # t_ln.set_label('{}'.format(sep))
             # t_ln.set_label('v={0:.1f}$\pm${1:.1f}$m/s$\n D={2:.1f}$\pm${3:.1f}$\mu m$'.format(np.mean(t_v), np.std(t_v), np.mean(t_dim), np.std(t_dim)))
             lines.append(t_ln)
             streakids_in_habits[sep] = list(compress(streakid_list, selector_list[sep]))
             # sepd_v_max = np.max([sepd_v_max, np.nanmax(t_v)])
+            ax.errorbar(t_dim, t_v, xerr=4.44, yerr=5.5, capsize=5, c=c, linestyle='none')
+        # fig2, ax2 = create_hist(t_v)
 
-    ax.grid()
+    fig_h, ax_h = imshow_in_figure()
+    # _, b, _ = ax_h.hist(v_lists, np.arange(0, 20, 120), edgecolor='black', linewidth=1.2, density=False, zorder=3)#, label=['Fall track particles', 'Particles not belonging to tracks'])
+
+    # def func(x, b):
+    #     return b*x**2
+    # from scipy.optimize import curve_fit
+    #
+    # popt, _ = curve_fit(func, t_dim, t_v)
+    # fit = np.polyfit(t_dim, t_v, 2)
+    # t_fit = ax.plot(dims_spaced, [fit[0]*d**2+fit[1]*d+fit[2] for d in dims_spaced], '--', c='r', linewidth=2,
+    #                 label=r'Data fit: $v={0:.4f}D^2+{1:.2f}D{2:.1f}$'.format(fit[0], fit[1], fit[2]))
+    # t_fit = ax.plot(dims_spaced, [popt[0]*d**2 for d in dims_spaced], '--', c='r', linewidth=2,
+    #                 label=r'Data fit: $v={0:.4f}D^2$'.format(popt[0]))
+
+    # from scipy.stats import linregress
+    # linreg = linregress(list(compress(t_dim, ~np.isnan(t_v))), list(compress(t_v, ~np.isnan(t_v))))
+    # ax.plot(dims_spaced, [linreg.intercept+linreg.slope*d for d in dims_spaced], c='k', lw=3,
+    #         label=r'Best linear regression fit')# - $D_{hyd}=1.28D_{max}-30.03\mu m$, $R^2=0.72$')
+
+    # ax.grid()
     # ax.plot(dims_spaced[1:], powerlaw(dims_spaced, amp_full, index_full)[1:], label='Power Law Full', linewidth=3, zorder=1)
     # ax.plot(dims_spaced, f, linewidth=3, label='Linear Capacitance Fit, v=aC, a={}]'.format(p1))
     # ax.set_xlim([0, np.max(dims_spaced)])
-    # ax.set_xlim([20, 200])
-    fontsize = 32
-    ax.set_xlabel('Maximum dimension in µm', fontsize=fontsize)
+    # ax.set_xlim([15, 210])
+    # ax.set_xlim([50, 250])
+    fontsize = 16
+    ax.set_xlabel(r'$D_{max}$ in $\mu m$', fontsize=fontsize+16)
+    # ax.set_xlabel(r'Diameter in $\mu m$', fontsize=fontsize+16)
+    # ax.set_ylim([5, 400])
     # ax.set_ylim([0, 1.05 * sepd_v_max])
     # ax.set_ylim([0, 1.1*maximum_vel])
     # ax.set_ylim([5, 500])
-    ax.set_ylabel(r'Hydrodynamic diameter in µm', fontsize=fontsize)
-    # ax.set_ylabel('Sedipmentation velocity in mm/s', fontsize=fontsize)
+    # ax.set_ylim([10, 150])
+    # ax.set_ylabel(r'Hydrodynamic diameter in µm', fontsize=fontsize)
+    # ax.set_ylabel(r'$D_{hyd}$ in $\mu m$', fontsize=fontsize+16)
+    ax.set_ylabel(r'$D_{hyd}/D_{maj}$', fontsize=fontsize+16)
+    # ax.set_ylabel('Sedimentation velocity in mm/s', fontsize=fontsize+16)
+    # ax.set_ylabel('w in mm/s', fontsize=fontsize+16)
     # plt.rc('font', size=24)
-    ax.tick_params(axis='both', which='major', labelsize=fontsize)
-    ax.tick_params(axis='both', which='minor', labelsize=fontsize-4)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize+16)
+    ax.tick_params(axis='both', which='minor', labelsize=fontsize+16)
     # ax.plot(dims_spaced, locatelli_hobbs, label='Locatelli+Hobbs 74', linewidth=2, color='b')
     # ax.axhline(maximum_vel, linewidth=2, color='k', label='Maximum measurable velocity')
     # ax.set_title('Fall speed vs. dimension for {}'.format(habit))
+    # ax.set_title('Experiment {}'.format(exp_list[0]), fontsize=fontsize+16)
     # ax.set_title('Fall speed vs. dimension for Calibration Beads of $30\mu$m diameter', fontsize=24)
-    ax.legend(fontsize=fontsize-2, loc='upper left')
+    # ax.legend(fontsize=fontsize-2, loc='lower right')
     # ax.set_xscale('log')
     # ax.set_yscale('log')
+    ax.set_xlim(25, 220)
+    ax.set_ylim(0, 110)
 
     # check = CheckButtons(ax, different_habits, [True]*len(different_habits))
     # check.on_clicked(func(different_habits, lines))
@@ -787,23 +939,27 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
 
         ax.axhline(y=dim_median_list[global_streakid], ls='--', c='b')
         ax.plot(xrange, fdl, c='b', lw=3)
-        ax.errorbar(xrange, fdl, yerr=2.22*np.ones_like(fdl), c='b', lw=1, capsize=5)
+        ax.errorbar(xrange, fdl, yerr=2*2.22*np.ones_like(fdl), c='b', lw=1, capsize=5)
         ax.set_xlim(1, len(fdl))
         ax.set_ylim(0, 1.1*np.max(fdl))
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-        ax.set_xlabel('Index', fontsize=20)
+        # ax.set_xlabel('Index', fontsize=20)
+        ax.set_xlabel('Image number', fontsize=20)
         ax.set_ylabel('Particle Max Diameter ($\mu$m)', fontsize=20)
-
+        ax.tick_params(axis='both', which='both', labelsize=20)
+        #
         ax = ax.twinx()
         fvl = full_v_list[global_streakid]
         xrange = np.arange(1, len(fvl)+1)+0.5
         ax.plot(xrange, fvl, c='g', lw=3)
         ax.axhline(y=v_median_list[global_streakid], ls='--', c='g')
-        ax.errorbar(xrange, fvl, yerr=5*np.ones_like(fvl), c='g', lw=1, capsize=5)
+        # ax.errorbar(xrange, fvl, yerr=10*2.22*55/1000*np.ones_like(fvl), c='g', lw=1, capsize=5)
+        ax.errorbar(xrange, fvl, yerr=5.5*np.ones_like(fvl), c='g', lw=1, capsize=5)
+        ax.tick_params(axis='both', which='major', labelsize=20)
         ax.set_ylim(0, 2*np.max(fvl))
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         ax.set_ylabel('Fall Speed (mm/s)', fontsize=20)
-        ax.tick_params(axis='both', which='major', labelsize=20)
+        # ax.tick_params(axis='both', which='both', labelsize=20)
 
         # f_3d = plt.figure(figsize=(18, 10), dpi=100)
         # ax3 = f_3d.add_subplot(111, projection='3d')
@@ -821,54 +977,72 @@ def onpick(event, dim_list, dim_median_list, im_list, streakid_list, info_list, 
     return True
 
 
-def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_list):
+def plot_hists_by_habit(habit, streak_list, dim_median_list, aspr_list, info_list, v_median_list):
 
     # Plotting things ############################
 
+    # Velocity distribution
+
+    # fig_h = plt.figure()
+    # fig_h.canvas.set_window_title('Velocity Distribution')
+    # ax = fig_h.add_subplot(111)
+    # min_bin = 5
+    # max_bin = 120
+    # bins = np.arange(min_bin, max_bin, 5)
+    #
+    # histo = plt.hist(v_median_list, bins, edgecolor='black', linewidth=1.2)
+    # ax.grid(b=True, which='major', linestyle='-')
+    # ax.tick_params(axis='both', which='major', labelsize=20)
+    fig, ax = create_hist(v_median_list, bins=20)
+    ax.set_xlabel(habit, fontsize=20)
+    ax.set_xlim(0, 120)
+    ax.set_ylim(0, 0.05)
+
+
     # Size distribution
-    fig_h = plt.figure()
-    fig_h.canvas.set_window_title('Size Distribution')
-    ax = fig_h.add_subplot(111)
-    min_bin = max(0.5, (min(dim_median_list)//5-1)*5+0.5)
-    max_bin = (max(dim_median_list)//5+2)*5+0.5
-    bins = np.arange(min_bin, max_bin, 5)
-    bins = np.arange(min_bin, max_bin, 1)
-
-    histo = plt.hist(dim_median_list, bins, edgecolor='black', linewidth=1.2)
-    ax.grid(b=True, which='major', linestyle='-')
-    ax.set_axisbelow('True')
-    ax.set_title('Size distribution for {}'.format(habit), fontsize=28)
-    ax.set_title('Size distribution for 30 $\mu$m calibration beads, measured by HIVIS', fontsize=24)
-    ax.set_xlabel('Maximum dimension in $\mu$m', fontsize=20)
-    ax.set_ylabel('Count', fontsize=20)
-    ax.tick_params(axis='both', which='major', labelsize=20)
-
-    # Angle histogram plot
-    fig_h = plt.figure()
-    fig_h.canvas.set_window_title('Angle Histogram')
-    mean_angle_list = [s.mean_angle for s in streak_list]
-    n_bins = 50
-    ax = fig_h.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
-    angle_range = np.arange(-0.5 * np.pi, 0.5 * np.pi, np.pi / n_bins)
-    angle_range = np.append(angle_range, 2 * np.pi)
-    a = plt.hist(mean_angle_list, angle_range)
-    ax.set_theta_zero_location("S")
-    ax.set_thetamin(-90)
-    ax.set_thetamax(90)
-    ax.bar(angle_range, a[1])
-    ax.set_title('Angle histogram for {}'.format(habit))
-
-    # Aspect ratio histogram plot
-    fig_a = plt.figure()
-    fig_a.canvas.set_window_title('Aspect Ratio Histogram')
-    mean_aspr_list = [np.median(c) for c in aspr_list]
-    n_bins = 20
-    bins = 1.0 + .25 * np.arange(n_bins)
-    logbins = np.logspace(np.log10(bins[0]),np.log10(bins[-1]),len(bins))
-    ax = fig_a.add_subplot(111)
-    ax.grid(b=True, which='major', linestyle='-')
-    histo = plt.hist(mean_aspr_list, logbins, edgecolor='black', linewidth=1.2)
-    ax.set_title('Aspect ratio histogram for {}'.format(habit))
+    # fig_h = plt.figure()
+    # fig_h.canvas.set_window_title('Size Distribution')
+    # ax = fig_h.add_subplot(111)
+    # min_bin = max(0.5, (min(dim_median_list)//5-1)*5+0.5)
+    # max_bin = (max(dim_median_list)//5+2)*5+0.5
+    # bins = np.arange(min_bin, max_bin, 5)
+    # bins = np.arange(min_bin, max_bin, 1)
+    #
+    # histo = plt.hist(dim_median_list, bins, edgecolor='black', linewidth=1.2)
+    # ax.grid(b=True, which='major', linestyle='-')
+    # ax.set_axisbelow('True')
+    # ax.set_title('Size distribution for {}'.format(habit), fontsize=28)
+    # ax.set_title('Size distribution for 30 $\mu$m calibration beads, measured by HIVIS', fontsize=24)
+    # ax.set_xlabel('Maximum dimension in $\mu$m', fontsize=20)
+    # ax.set_ylabel('Count', fontsize=20)
+    # ax.tick_params(axis='both', which='major', labelsize=20)
+    #
+    # # Angle histogram plot
+    # fig_h = plt.figure()
+    # fig_h.canvas.set_window_title('Angle Histogram')
+    # mean_angle_list = [s.mean_angle for s in streak_list]
+    # n_bins = 50
+    # ax = fig_h.add_axes([0.1, 0.1, 0.8, 0.8], polar=True)
+    # angle_range = np.arange(-0.5 * np.pi, 0.5 * np.pi, np.pi / n_bins)
+    # angle_range = np.append(angle_range, 2 * np.pi)
+    # a = plt.hist(mean_angle_list, angle_range)
+    # ax.set_theta_zero_location("S")
+    # ax.set_thetamin(-90)
+    # ax.set_thetamax(90)
+    # ax.bar(angle_range, a[1])
+    # ax.set_title('Angle histogram for {}'.format(habit))
+    #
+    # # Aspect ratio histogram plot
+    # fig_a = plt.figure()
+    # fig_a.canvas.set_window_title('Aspect Ratio Histogram')
+    # mean_aspr_list = [np.median(c) for c in aspr_list]
+    # n_bins = 20
+    # bins = 1.0 + .25 * np.arange(n_bins)
+    # logbins = np.logspace(np.log10(bins[0]), np.log10(bins[-1]),len(bins))
+    # ax = fig_a.add_subplot(111)
+    # ax.grid(b=True, which='major', linestyle='-')
+    # histo = plt.hist(mean_aspr_list, logbins, edgecolor='black', linewidth=1.2)
+    # ax.set_title('Aspect ratio histogram for {}'.format(habit))
 #
 #     # z position histogram plot
 #     is_in_folder = [[] for f in folder_list]

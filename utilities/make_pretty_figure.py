@@ -4,7 +4,7 @@ import os
 from time import strftime
 
 
-def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hide_axes=False, figspan=(10, 10), dpi=100, grid=True):
+def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hide_axes=False, figspan=(20.48, 20.48), dpi=100, grid=True):
 
     fig = plt.figure(figsize=figspan, dpi=dpi)
     if ax is None:
@@ -19,7 +19,7 @@ def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hi
     if img is None:
         pass
     else:
-        ax.imshow(img)
+        ax.imshow(img, cmap='bone')
 
     ax.set_xlabel(xlabel, fontsize=16)
     ax.set_ylabel(ylabel, fontsize=20)
@@ -37,7 +37,7 @@ def imshow_in_figure(img=None, ax=None, xlabel=None, ylabel=None, title=None, hi
     return fig, ax
 
 
-def create_hist(vals, ax=None, minval=0, maxval=None, bins=None, step=1, **kwargs):
+def create_hist(vals, ax=None, minval=0, maxval=None, bins=None, step=1, label='', **kwargs):
     from scipy.stats import skew, kurtosis
     if maxval is None:
         maxval = np.max(vals)
@@ -45,30 +45,36 @@ def create_hist(vals, ax=None, minval=0, maxval=None, bins=None, step=1, **kwarg
     if bins is None:
         bins = np.arange(minval, maxval, step)
     if ax is None:
-        fig, ax = imshow_in_figure(grid=True, figspan=(10, 6), ax=ax, **kwargs)
+        # fig, ax = imshow_in_figure(grid=True, figspan=(10, 6), ax=ax, **kwargs)
+        fig, ax = imshow_in_figure(grid=True, figspan=(10, 6), **kwargs)
     else:
         fig = None
 
-    _, b, _ = ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=False, weights=np.ones(len(vals))/len(vals), label='N = {}'.format(len(vals)), zorder=3)
+    if label == '':
+        label = 'N = {}'.format(len(vals))
+
+    _, b, _ = ax.hist(vals, bins, edgecolor='black', linewidth=1.2, density=True, weights=np.ones(len(vals))/len(vals), label=label, zorder=3)
     s = skew(vals)
     k = kurtosis(vals)
     ax.set_xlim(minval, 2*b[-1]-b[-2])
     ax.set_ylabel('PDF', fontsize=20)
 
-    ax.set_xlabel(r'Fall orientation in $\degree$', fontsize=20)
+    # ax.set_xlabel(r'Drop diameter in $\mu m$', fontsize=20)
+    # ax.set_xlabel(r'Fall orientation in $\degree$', fontsize=20)
     # ax.get_legend().set_visible(False)
 
     ax.grid(which='major', linestyle='-', zorder=0)
-    # ax.legend(fontsize=20, loc='upper right')
+    ax.legend(fontsize=20, loc='upper right')
 
     ax.tick_params(axis='both', which='major', labelsize=20)
     print('Skewness of distribution: {}'.format(s))
     print('Kurtosis of distribution: {}'.format(k))
+    print('N = {}'.format(len(vals)))
 
     return fig, ax
 
 
-def savefig_ipa(fig, fn):
+def savefig_ipa(fig, fn, dpi=100):
     date = strftime("%d%b%y")
     time = strftime("%-H.%M.%S")
 
@@ -81,7 +87,7 @@ def savefig_ipa(fig, fn):
     except FileExistsError:
         pass
     # fig.savefig(os.path.join(datepath, fn+time+'.png'), bbox_inches='tight',)
-    fig.savefig(os.path.join(datepath, fn+time+'.png'))
+    fig.savefig(os.path.join(datepath, fn+time+'.png'), dpi=dpi, bbox_inches='tight')
 
 
 def density_plot(values, position, pxl_size, imsize, relative=True, nan_val=0):

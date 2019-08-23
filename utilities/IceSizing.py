@@ -68,7 +68,7 @@ class MicroImg:
                 box = cv2.boxPoints(box)
                 box = np.array(box, dtype="int")
 
-                if True:#~((box > (self.thresh_img.shape[0]-self.mindisttoedge)).any()):# or (box < self.mindisttoedge).any()):
+                if ~((box > (self.thresh_img.shape[0]-self.mindisttoedge)).any()):# or (box < self.mindisttoedge).any()):
                     filtered_contours.append(c)
         return filtered_contours
 
@@ -92,13 +92,13 @@ class MicroImg:
 
             this_data['Long Axis'] = 2*la/self.pixels_per_metric
             this_data['Short Axis'] = this_data['Long Axis']
-            this_data['Orientation'] = 0
+            this_data['Orientation'] = angles_from_conts(c)
             this_data['Center Points'] = this_center
             data.append(this_data)
 
-            cv2.putText(img, "{:.2f}um".format(2*la / self.pixels_per_metric),
-                        (int(this_center[0] - 150), int(this_center[1]-la)), cv2.FONT_HERSHEY_SIMPLEX,
-                         2, (45, 255, 45), 4)
+            # cv2.putText(img, "{:.2f}um".format(2*la / self.pixels_per_metric),
+            #             (int(this_center[0] - 150), int(this_center[1]-la)), cv2.FONT_HERSHEY_SIMPLEX,
+            #              2, (45, 255, 45), 4)
 
             # this_data, img = draw_box_from_conts(c, img, self.pixels_per_metric, optional_object_filter_condition, streak_flag)
             # if this_data:
@@ -146,8 +146,9 @@ class MicroImg:
 
                 thresh = cv2.Canny(gray, canny_low, canny_high, L2gradient=True)
                 if self.dilation < 20:
-                    self.dilation = 20
-                    print('Overriding dilation to 20 for Canny edge detection.')
+                    pass
+                    # self.dilation = 20
+                    # print('Overriding dilation to 20 for Canny edge detection.')
             elif self.thresh_type[0] == "Bin":
                 if self.thresh_type[1] != 0:
                     threshold = self.thresh_type[1]
@@ -174,6 +175,7 @@ class MicroImg:
 
                 adpt_constant = 7
                 thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, block_size, adpt_constant)
+                # thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, block_size, adpt_constant)
             elif self.thresh_type[0] == "Gradient":
                 # grad_img = np.uint8(np.sqrt(np.uint8(cv2.Sobel(gray, -1, 0, 1)) ** 2 + np.uint8(cv2.Sobel(gray, -1, 1, 0)) ** 2))
                 grad_img = cv2.Laplacian(gray, cv2.CV_8U)
@@ -249,7 +251,7 @@ class MicroImg:
                     print('Using single index for k-means cluster.')
                     la = [1 if (l == self.thresh_type[2]) else 0 for l in re_labels]
                 except IndexError:
-                    print('Not index found, using default cluster for k-means.')
+                    print('No index found, using default cluster for k-means.')
                     la = [1 if (l == 0) else 0 for l in re_labels]
 
                 thresh = np.reshape(la, [img.shape[0], img.shape[1]]).astype('uint8')
@@ -398,6 +400,32 @@ def draw_box_from_conts(contour, img, pixels_per_metric, optional_object_filter_
         # cv2.waitKey(0)
 
         return data, img_processed
+
+
+def angles_from_conts(cont):
+    box = cv2.minAreaRect(cont)
+    box = cv2.boxPoints(box)
+    box = np.array(box, dtype="int")
+
+    box = perspective.order_points(box)
+
+    (tl, tr, br, bl) = box
+
+    (tltrX, tltrY) = midpoint(tl, tr)
+    (blbrX, blbrY) = midpoint(bl, br)
+
+    (tlblX, tlblY) = midpoint(tl, bl)
+    (trbrX, trbrY) = midpoint(tr, br)
+
+    d_a = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+    d_b = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+
+    if d_a > d_b:
+        orientation = np.arctan((blbrX-tltrX)/(blbrY-tltrY))
+    else:
+        orientation = np.arctan((tlblX-trbrX)/(tlblY-trbrY))
+
+    return orientation
 
 
 def main():

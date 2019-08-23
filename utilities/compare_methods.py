@@ -139,8 +139,8 @@ def main():
 
     fig_siz, ax_siz = imshow_in_figure(figspan=(15, 8), dpi=100)
 
-    label_majsizs = [l['Long Axis'] for l in label_img.data]
-    # label_majsizs = [2*np.sqrt(float(a['Area'])/np.pi) for a in label_img.data]
+    # label_majsizs = [l['Long Axis'] for l in label_img.data]
+    label_majsizs = [2*np.sqrt(float(a['Area'])/np.pi) for a in label_img.data]
     xax = np.arange(len(label_majsizs))
 
     # ax_siz.scatter(xax, label_majsizs, c='k', marker='s', s=50)
@@ -149,17 +149,17 @@ def main():
         xax_in = [2*j-(i-1)/len(proxs)+1 for j in np.arange(len(label_majsizs))]
         # ax_siz.scatter(xax_in, [cp['Long Axis'] for cp in cps], c=[c/255 for c in col])
         # ax_siz.scatter(xax_in, [cp['Long Axis']-la for cp, la in zip(cps, label_majsizs)], c=[c/255 for c in col], edgecolors='k')
-        siz = [cp['Long Axis'] for cp in cps]
-        # siz = [2*np.sqrt(float(a['Area'])/np.pi) for a in cps]
+        # siz = [cp['Long Axis'] for cp in cps]
+        siz = [2*np.sqrt(float(a['Area'])/np.pi) for a in cps]
 
         # size_diffs = [cp['Long Axis']-la if len(cp) > 0 else 0 for cp, la in zip(cps, label_majsizs)]
         size_diffs = [s-la for s,la in zip(siz, label_majsizs)]
 
         ax_siz.bar(xax_in[:-1], size_diffs[:-1], 1/len(proxs), label=f[0], color=[c/255 for c in col])
         e_mean = np.mean([np.abs(s) for s in size_diffs[:-1]])
-        e_mean_rel = np.mean([np.abs(s/la) for s, la in zip(size_diffs, label_majsizs)])
+        e_mean_rel = np.mean([np.abs(s/la)*100 for s, la in zip(size_diffs, label_majsizs)])
         print('Average absolute sizing error - {0}: {1:.2f} um'.format(f[0], e_mean))
-        print('Average relative sizing error - {0}: {1:.2f} um'.format(f[0], e_mean_rel))
+        print('Average relative sizing error - {0}: {1:.2f}%'.format(f[0], e_mean_rel))
         ax_siz.axhline(e_mean, color=[c/255 for c in col])
         ax_siz.set_xticks(xax_in)
         ax_siz.set_xticklabels(([str(int(x/2)+1)for x in xax_in[:-1]]))
@@ -189,7 +189,7 @@ def main():
                 cv2.putText(img, str(i+1), (int(d['Center Points'][0]-50), int(d['Center Points'][1]+50)), cv2.FONT_HERSHEY_SIMPLEX,
                         3, (250, 250, 250), 8)
 
-        cv2.drawContours(img, tmp, -1, col_label, 4)
+        # cv2.drawContours(img, tmp, -1, col_label, 4)
 
         # ax_siz.scatter(np.arange(len(method_property['majsizs'])), method_property['majsizs'], c='k')
 
@@ -203,7 +203,7 @@ def main():
     # if label_img:
         # ax_img.plot([], c=[c/255 for c in col_label], label='Marked by operator')
 
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower right', fontsize=24)
 
     savefig_ipa(fig, 'thresh_contour_comparison')
     savefig_ipa(fig_siz, 'thresh_size_comparison')

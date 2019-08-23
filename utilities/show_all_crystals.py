@@ -89,6 +89,7 @@ plt.show()
 # savefig_ipa(fig2, 'OrientationHistogram')
 # plt.show()
 
+
 def column_gallery(ips, ims):
     # [~, ord] = sort(total_s, 'descend');
 

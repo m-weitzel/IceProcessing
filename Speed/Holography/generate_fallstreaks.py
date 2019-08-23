@@ -16,104 +16,10 @@ from utilities.fit_powerlaw import fit_powerlaw
 
 
 def main():
-    path = '/ipa/holo/mweitzel/HIVIS_Holograms/Meas22May/'
+    path = '/ipa/holo/mweitzel/HIVIS_Holograms/Prev23FebOrient/'
     temperature = -12
-    filename_ps = 'ps_bypredict.mat'
 
-    a = sio.loadmat(os.path.join(path, filename_ps))
-
-    # Adjust to how the camera was tilted (90°) to have true spatial directions in fall images, multiply by 1000 to get mm
-    tmp = a['xp']*1000
-    a['xp'] = a['yp']*1000
-    a['yp'] = tmp
-    a['zp'] = a['zp']*1000
-
-    # General parameters
-    pxl_size = 1
-    fr = get_folder_framerate(path)
-
-    # Properties for finding streaks
-    min_length = 5                  # minimum number of consecutive particles to be considered a streak
-    max_size_diff = 0.2             # relative size difference - 0.1 corresponds to 10%
-    max_dist_from_predict = 1       # total, mostly in mm
-    static_velocity = True          # True: Velocity fixed at vel_in_mm between two frames, False: automatically calculated (from Stokes)
-
-    if static_velocity:
-        vel_guess = lambda x, y: -x/y
-        vel_in_mm_p_s = 60              # guess for velocity (in mm/s)
-        base_velocity_guess = [0, vel_guess(vel_in_mm_p_s, fr), 0]
-    else:
-        # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
-                                                            # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
-        # y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
-        rho_o = 1000
-        y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta(temperature))/fr*1e3   # Stokes
-
-    # End of properties
-
-    p_list = list()
-    for k in range(0, len(a['times'])):
-        p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size,
-                                   a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size,
-                                   a['prediction'][k].rstrip(), a['majsiz'][k][0],
-                                   a['minsiz'][k][0], a['area'][k][0],
-                                   a['angle'][k][0], a['ims'][k][0]))
-
-    print('{} particles loaded.'.format(len(p_list)))
-    last_holonum = p_list[-1].holonum
-    holonums = range(0, last_holonum+1)
-
-    habit_list = [p.habit for p in p_list]
-    different_habits = list(set(habit_list))
-
-    p_by_habits = dict()
-    streak_list = list()
-
-    for hab in different_habits:
-        p_by_habits[hab] = [p for p in p_list if p.habit == hab]
-
-        processing_p_list = p_by_habits[hab]
-        ps_in_holos = [[] for _ in holonums]
-        for p in processing_p_list:
-            ps_in_holos[p.holonum].append(p)
-
-        while processing_p_list:
-            this_particle = processing_p_list[0]
-            if static_velocity:
-                velocity_guess = base_velocity_guess
-            else:
-                y_velocity = y_vel(this_particle.majsiz)
-                velocity_guess = [0, y_velocity, 0]
-
-            new_streak = ParticleStreak(this_particle, a['holotimes'])
-            processing_p_list.remove(this_particle)
-            extended = True
-            while extended:
-                try:
-                    # If no particles in hologram, end the streak
-                    if len(ps_in_holos[new_streak.particle_streak[-1].holonum+1]) < 1:
-                        extended = False
-                        ext_by = []
-                    else:
-                        # Else find streak particles in next hologram
-                        new_streak, extended, ext_by = find_streak_particles(new_streak, ps_in_holos[new_streak.particle_streak[-1].holonum+1],
-                                                                             velocity_guess, max_dist=max_dist_from_predict, max_size_diff=max_size_diff, prevent_upwards=False)
-                except IndexError:
-                    # If last hologram is reached, end the streak
-                    extended = False
-                    ext_by = []
-
-                if extended:
-                    p_list.remove(ext_by)                                                 # remove the recently added particle from particle list
-                    processing_p_list.remove(ext_by)                                      # remove the recently added particle from particle list
-                    ps_in_holos[new_streak.particle_streak[-2].holonum+1].remove(ext_by)  # remove particle from list of particles in current (next) hologram
-                    if len(new_streak.particle_streak) > 2:
-                        # Starting with the third particle, velocity guess for finding new particles is derived from the last two found particles
-                        old_guess = velocity_guess
-                        velocity_guess = new_streak.particle_streak[-1].spatial_position-new_streak.particle_streak[-2].spatial_position
-                        # print('Old guess: {}, new guess: {}'.format(old_guess, velocity_guess))
-            if len(new_streak.particle_streak) >= min_length:
-                streak_list.append(new_streak)
+    streak_list = generate_streaks(path, temperature)
 
     save_flag = input('Save {} streaks to file?'.format(len(streak_list)))
     if save_flag == 'Yes' or save_flag == 'yes':
@@ -124,7 +30,7 @@ def main():
 
         print('Saving {} streaks in '.format(len(streak_list))+os.path.join(path, 'streak_data.dat.'))
         save_dict = {"folder": path, "streaks": streak_list, "temperature": temperature}
-        pickle.dump(save_dict, open(os.path.join(path, 'streak_data.dat'), 'wb'), -1)
+        pickle.dump(save_dict, open(os.path.join(path, 'streak_data_orient.dat'), 'wb'), -1)
 
     plt.show()
 
@@ -143,19 +49,19 @@ class FallParticle:
         self.aspr = majsiz/minsiz
         self.area = area
         self.orient = orient
+        self.is_streak_particle = False
         if len(args) > 0:
             self.partimg = args[0]
 
 
 class ParticleStreak:
-    def __init__(self, initial_particle, holotimes):
+    def __init__(self, initial_particle):
         self.initial_particle = initial_particle
         self.particle_streak = [initial_particle]
         self.streak_habit = initial_particle.habit
         self.streak_length = self.get_streak_length()
         self.angles = ()
         self.mean_angle = self.set_mean_angle()
-        self.holotimes = np.insert(holotimes, 0, 0)
 
     def add_particle(self, particle):
         self.particle_streak.append(particle)
@@ -189,11 +95,131 @@ class ParticleStreak:
         return v_list
 
 
+def generate_streaks(folder, temperature):
+    filename_ps = 'ps_orient_bypredict.mat'
+
+    a = sio.loadmat(os.path.join(folder, filename_ps))
+
+    # Adjust to how the camera was tilted (90°) to have true spatial directions in fall images, multiply by 1000 to get mm
+    tmp = a['xp']*1000
+    a['xp'] = a['yp']*1000
+    a['yp'] = tmp
+    a['zp'] = a['zp']*1000
+
+    # General parameters
+    pxl_size = 1
+    fr = get_folder_framerate(folder)
+
+    # Properties for finding streaks
+    min_length = 3                  # minimum number of consecutive particles to be considered a streak
+    max_size_diff = 0.5             # relative size difference - 0.1 corresponds to 10%
+    max_dist_from_predict = 1       # total, mostly in mm
+    static_velocity = True          # True: Velocity fixed at vel_in_mm between two frames, False: automatically calculated (from Stokes)
+
+    if static_velocity:
+        vel_guess = lambda x, y: -x/y
+        vel_in_mm_p_s = 60              # guess for velocity (in mm/s)
+        base_velocity_guess = [0, vel_guess(vel_in_mm_p_s, fr), 0]
+    else:
+        # y_vel = lambda x: (-0.69*(x*1e3)**0.41)/60*1e3      # Locatelli&Hobbs Agg.s of unrimed assemblages of plates, side planes, ...
+                                                            # v = 0.69*D^0.41, v in m/s, D in mm, 60 fps, y in mm
+        # y_vel = lambda x: (-0.1 * (x * 1e-3) ** 0.05)/60 * 1e3
+        rho_o = 1000
+        y_vel = lambda x: -2*(x/2)**2*9.81*(rho_o-1.34)/(9*eta(temperature))/fr*1e3   # Stokes
+
+    # End of properties
+
+    initial_p_list = list()
+    for k in range(0, len(a['times'])):
+        try:
+            initial_p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size,
+                                       a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size,
+                                       a['prediction'][k].rstrip(), a['majsiz'][k][0],
+                                       a['minsiz'][k][0], a['area'][k][0],
+                                       a['angle'][k][0], a['ims'][k][0]))
+        except KeyError:
+            # print('No angle data in {}, neglecting.'.format(folder))
+            initial_p_list.append(FallParticle(a['times'][k][0], 0, a['xp'][k][0]*pxl_size,
+                                       a['yp'][k][0]*pxl_size, a['zp'][k][0]*pxl_size,
+                                       a['prediction'][k].rstrip(), a['majsiz'][k][0],
+                                       a['minsiz'][k][0], a['area'][k][0],
+                                       0, a['ims'][k][0]))
+
+    print('{} particles loaded.'.format(len(initial_p_list)))
+
+    p_list = initial_p_list.copy()
+
+    last_holonum = p_list[-1].holonum
+    holonums = range(0, last_holonum+1)
+
+    habit_list = [p.habit for p in p_list]
+    different_habits = list(set(habit_list))
+
+    p_by_habits = dict()
+    streak_list = list()
+
+    for hab in different_habits:
+        p_by_habits[hab] = [p for p in p_list if p.habit == hab]
+
+        processing_p_list = p_by_habits[hab]
+        ps_in_holos = [[] for _ in holonums]
+        for p in processing_p_list:
+            ps_in_holos[p.holonum].append(p)
+
+        while processing_p_list:
+            this_particle = processing_p_list[0]
+            if static_velocity:
+                velocity_guess = base_velocity_guess
+            else:
+                y_velocity = y_vel(this_particle.majsiz)
+                velocity_guess = [0, y_velocity, 0]
+
+            new_streak = ParticleStreak(this_particle)
+            processing_p_list.remove(this_particle)
+            extended = True
+            while extended:
+                try:
+                    # If no particles in hologram, end the streak
+                    if len(ps_in_holos[new_streak.particle_streak[-1].holonum+1]) < 1:
+                        extended = False
+                        ext_by = []
+                    else:
+                        # Else find streak particles in next hologram
+                        new_streak, extended, ext_by = find_streak_particles(new_streak, ps_in_holos[new_streak.particle_streak[-1].holonum+1],
+                                                                             velocity_guess, max_dist=max_dist_from_predict, max_size_diff=max_size_diff, prevent_upwards=False)
+                except IndexError:
+                    # If last hologram is reached, end the streak
+                    extended = False
+                    ext_by = []
+
+                if extended:
+                    p_list.remove(ext_by)                                                 # remove the recently added particle from particle list
+                    processing_p_list.remove(ext_by)                                      # remove the recently added particle from particle list
+                    ps_in_holos[new_streak.particle_streak[-2].holonum+1].remove(ext_by)  # remove particle from list of particles in current (next) hologram
+                    if len(new_streak.particle_streak) > 2:
+                        # Starting with the third particle, velocity guess for finding new particles is derived from the last two found particles
+                        old_guess = velocity_guess
+                        velocity_guess = new_streak.particle_streak[-1].spatial_position-new_streak.particle_streak[-2].spatial_position
+                        # print('Old guess: {}, new guess: {}'.format(old_guess, velocity_guess))
+            if len(new_streak.particle_streak) >= min_length:
+                streak_list.append(new_streak)
+                for part in new_streak.particle_streak:
+                    part.is_streak_particle = True
+    return streak_list
+
+
 def get_folder_framerate(folder):
-    filelist = os.listdir(os.path.join(folder, 'holos'))
-    filelist = [f for f in filelist if f.endswith('.png')]
-    filelist.sort()
-    gettime = lambda t: datetime.strptime(filelist[t][-19:-4], '%H-%M-%S-%f')
+    try:
+        filelist = os.listdir(os.path.join(folder, 'holos'))
+        filelist = [f for f in filelist if f.endswith('.png')]
+        filelist.sort()
+        gettime = lambda t: datetime.strptime(filelist[t][-19:-4], '%H-%M-%S-%f')
+    except FileNotFoundError:
+        filelist = os.listdir(os.path.join(folder, 'Fall'))
+        filelist = [f for f in filelist if f.endswith('.png')]
+        filelist.sort()
+        gettime = lambda t: datetime.strptime(filelist[t][18:33], '%H-%M-%S-%f')
+
     start = gettime(0)
     end = gettime(-1)
     quart = gettime(np.int(len(filelist)/4))

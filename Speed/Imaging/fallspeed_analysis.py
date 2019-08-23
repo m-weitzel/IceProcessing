@@ -1,4 +1,4 @@
-""" Imports fall_speed_data.dat (fall streaks) from a specified folder and creates characteristic plots describing the average properties.
+""" Imports fall_speed_data.dat (fall streaks) fom a specified folder and creates characteristic plots describing the average properties.
 These plots show the characteristic spatial distribution of average fall speed, angle and other properties.
 """
 
@@ -17,6 +17,8 @@ import time
 from utilities.find_ccr_folder import find_ccr
 import extract_fall_data
 from utilities.IceSizing import MicroImg
+from Speed.Holography.generate_fallstreaks import get_folder_framerate
+
 
 try:
     import matplotlib.pyplot as plt
@@ -25,7 +27,7 @@ except ImportError:
     pass
 
 folder = find_ccr()
-folder = os.path.join(folder, 'Y2017/1107/M1')
+folder = os.path.join(folder, 'Y2017/0908/M1')
 pixel_size = 23.03  # in µm
 exposure_time = 85000  # in µs
 
@@ -35,7 +37,7 @@ histogram_plt_flag = True
 orientation_polar_flag = False
 v_t_series_flag = True
 ori_scatter_flag = False
-centerpt_density_flag = True
+centerpt_density_flag = False
 
 
 def main(fldr, pxl_size, exp_time, save_only=False, h_flag=True, op_flag=True, vt_flag=True, or_flag=True, dn_flag=True):
@@ -80,7 +82,8 @@ def main(fldr, pxl_size, exp_time, save_only=False, h_flag=True, op_flag=True, v
             plot_descriptor_list += ['orientation_polar.png']
             t0 = time.time()
         if vt_flag:
-            velocity_time_series(folder_list, time_list, projected_vs)
+            fr = get_folder_framerate(folder)
+            velocity_time_series(folder_list, time_list, projected_vs, fr)
             t1 = time.time()
             print('Time spent on Velocity Time Series: {0:.1f} s'.format(t1-t0))
             plot_descriptor_list += ['v_timeseries.png', 'v_count_of_streaks']
@@ -173,7 +176,7 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr, all_four=True):
         t_ax.text(0.95*float(t_ax.get_xlim()[1]), 0.95*float(t_ax.get_ylim()[1]), 'Mean:${0:.3f} \pm {1:.3f}$ {2:s}'.format(mu, sigma, unit),
                   bbox=dict(facecolor='red', alpha=0.2), horizontalalignment='right', verticalalignment='top')
 
-    fig = plt.figure(figsize=(16, 12.5))
+    fig = plt.figure(figsize=(16, 20))
 
     bins = np.arange(0, 150, 10)
 
@@ -206,21 +209,35 @@ def mass_velocity_dim_histograms(vs, mass_data, fldr, all_four=True):
         # ax.set_xlabel('Drop diameter in um')
 
     else:
-        axs = fig.subplots(2)
+        axs = fig.subplots(3)
 
         ax = axs[0]
         bins = np.arange(0, 120, 5)
-        _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max, grid=False)
-        ax.set_title('Terminal Velocity in mm/s', fontsize=24)
+        _, ax = create_hist(vs, ax=ax, bins=bins, maxval=v_max, grid=False, label='Measured terminal velocity in mm/s')
+        # ax.set_title('Measured terminal velocity in mm/s', fontsize=24)
+        # ax.set_xlabel('Measured terminal velocity in mm/s', fontsize=24)
 
         ax = axs[1]
-        bins = np.arange(0, np.max(area_eq_diam_list), 4)
+        # bins = np.arange(0, np.max(area_eq_diam_list), 4)
         # _, ax = create_hist(area_eq_diam_list, ax=ax, bins=bins, maxval=ae_max, grid=False)
         # ax.set_title(r'Area equivalent diameter in $\mu m$', fontsize=20)
-        _, ax = create_hist(max_diam_list, ax=ax, bins=bins, maxval=mxdim_max)
+        _, ax = create_hist(max_diam_list, ax=ax, bins=np.arange(0, 120, 8), maxval=mxdim_max, label=r'Measured $D_{ae}$ in $\mu$m')
         # plot_param_hist(ax, max_diam_list, mxdim_max, n_bins, '$\mu m$')
         # ax.set_title(r'Maximum diameter in $\mu m$', fontsize=20)
-        ax.set_xlabel('Maximum diameter in um', fontsize=24)
+        # ax.set_xlabel(r'$D_{ae}$ in $\mu$m', fontsize=24)
+
+    # from Speed.Holography.generate_fallstreaks import eta
+    # fig, ax = imshow_in_figure()
+    ax = axs[2]
+    vs_stokes = [9.81/(6*np.pi*16.65*1e-6)*0.4972*(d*1e-6)**2.36/(d*1e-6/2)*1000 for d in max_diam_list]
+    print('v calculated')
+    bins = np.arange(0, 120, 8)
+
+    _, ax = create_hist(vs_stokes, ax=ax, bins=bins, maxval=v_max, grid=False, label='Terminal velocity predicted by Stokes theory in mm/s')#, bins=np.arange(0, 120, 8), maxval=np.max(vs_stokes))
+    # ax.set_xlabel('Terminal velocity predicted by Stokes in mm/s', fontsize=20)
+    axs[0].set_ylim(axs[1].get_ylim())
+    axs[2].set_ylim(axs[1].get_ylim())
+    print('Stokes plotted')
 
     # plt.suptitle('Histogram Overview for '+fldr[-8:], fontsize=24)
 
@@ -247,12 +264,13 @@ def orientation_polar_plot(orientation):
         bar.set_alpha(0.5)
 
 
-def velocity_time_series(folder_list, time_list, projected_vs):
+def velocity_time_series(folder_list, time_list, projected_vs, fr):
     temp_vals = list()
     mean_vals = np.zeros(len(folder_list))
     std_vals = np.zeros(len(folder_list))
     streaks_in_pic = np.zeros(len(folder_list))
-    curr_val = 0
+    start_val = 250
+    curr_val = start_val
 
     for t_time, v in zip(time_list, projected_vs):
         if t_time == curr_val:
@@ -276,6 +294,7 @@ def velocity_time_series(folder_list, time_list, projected_vs):
                         temp_vals = list()
 
     n_bins = 25
+    print('Running mean window: {} seconds.'.format(1/fr*n_bins))
 
     sum_run = np.nancumsum(np.insert(mean_vals, 0, 0))
     sum_std = np.nancumsum(np.insert(std_vals, 0, 0))
@@ -295,11 +314,11 @@ def velocity_time_series(folder_list, time_list, projected_vs):
     nan_mask = np.isnan(std_vals)
     rm_std = np.convolve(np.where(nan_mask, 0, std_vals), K, 'same')/np.convolve(~nan_mask, K, 'same')
 
-    f_start = folder_list[0]
+    f_start = folder_list[start_val]
     start_time = np.float16(f_start[21:23])*60+np.float16(f_start[24:26])+np.float16(f_start[27:30])/1000
     time_fl = [np.float16(f[21:23])*60+np.float16(f[24:26])+np.float16(f[27:30])/1000-start_time for f in folder_list if '.png' in f]
 
-    f, ax = imshow_in_figure(figspan=(18, 10), dpi=100)
+    f, ax = imshow_in_figure(figspan=(18, 7), dpi=100)
     # ax = ax2.twinx()
     # ax2.bar([t+0.5 for t in time_fl], streaks_in_pic, zorder=0, alpha=0.4)
     ax.plot(time_fl, rm_vs, color='b', zorder=5)
@@ -382,6 +401,10 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size, relative=True)
 
             binned_n[int(i)][int(j)] = len(bins_orientation[int(i)][int(j)])
 
+    binned_n[binned_n < 20] = 0
+    binned_o[binned_n < 20] = 0
+    binned_v[binned_n < 20] = 0
+
     if relative:
         sum_all_n = np.sum(binned_n)
         binned_n = [b/sum_all_n for b in [c for c in binned_n]]
@@ -392,7 +415,7 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size, relative=True)
     # ax.set_xlim([xs[0]*pxl_size/1000, xs[-1]*pxl_size/1000])
     # ax.set_ylim([ys[0]*pxl_size/1000, ys[-1]*pxl_size/1000])
     f.canvas.draw()
-    cmap = plt.cm.YlOrRd
+    cmap = plt.cm.Spectral_r
     # cmap = plt.cm.Spectral_r
     cmap.set_under(color='white')
     im = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_n), 0), cmap=cmap, vmin=0.0001)
@@ -433,8 +456,8 @@ def centerpt_density(centerpt, orientation, vs, imsize, pxl_size, relative=True)
     f.canvas.draw()
     X, Y = np.meshgrid(xs*pxl_size/1000, ys*pxl_size/1000)
     im_pc = ax.pcolor(xs * pxl_size/1000, ys * pxl_size/1000, np.flip(np.transpose(binned_v), 0), cmap=cmap, vmin=1.5, vmax=50)
-    im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0)*np.flip(np.transpose(binned_v), 0)),
-                      -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0))
+    im_qv = ax.quiver(X, Y, np.sin(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0),
+                      -np.cos(np.flip(np.transpose(binned_o), 0))*np.flip(np.transpose(binned_v), 0), headwidth=8)
     cbar = f.colorbar(im_pc, ticks=np.linspace(0, 50, 6))
     cbar.set_label('v in $mm/s$', fontsize=20)
     cbar.ax.tick_params(labelsize=20)
