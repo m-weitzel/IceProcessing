@@ -287,12 +287,15 @@ def dist(particle_a, particle_b, ignore_zpos=False):
 
 def eta(t):
 
-    ts = [c+273.15 for c in (-25, -10, 0, 25)]
-    e = [c*1e-6 for c in (15.88, 16.65, 17.15, 18.32)]
+    # ts = [c+273.15 for c in (-25, -10, 0, 25)]
+    # e = [c*1e-6 for c in (15.88, 16.65, 17.15, 18.32)]
+    # e = [c*1e-6 for c in (16.05, 16.85, 17.36, 18.62)]
 
-    pl = fit_powerlaw(ts, e)
+    # pl = fit_powerlaw(ts, e)
 
-    eta = pl[0]*(t+273.15)**pl[1]
+    # eta = pl[0]*(t+273.15)**pl[1]
+
+    eta = 18.6*1e-6*((t+273.15)/300)**0.76
 
     return eta
 
